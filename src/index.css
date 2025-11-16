@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+body {
+  background: white;
+  color: #1a1a1a;
+}
+
+/* Lock the page and stop rubber-band */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Pin the app to the visual viewport (keyboard-safe) */
+#root {
+  position: fixed;
+  inset: 0; /* top/right/bottom/left: 0 */
+  height: 100dvh; /* dynamic viewport height */
+  overflow: clip; /* no scrollbars at root */
+}
+
+/* Fallback for older browsers */
+@supports not (height: 100dvh) {
+  #root {
+    height: 100vh;
+  }
+}
+
+/* ---- Safe-area + app shell helpers ---- */
+:root {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+
+  --nav-h: 56px; /* bottom nav height */
+  --footer-h: 64px; /* comment bar height */
+}
+
+.app-shell {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Main scrollable area for each screen */
+.content {
+  height: 100%;
+  overflow: auto;
+}
+
+/* Leave space for bottom nav when it's visible */
+.with-bottom-nav {
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Detail screens that only need space for the footer (no bottom nav) */
+.discussion-detail-page {
+  height: 100%;
+  overflow: auto;
+  padding-bottom: calc(var(--footer-h) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Generic fixed footer (comment input bars, etc.) */
+.fixed-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: 28rem; /* matches max-w-md layout */
+  margin-left: auto;
+  margin-right: auto;
+  background: #ffffff;
+  border-top: 1px solid var(--border, #e5e5e5);
+  padding: 16px 24px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 60; /* above any bottom nav */
+  box-sizing: border-box;
+}
+
+/* Hide the default clear button in search inputs */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
