@@ -5,7 +5,7 @@ import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 interface LoginScreenProps {
-  onLogin: (name: string) => void;
+  onLogin: (name: string, id: string) => void;
   onNavigate: (path: string) => void;
 }
 
@@ -51,8 +51,9 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
 
     // 3. Use full_name from DB, fallback to "Student"
     const displayName = profile?.full_name || "Student";
+    const userId = user.id;
 
-    onLogin(displayName);
+    onLogin(displayName, userId);
   };
 
   return (

@@ -26,6 +26,7 @@ import {
 import { ActivityMainScreen } from "./pages/ActivityMainScreen";
 import { RecordActivityScreen } from "./pages/RecordActivityScreen";
 import { EditActivityScreen } from "./pages/EditActivityScreen";
+import DetailActivityScreen from "./pages/DetailActivityScreen";
 import { FacilityListScreen, BookListHeader } from "./pages/FacilityListScreen";
 import {
   MyBookingsScreen,
@@ -161,6 +162,20 @@ function EditActivityWrapper({ userId }: { userId: string }) {
   );
 }
 
+function DetailActivityWrapper() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  return (
+    <DetailActivityScreen
+      activityId={id || ""}
+      onNavigate={(screen) => {
+        if (screen === "activity-main") navigate("/activity-main");
+      }}
+    />
+  );
+}
+
 function RequireAuth({
   authed,
   children,
@@ -208,7 +223,7 @@ export default function App() {
     const p = location.pathname;
     if (p.startsWith("/discussion")) return "discussion";
     if (p.startsWith("/book") || p.startsWith("/facilities")) return "book";
-    if (p.startsWith("/activity") || p.startsWith("/activity"))
+    if (p.startsWith("/activity") || p.startsWith("/detailactivity"))
       return "activity";
     if (p.startsWith("/profile")) return "profile";
     return "home";
@@ -218,7 +233,12 @@ export default function App() {
 
   const handleLogin = async (name: string, id?: string) => {
     setStudentName(name || "Student");
-    if (id) setUserId(id);
+    if (id) {
+      setUserId(id.toString());
+    }else {
+      console.warn("Warning: user ID is missing");
+      setUserId("");      
+    }
     setAuthed(true);
     navigate("/home", { replace: true });
   };
@@ -420,10 +440,13 @@ export default function App() {
               <RequireAuth authed={authed}>
                 <ActivityMainScreen
                   userId={userId}
+                  userRole="student"
                   onNavigate={(screen, data) => {
                     if (screen === "profile") navigate("/profile");
                     if (screen === "activity-detail" && data)
                       navigate(`/activity/${data}`);
+                    if (screen === "detailactivity" && data) 
+                      navigate(`/detailactivity/${data}`);
                     if (screen === "activity-record")
                       navigate("/activity/record");
                     if (screen === "edit-activity" && data)
@@ -440,7 +463,7 @@ export default function App() {
               <RequireAuth authed={authed}>
                 <RecordActivityScreen
                   studentName={studentName}
-                  userId={userId}
+                  userRole="student"
                   onNavigate={(screen) => {
                     if (screen === "activity-main") navigate("/activity-main");
                   }}
@@ -498,6 +521,15 @@ export default function App() {
             element={
               <RequireAuth authed={authed}>
                 <ActivityDetailWrapper />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/detailactivity/:id"
+            element={
+              <RequireAuth authed={authed}>
+                <DetailActivityWrapper />
               </RequireAuth>
             }
           />

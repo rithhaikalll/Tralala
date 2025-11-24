@@ -103,51 +103,51 @@ export function EditActivityScreen({
     if (!formData) return;
 
     if (!hasChanges) {
-      setCustomMessage("No changes made.");
-      setTimeout(() => onNavigate("activity-main"), 1000);
-      return;
+        setCustomMessage("No changes made.");
+        setTimeout(() => onNavigate("activity-main"), 1000);
+        return;
     }
 
     if (!validateForm()) {
-      setCustomMessage("Please fix errors before saving.");
-      return;
+        setCustomMessage("Please fix errors before saving.");
+        return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Ensure correct types and column names match your Supabase table
-      const updatePayload: any = {
+        // Ensure correct types and column names match your Supabase table
+        const updatePayload: any = {
         activity_name: formData.activity_name,
         activity_type: formData.activity_type,
         date: formData.activity_date
-          ? new Date(formData.activity_date).toISOString()
-          : null,
+            ? new Date(formData.activity_date).toISOString()
+            : null,
         duration: Number(formData.duration_hours) || 0, // must be number
         remark: formData.remarks || "",
         recorded_date: new Date().toISOString(),
-      };
+        };
 
-      const { data, error } = await supabase
+        const { data, error } = await supabase
         .from("recorded_activities")
         .update(updatePayload)
         .eq("id", activityId);
 
-      setIsSubmitting(false);
+        setIsSubmitting(false);
 
-      if (error) {
+        if (error) {
         console.error("Supabase update error:", error);
         setCustomMessage(`Failed to update activity: ${error.message}`);
-      } else {
+        } else {
         setCustomMessage("Activity updated successfully!");
         setTimeout(() => onNavigate("activity-main"), 1000);
-      }
+        }
     } catch (err) {
-      console.error("Unexpected error:", err);
-      setIsSubmitting(false);
-      setCustomMessage("An unexpected error occurred.");
+        console.error("Unexpected error:", err);
+        setIsSubmitting(false);
+        setCustomMessage("An unexpected error occurred.");
     }
-  };
+    };
 
   const handleCancel = () => {
     onNavigate("activity-main");
@@ -157,24 +157,16 @@ export function EditActivityScreen({
 
   return (
     <div className="min-h-screen bg-white pb-8">
-      {/* Header = same style as ActivityHistoryScreen */}
-      <div
-        className="sticky top-0 z-40 bg-white px-6 py-6 border-b"
-        style={{ borderColor: "#E5E5E5" }}
-      >
-        <div className="flex items-center gap-3">
-          <button onClick={handleCancel} style={{ color: "#7A0019" }}>
-            <ArrowLeft className="w-6 h-6" strokeWidth={1.5} />
-          </button>
-          <h1
-            style={{
-              color: "#1A1A1A",
-              fontWeight: 600,
-              fontSize: "20px",
-            }}
+      {/* Header */}
+      <div className="px-6 py-4 border-b" style={{ borderColor: "#E5E5E5" }}>
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            onClick={handleCancel}
+            className="w-10 h-10 flex items-center justify-center"
           >
-            Edit Activity
-          </h1>
+            <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
+          </button>
+          <h1 className="text-[20px] font-semibold">Edit Activity</h1>
         </div>
       </div>
 
@@ -192,9 +184,7 @@ export function EditActivityScreen({
       <div className="px-6 pt-6 space-y-6">
         {/* Activity Name */}
         <div>
-          <label className="block mb-1 font-medium text-sm">
-            Activity Name *
-          </label>
+          <label className="block mb-1 font-medium text-sm">Activity Name *</label>
           <input
             type="text"
             value={formData.activity_name}
@@ -202,9 +192,7 @@ export function EditActivityScreen({
               setFormData({ ...formData, activity_name: e.target.value })
             }
             className="w-full h-12 px-4 border rounded"
-            style={{
-              borderColor: errors.activity_name ? "#FCA5A5" : "#E5E5E5",
-            }}
+            style={{ borderColor: errors.activity_name ? "#FCA5A5" : "#E5E5E5" }}
             disabled={showPermissionError}
           />
           {errors.activity_name && (
@@ -214,18 +202,14 @@ export function EditActivityScreen({
 
         {/* Activity Type */}
         <div>
-          <label className="block mb-1 font-medium text-sm">
-            Activity Type *
-          </label>
+          <label className="block mb-1 font-medium text-sm">Activity Type *</label>
           <select
             value={formData.activity_type}
             onChange={(e) =>
               setFormData({ ...formData, activity_type: e.target.value })
             }
             className="w-full h-12 px-4 border rounded"
-            style={{
-              borderColor: errors.activity_type ? "#FCA5A5" : "#E5E5E5",
-            }}
+            style={{ borderColor: errors.activity_type ? "#FCA5A5" : "#E5E5E5" }}
             disabled={showPermissionError}
           >
             <option value="">Select type</option>
@@ -253,16 +237,12 @@ export function EditActivityScreen({
             style={{ borderColor: errors.date ? "#FCA5A5" : "#E5E5E5" }}
             disabled={showPermissionError}
           />
-          {errors.date && (
-            <p className="text-red-700 text-xs mt-1">{errors.date}</p>
-          )}
+          {errors.date && <p className="text-red-700 text-xs mt-1">{errors.date}</p>}
         </div>
 
         {/* Duration */}
         <div>
-          <label className="block mb-1 font-medium text-sm">
-            Duration (hours) *
-          </label>
+          <label className="block mb-1 font-medium text-sm">Duration (hours) *</label>
           <input
             type="number"
             step="0.25"
@@ -309,12 +289,38 @@ export function EditActivityScreen({
             Cancel
           </button>
         </div>
+        {!showPermissionError && (
+          <button
+            onClick={async () => {
+              if (!confirm("Are you sure you want to delete this activity? This cannot be undone.")) return;
+
+              try {
+                const { error } = await supabase
+                  .from("recorded_activities")
+                  .delete()
+                  .eq("id", activityId);
+
+                if (error) {
+                  console.error("Failed to delete activity:", error);
+                  setCustomMessage(`Failed to delete activity: ${error.message}`);
+                } else {
+                  setCustomMessage("Activity deleted successfully!");
+                  setTimeout(() => onNavigate("activity-main"), 1000);
+                }
+              } catch (err) {
+                console.error("Unexpected error:", err);
+                setCustomMessage("An unexpected error occurred while deleting.");
+              }
+            }}
+            className="w-full h-12 bg-red-600 text-white rounded font-medium"
+          >
+            Delete Activity
+          </button>
+        )}
 
         {/* Custom message */}
         {customMessage && (
-          <p className="mt-4 text-center text-sm text-gray-600">
-            {customMessage}
-          </p>
+          <p className="mt-4 text-center text-sm text-gray-600">{customMessage}</p>
         )}
       </div>
     </div>
