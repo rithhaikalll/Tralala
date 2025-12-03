@@ -2,10 +2,19 @@
 
 | Name | Contributions |
 |------|---------------|
-| Rifqi | Register and Sign In Module |
-| Fakhrul | Activity Recording Module |
-| Aidil | Discussion Forum Module |
-| Harith | Facility Booking Module |
+| Rifqi | Authentication Subsystem |
+| Fakhrul | Activity Tracking Subsystem |
+| Aidil | Community Subsystem |
+| Harith | Facility Subsystem |
+
+# 📊 Activity Tracking Subsystem
+🧑‍💻Developer: MUHAMMAD FAKHRUL RAZZI BIN MD NOOR
+
+| Sprint | Module Name | Code |
+|--------|-------------|------|
+| 1 | Activity Recording Module | [Actvity Main Screen](.src/pages/ActivityMainScreen.tsx) |
+
+
 
 # React + TypeScript + Vite
 
