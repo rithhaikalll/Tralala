@@ -11,7 +11,7 @@
 🧑‍💻Developer: MUHAMMAD RIFQI BIN RAZALI
 | Sprint | Module Name | FrontEnd |
 |--------|-------------|------|
-| 1 | Activity Recording Module | [Login Screen](src/pages/LoginScreen.tsx) [Register Screen](src/pages/RegisterScreen.tsx) [Reset Password Request Screen](src/pages/ResetPasswordRequestScreen.tsx) [Reset Link Sent Screen](src/pages/ResetLinkSentScreen.tsx) [Reset Password New Screen](src/pages/ResetPasswordNewScreen.tsx)|
+| 1 | Register and Sign In Module |Pages <br> <ul><li> [Login Screen](src/pages/LoginScreen.tsx)</li> <li>[Register Screen](src/pages/RegisterScreen.tsx)</li> <li>[Reset Password Request Screen](src/pages/ResetPasswordRequestScreen.tsx)</li> <li>[Reset Link Sent Screen](src/pages/ResetLinkSentScreen.tsx)</li> <li>[Reset Password New Screen](src/pages/ResetPasswordNewScreen.tsx)|
 
 # 📊 Activity Tracking Subsystem
 🧑‍💻Developer: MUHAMMAD FAKHRUL RAZZI BIN MD NOOR
