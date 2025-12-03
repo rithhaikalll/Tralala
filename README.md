@@ -10,9 +10,9 @@
 # 📊 Activity Tracking Subsystem
 🧑‍💻Developer: MUHAMMAD FAKHRUL RAZZI BIN MD NOOR
 
-| Sprint | Module Name | Code |
+| Sprint | Module Name | FrontEnd |
 |--------|-------------|------|
-| 1 | Activity Recording Module | [Actvity Main Screen](src/pages/ActivityMainScreen.tsx) |
+| 1 | Activity Recording Module | [Actvity Main Screen](src/pages/ActivityMainScreen.tsx) [Detail Activity Screen](src/pages/DetailActivityScreen.tsx) [Edit Actvity Screen](src/pages/EditActivityScreen.tsx) |
 
 
 
