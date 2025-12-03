@@ -1,3 +1,12 @@
+# 👥 Contributors
+
+| Name | Contributions |
+|------|---------------|
+| Rifqi | Register and Sign In Module |
+| Fakhrul | Activity Recording Module |
+| Aidil | Discussion Forum Module |
+| Harith | Facility Booking Module |
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
