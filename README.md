@@ -7,6 +7,12 @@
 | Aidil | Community Subsystem |
 | Harith | Facility Subsystem |
 
+# 👤 Authentication Subsystem
+🧑‍💻Developer: MUHAMMAD RIFQI BIN RAZALI
+| Sprint | Module Name | FrontEnd |
+|--------|-------------|------|
+| 1 | Activity Recording Module | [Login Screen](src/pages/LoginScreen.tsx) [Register Screen](src/pages/RegisterScreen.tsx) [Reset Password Request Screen](src/pages/ResetPasswordRequestScreen.tsx) [Reset Link Sent Screen](src/pages/ResetLinkSentScreen.tsx) [Reset Password New Screen](src/pages/ResetPasswordNewScreen.tsx)|
+
 # 📊 Activity Tracking Subsystem
 🧑‍💻Developer: MUHAMMAD FAKHRUL RAZZI BIN MD NOOR
 
