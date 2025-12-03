@@ -12,7 +12,7 @@
 
 | Sprint | Module Name | Code |
 |--------|-------------|------|
-| 1 | Activity Recording Module | [Actvity Main Screen](.src/pages/ActivityMainScreen.tsx) |
+| 1 | Activity Recording Module | [Actvity Main Screen](src/pages/ActivityMainScreen.tsx) |
 
 
 
