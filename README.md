@@ -11,8 +11,8 @@
 🧑‍💻Developer: MUHAMMAD FAKHRUL RAZZI BIN MD NOOR
 
 | Sprint | Module Name | FrontEnd | Backend |
-|--------|-------------|----------|---------|
-| 1 | Activity Recording Module | [Actvity Main Screen](src/pages/ActivityMainScreen.tsx) [Detail Activity Screen](src/pages/DetailActivityScreen.tsx) [Edit Actvity Screen](src/pages/EditActivityScreen.tsx) [Record Actvity Screen](src/pages/RecordActivityScreen.tsx) |
+|:------:|:-----------:|:--------:|:-------:|
+| 1 | Activity Recording Module | [Actvity Main Screen](src/pages/ActivityMainScreen.tsx) <br> [Detail Activity Screen](src/pages/DetailActivityScreen.tsx) <br> [Edit Actvity Screen](src/pages/EditActivityScreen.tsx) <br> [Record Actvity Screen](src/pages/RecordActivityScreen.tsx) |
 
 
 
