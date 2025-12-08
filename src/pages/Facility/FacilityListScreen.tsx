@@ -1,8 +1,8 @@
 // src/pages/FacilityListScreen.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
-import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { supabase } from "../lib/supabaseClient";
+import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
+import { supabase } from "../../lib/supabaseClient";
 
 interface FacilityListScreenProps {
   onNavigate: (screen: string, data?: string) => void;

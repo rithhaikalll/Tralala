@@ -1,6 +1,8 @@
 // src/App.tsx
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { supabase } from "./lib/supabaseClient";
+
 import {
   Routes,
   Route,
@@ -10,41 +12,45 @@ import {
   useParams,
 } from "react-router-dom";
 
-import { LoginScreen } from "./pages/LoginScreen";
-import { RegisterScreen } from "./pages/RegisterScreen";
-import { ResetPasswordRequestScreen } from "./pages/ResetPasswordRequestScreen";
-import { ResetPasswordNewScreen } from "./pages/ResetPasswordNewScreen";
-import { ResetLinkSentScreen } from "./pages/ResetLinkSentScreen";
-import { HomeScreen, HomeScreenHeader } from "./pages/HomeScreen";
+import { LoginScreen } from "./pages/Authentication/LoginScreen";
+import { RegisterScreen } from "./pages/Authentication/RegisterScreen";
+import { ResetPasswordRequestScreen } from "./pages/Authentication/ResetPasswordRequestScreen";
+import { ResetPasswordNewScreen } from "./pages/Authentication/ResetPasswordNewScreen";
+import { ResetLinkSentScreen } from "./pages/Authentication/ResetLinkSentScreen";
+import { HomeScreen, HomeScreenHeader } from "./pages/StudentDashboard";
+import { StaffCheckInDashboardScreen } from "./pages/StaffDashboard";
 import { BottomNav } from "./pages/BottomNav";
 import { ProfileScreen } from "./pages/ProfileScreen";
-import { ActivityHistoryScreen } from "./pages/ActivityHistoryScreen";
+import { ActivityHistoryScreen } from "./pages/Activity Tracking/ActivityHistoryScreen";
 import {
   ActivityDetailScreen,
   ActivityDetailHeader,
-} from "./pages/ActivityDetailScreen";
-import { ActivityMainScreen } from "./pages/ActivityMainScreen";
-import { RecordActivityScreen } from "./pages/RecordActivityScreen";
-import { EditActivityScreen } from "./pages/EditActivityScreen";
-import DetailActivityScreen from "./pages/DetailActivityScreen";
-import { FacilityListScreen, BookListHeader } from "./pages/FacilityListScreen";
+} from "./pages/Activity Tracking/ActivityDetailScreen";
+import { ActivityMainScreen } from "./pages/Activity Tracking/ActivityMainScreen";
+import { RecordActivityScreen } from "./pages/Activity Tracking/RecordActivityScreen";
+import { EditActivityScreen } from "./pages/Activity Tracking/EditActivityScreen";
+import DetailActivityScreen from "./pages/Activity Tracking/DetailActivityScreen";
+import {
+  FacilityListScreen,
+  BookListHeader,
+} from "./pages/Facility/FacilityListScreen";
 import {
   MyBookingsScreen,
   MyBookingsScreenHeader,
-} from "./pages/MyBookingsScreen";
+} from "./pages/Facility/MyBookingsScreen";
 import {
   DiscussionScreen,
   DiscussionScreenHeader,
-} from "./pages/DiscussionScreen";
-import { DiscussionDetailScreen } from "./pages/DiscussionDetailScreen";
-import { CreateDiscussionScreen } from "./pages/CreateDiscussionScreen";
+} from "./pages/Community/DiscussionScreen";
+import { DiscussionDetailScreen } from "./pages/Community/DiscussionDetailScreen";
+import { CreateDiscussionScreen } from "./pages/Community/CreateDiscussionScreen";
 import {
   FacilityDetailsScreen,
   FacilityDetailsHeader,
-} from "./pages/FacilityDetailsScreen";
-import { TimeSlotSelectionScreen } from "./pages/TimeSlotSelectionScreen";
-import { BookingConfirmationScreen } from "./pages/BookingConfirmationScreen";
-import { SuccessScreen } from "./pages/SuccessScreen";
+} from "./pages/Facility/FacilityDetailsScreen";
+import { TimeSlotSelectionScreen } from "./pages/Facility/TimeSlotSelectionScreen";
+import { BookingConfirmationScreen } from "./pages/Facility/BookingConfirmationScreen";
+import { SuccessScreen } from "./pages/Facility/SuccessScreen";
 
 function DiscussionDetailWrapper({
   onNavigate,
@@ -215,6 +221,7 @@ export default function App() {
     location.pathname.startsWith("/activity-history") ||
     location.pathname.match(/^\/activity\/[^/]+$/) || // /activity/:id
     location.pathname.startsWith("/activity/edit") || // /activity/edit/:id
+    location.pathname.startsWith("/staff-dashboard") || // hide for staff
     location.pathname.startsWith("/my-bookings"); // 🔴 hide on My Bookings
 
   const showBottomNav = authed && !hideBottomNav;
@@ -232,15 +239,32 @@ export default function App() {
   const [userId, setUserId] = useState<string>("");
 
   const handleLogin = async (name: string, id?: string) => {
-    setStudentName(name || "Student");
-    if (id) {
-      setUserId(id.toString());
-    }else {
+    // get current user (to read metadata.role)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const role = user?.user_metadata?.role || "student";
+    const displayName =
+      (user?.user_metadata?.fullName as string) || name || "User";
+
+    setStudentName(displayName);
+
+    if (id || user?.id) {
+      setUserId((id || user?.id) as string);
+    } else {
       console.warn("Warning: user ID is missing");
-      setUserId("");      
+      setUserId("");
     }
+
     setAuthed(true);
-    navigate("/home", { replace: true });
+
+    // route based on role
+    if (role === "staff") {
+      navigate("/staff-dashboard", { replace: true });
+    } else {
+      navigate("/home", { replace: true });
+    }
   };
 
   const handleNavigateFromLogin = (path: string) => {
@@ -445,7 +469,7 @@ export default function App() {
                     if (screen === "profile") navigate("/profile");
                     if (screen === "activity-detail" && data)
                       navigate(`/activity/${data}`);
-                    if (screen === "detailactivity" && data) 
+                    if (screen === "detailactivity" && data)
                       navigate(`/detailactivity/${data}`);
                     if (screen === "activity-record")
                       navigate("/activity/record");
@@ -580,6 +604,26 @@ export default function App() {
           />
 
           <Route
+            path="/staff-dashboard"
+            element={
+              <RequireAuth authed={authed}>
+                <StaffCheckInDashboardScreen
+                  staffName={studentName}
+                  onNavigate={() => {
+                    // if later you want to navigate somewhere from staff dashboard
+                    // e.g. navigate("/profile")
+                  }}
+                  onLogout={async () => {
+                    await supabase.auth.signOut();
+                    setAuthed(false);
+                    navigate("/", { replace: true });
+                  }}
+                />
+              </RequireAuth>
+            }
+          />
+
+          <Route
             path="*"
             element={<Navigate to={authed ? "/home" : "/"} replace />}
           />
@@ -595,6 +639,7 @@ export default function App() {
           location.pathname.startsWith("/activity-history") ||
           location.pathname.match(/^\/activity\/[^/]+$/) || // /activity/:id
           location.pathname.startsWith("/activity/edit") || // /activity/edit/:id
+          location.pathname.startsWith("/staff-dashboard") || // hide for staff
           location.pathname.startsWith("/my-bookings"); // 🔴 also hide here
 
         const show = authed && !hide;

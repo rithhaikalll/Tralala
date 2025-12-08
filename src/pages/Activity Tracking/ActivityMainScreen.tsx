@@ -1,6 +1,6 @@
 import { Plus, Clock, CheckCircle, Edit2, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface ActivityMainScreenProps {
   onNavigate: (screen: string, data?: any) => void;

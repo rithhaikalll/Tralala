@@ -1,6 +1,6 @@
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface RecordActivityScreenProps {
   onNavigate: (screen: string, data?: any) => void;

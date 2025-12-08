@@ -1,7 +1,7 @@
 // src/pages/MyBookingsScreen.tsx
 import { Calendar, Clock, MapPin, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 export function MyBookingsScreenHeader({ onBack }: { onBack: () => void }) {
   return (
@@ -31,6 +31,7 @@ type BookingRow = {
   time_label: string;
   status: string;
   reference_code: string | null;
+  checkInCode: string | null; // stored as check_in_code in DB
   facilities: {
     name: string;
     location: string | null;
@@ -39,7 +40,6 @@ type BookingRow = {
 
 function parseBookingDateTime(dateLabel: string, timeLabel: string): number {
   try {
-    // date_label: "Tue, Nov 18"
     const cleaned = dateLabel.replace(",", ""); // "Tue Nov 18"
     const parts = cleaned.split(" "); // ["Tue","Nov","18"]
     if (parts.length < 3) return Number.MAX_SAFE_INTEGER;
@@ -47,7 +47,6 @@ function parseBookingDateTime(dateLabel: string, timeLabel: string): number {
     const [, month, day] = parts; // ignore weekday
     const year = new Date().getFullYear();
 
-    // time_label: "9:00 AM - 10:00 AM"
     const startTime = timeLabel.split("-")[0].trim(); // "9:00 AM"
 
     const dt = new Date(`${month} ${day} ${year} ${startTime}`);
@@ -90,6 +89,7 @@ export function MyBookingsScreen() {
           time_label,
           status,
           reference_code,
+          check_in_code,
           facilities (
             name,
             location
@@ -102,41 +102,43 @@ export function MyBookingsScreen() {
       if (error) {
         console.error("Error loading bookings", error);
         setBookings([]);
-      } else {
-        const mapped: BookingRow[] = (data || []).map((row: any) => ({
-          id: row.id,
-          date_label: row.date_label,
-          time_label: row.time_label,
-          status: row.status,
-          reference_code: row.reference_code ?? null,
-          facilities: row.facilities
-            ? {
-                name: row.facilities.name as string,
-                location: (row.facilities.location as string) ?? null,
-              }
-            : null,
-        }));
-
-        // 🔽 sort confirmed first (by date+time), then cancelled (also sorted)
-        const confirmed = mapped.filter(
-          (b) => b.status?.toLowerCase() !== "cancelled"
-        );
-        const cancelled = mapped.filter(
-          (b) => b.status?.toLowerCase() === "cancelled"
-        );
-
-        const sortByDateTime = (a: BookingRow, b: BookingRow) => {
-          const ta = parseBookingDateTime(a.date_label, a.time_label);
-          const tb = parseBookingDateTime(b.date_label, b.time_label);
-          return ta - tb;
-        };
-
-        confirmed.sort(sortByDateTime);
-        cancelled.sort(sortByDateTime);
-
-        setBookings([...confirmed, ...cancelled]);
+        setLoading(false);
+        return;
       }
 
+      const mapped: BookingRow[] = (data || []).map((row: any) => ({
+        id: row.id,
+        date_label: row.date_label,
+        time_label: row.time_label,
+        status: row.status,
+        reference_code: row.reference_code ?? null,
+        checkInCode: row.check_in_code ?? null,
+        facilities: row.facilities
+          ? {
+              name: row.facilities.name as string,
+              location: (row.facilities.location as string) ?? null,
+            }
+          : null,
+      }));
+
+      const now = Date.now();
+
+      // 🔥 Only keep FUTURE, ACTIVE bookings
+      const active = mapped.filter((b) => {
+        const s = b.status?.toLowerCase();
+        if (s === "cancelled" || s === "completed") return false;
+
+        const startTs = parseBookingDateTime(b.date_label, b.time_label);
+        return startTs >= now;
+      });
+
+      active.sort((a, b) => {
+        const ta = parseBookingDateTime(a.date_label, a.time_label);
+        const tb = parseBookingDateTime(b.date_label, b.time_label);
+        return ta - tb;
+      });
+
+      setBookings(active);
       setLoading(false);
     };
 
@@ -162,11 +164,8 @@ export function MyBookingsScreen() {
       console.error("Failed to cancel booking", error);
       alert("Failed to cancel booking.");
     } else {
-      setBookings((prev) =>
-        prev.map((b) =>
-          b.id === selectedBookingId ? { ...b, status: "cancelled" } : b
-        )
-      );
+      // 🔥 Immediately remove from UI
+      setBookings((prev) => prev.filter((b) => b.id !== selectedBookingId));
 
       try {
         const {
@@ -228,7 +227,18 @@ export function MyBookingsScreen() {
             const facilityName = booking.facilities?.name || "Facility";
             const location = booking.facilities?.location || "Campus Facility";
 
-            const isCancelled = booking.status.toLowerCase() === "cancelled";
+            const statusLower = booking.status.toLowerCase();
+            const isCancelled = statusLower === "cancelled";
+
+            // 🔍 Show more detailed status if you start using them
+            const statusLabel =
+              statusLower === "checked_in"
+                ? "Checked In"
+                : statusLower === "completed"
+                ? "Completed"
+                : statusLower === "cancelled"
+                ? "Cancelled"
+                : "Confirmed";
 
             return (
               <div
@@ -273,7 +283,7 @@ export function MyBookingsScreen() {
                       fontWeight: 500,
                     }}
                   >
-                    {isCancelled ? "Cancelled" : "Confirmed"}
+                    {statusLabel}
                   </span>
                 </div>
 
@@ -298,6 +308,7 @@ export function MyBookingsScreen() {
                       {booking.time_label}
                     </span>
                   </div>
+
                   {booking.reference_code && (
                     <p className="text-xs" style={{ color: "#888888" }}>
                       Ref: {booking.reference_code}
@@ -305,10 +316,47 @@ export function MyBookingsScreen() {
                   )}
                 </div>
 
+                {/* Big Check-In Code */}
+                {!isCancelled && booking.checkInCode && (
+                  <div
+                    className="mt-2 pt-3 border-t"
+                    style={{ borderColor: "#F4D4DD" }}
+                  >
+                    <p
+                      className="text-xs text-center mb-2"
+                      style={{ color: "#888888" }}
+                    >
+                      Check-In Code
+                    </p>
+                    <div className="flex justify-center">
+                      <div
+                        className="px-6 py-3 border border-dashed"
+                        style={{
+                          borderRadius: "16px",
+                          borderColor: "#F4A7B5",
+                          backgroundColor: "#FFF7FA",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: "monospace",
+                            fontWeight: 700,
+                            letterSpacing: "6px",
+                            fontSize: "24px",
+                            color: "#B3003B",
+                          }}
+                        >
+                          {booking.checkInCode}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {!isCancelled && (
                   <button
                     onClick={() => handleCancelClick(booking.id)}
-                    className="w-full h-12 border flex items-center justify-center mt-2"
+                    className="w-full h-12 border flex items-center justify-center mt-4"
                     style={{
                       borderWidth: "1.5px",
                       borderColor: "#7A0019",

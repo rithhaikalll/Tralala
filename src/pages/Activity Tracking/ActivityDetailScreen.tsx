@@ -1,7 +1,7 @@
 // src/pages/ActivityDetailScreen.tsx
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface ActivityDetailScreenProps {
   activityId: string;

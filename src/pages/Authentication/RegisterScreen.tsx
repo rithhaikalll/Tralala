@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Button } from "../components/ui/button";
-import { supabase } from "../lib/supabaseClient";
+import { Button } from "../../components/ui/button";
+import { supabase } from "../../lib/supabaseClient";
 
 interface RegisterScreenProps {
   onNavigate: (screen: string) => void;

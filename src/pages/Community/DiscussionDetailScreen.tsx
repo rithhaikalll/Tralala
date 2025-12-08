@@ -1,6 +1,6 @@
 import { ArrowLeft, Heart, MessageCircle, Trash2, Flag } from "lucide-react";
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface DiscussionDetailScreenProps {
   postId: string;

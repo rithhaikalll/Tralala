@@ -1,8 +1,8 @@
 // src/pages/FacilityDetailsScreen.tsx
 import { useEffect, useState } from "react";
 import { ArrowLeft, MapPin, Clock, Users, Info } from "lucide-react";
-import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { supabase } from "../lib/supabaseClient";
+import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
+import { supabase } from "../../lib/supabaseClient";
 
 interface FacilityDetailsScreenProps {
   facilityId: string;

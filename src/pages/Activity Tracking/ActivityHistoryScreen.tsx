@@ -1,7 +1,7 @@
 // src/pages/ActivityHistoryScreen.tsx
 import { useEffect, useState } from "react";
 import { CheckCircle, XCircle, ArrowLeft } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface ActivityHistoryScreenProps {
   onNavigate: (screen: string, data?: any) => void;

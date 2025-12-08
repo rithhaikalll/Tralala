@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface CreateDiscussionScreenProps {
   onNavigate: (screen: string) => void;

@@ -145,18 +145,18 @@ export function HomeScreen({ studentName, onNavigate }: HomeScreenProps) {
         .from("facility_bookings")
         .select(
           `
-        id,
-        date_label,
-        time_label,
-        status,
-        facilities (
-          name,
-          location
-        )
-      `
+    id,
+    date_label,
+    time_label,
+    status,
+    facilities (
+      name,
+      location
+    )
+  `
         )
         .eq("user_id", user.id)
-        .neq("status", "cancelled");
+        .in("status", ["pending", "approved", "confirmed", "checked_in"]);
 
       if (error) {
         console.error("Error loading upcoming booking", error);
@@ -228,15 +228,23 @@ export function HomeScreen({ studentName, onNavigate }: HomeScreenProps) {
         startAt: toStartDate(row.date_label, row.time_label),
       }));
 
-      // Sort by startAt (earliest first), fall back to original order if startAt missing
-      withStart.sort((a, b) => {
+      const now = new Date();
+
+      // keep only future (or undated) bookings
+      const upcomingOnly = withStart.filter((b: any) => {
+        if (!b.startAt) return true; // if parsing failed, keep it just in case
+        return (b.startAt as Date).getTime() >= now.getTime();
+      });
+
+      // Sort by startAt (earliest first)
+      upcomingOnly.sort((a: any, b: any) => {
         if (!a.startAt && !b.startAt) return 0;
         if (!a.startAt) return 1;
         if (!b.startAt) return -1;
         return (a.startAt as Date).getTime() - (b.startAt as Date).getTime();
       });
 
-      const first = withStart[0];
+      const first = upcomingOnly[0];
 
       if (!first) {
         setUpcomingBooking(null);

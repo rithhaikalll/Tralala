@@ -1,7 +1,7 @@
 // DetailActivityScreen.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 import { ArrowLeft } from "lucide-react";
 
 interface DetailActivityScreenProps {

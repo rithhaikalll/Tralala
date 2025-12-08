@@ -1,7 +1,7 @@
 // src/pages/TimeSlotSelectionScreen.tsx
 import { Calendar } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface TimeSlotSelectionScreenProps {
   facilityId: string;
@@ -43,14 +43,6 @@ const TIME_SLOTS: TimeSlot[] = [
   { id: "9", label: "4:00 PM - 5:00 PM" },
 ];
 
-const FACILITY_NAMES: Record<string, string> = {
-  "1": "Badminton Court",
-  "2": "Futsal Field",
-  "3": "Ping Pong Table",
-  "4": "Volleyball Court",
-  "5": "Fitness Gym",
-};
-
 export function TimeSlotSelectionScreen({
   facilityId,
   onNavigate,
@@ -65,6 +57,30 @@ export function TimeSlotSelectionScreen({
   );
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // ✅ Facility name from DB
+  const [facilityName, setFacilityName] = useState<string>("Facility");
+
+  // Load facility name for this facilityId
+  useEffect(() => {
+    const fetchFacility = async () => {
+      const { data, error } = await supabase
+        .from("facilities")
+        .select("name")
+        .eq("id", facilityId)
+        .maybeSingle();
+
+      if (!error && data?.name) {
+        setFacilityName(data.name as string);
+      } else {
+        console.error("Failed to load facility name", error);
+      }
+    };
+
+    if (facilityId) {
+      fetchFacility();
+    }
+  }, [facilityId]);
 
   // Load bookings for this facility + date (for ALL users)
   useEffect(() => {
@@ -106,7 +122,7 @@ export function TimeSlotSelectionScreen({
 
     onNavigate("booking-confirmation", {
       facilityId,
-      facilityName: FACILITY_NAMES[facilityId] || "Facility",
+      facilityName, // ✅ real name from DB
       date: selectedDate, // label, e.g. "Sun, Nov 16"
       time: slot.label, // label, e.g. "8:00 AM - 9:00 AM"
     });

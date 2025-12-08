@@ -1,7 +1,7 @@
 // src/pages/DiscussionScreen.tsx
 import { useEffect, useState } from "react";
 import { Plus, MessageCircle, Heart } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface Discussion {
   id: string;

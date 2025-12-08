@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { supabase } from "../lib/supabaseClient";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { supabase } from "../../lib/supabaseClient";
 
 interface ResetPasswordRequestScreenProps {
   onNavigate: (screen: string) => void;

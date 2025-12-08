@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface EditActivityScreenProps {
   onNavigate: (screen: string, data?: any) => void;

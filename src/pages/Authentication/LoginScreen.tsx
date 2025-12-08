@@ -1,8 +1,8 @@
 import { Eye, EyeOff } from "lucide-react";
-import { Input } from "../components/ui/input";
-import { Button } from "../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
 import { useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface LoginScreenProps {
   onLogin: (name: string, id: string) => void;

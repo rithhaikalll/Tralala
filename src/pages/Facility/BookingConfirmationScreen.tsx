@@ -1,6 +1,6 @@
 // src/pages/BookingConfirmationScreen.tsx
 import { Calendar, Clock, MapPin, Info } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface BookingConfirmationScreenProps {
   bookingData: {
@@ -27,10 +27,17 @@ export function BookingConfirmationScreen({
       return;
     }
 
+    // Reference ID (can stay alphanumeric)
     const referenceCode =
       "UTM" + Math.random().toString(36).substr(2, 9).toUpperCase();
 
-    // ⬇️ CHANGED: we now select() and .single() to get the new booking row back
+    // 🔢 6-digit NUMERIC check-in code (000000 – 999999)
+    const checkInCode = String(Math.floor(Math.random() * 1_000_000)).padStart(
+      6,
+      "0"
+    );
+
+    // Insert booking + store check_in_code
     const { data, error } = await supabase
       .from("facility_bookings")
       .insert({
@@ -40,6 +47,7 @@ export function BookingConfirmationScreen({
         time_label: bookingData.time,
         status: "confirmed",
         reference_code: referenceCode,
+        check_in_code: checkInCode, // 👈 NEW
       })
       .select()
       .single();
@@ -50,7 +58,7 @@ export function BookingConfirmationScreen({
       return;
     }
 
-    // ⬇️ NEW: write to activity_logs (fire-and-forget style)
+    // Activity log (unchanged, still uses returned row id)
     try {
       await supabase.from("activity_logs").insert({
         user_id: user.id,
@@ -71,9 +79,11 @@ export function BookingConfirmationScreen({
       console.error("Failed to log activity", e);
     }
 
+    // ⬇️ Pass both ref + 6-digit code to SuccessScreen
     onNavigate("success", {
       ...bookingData,
       referenceCode,
+      checkInCode,
     });
   };
 
@@ -220,9 +230,6 @@ export function BookingConfirmationScreen({
               </p>
             </div>
           </div>
-
-          {/* Terms (same as before, unchanged) */}
-          {/* ... you can keep your existing terms block here ... */}
         </div>
 
         {/* Fixed Footer Buttons */}
