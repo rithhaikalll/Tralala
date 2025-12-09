@@ -732,7 +732,7 @@ export function StaffCheckInDashboardScreen({
       {/* End Session Confirmation Modal - UC14 with AF1 */}
       {showEndSessionModal && selectedSession && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50"
+          className="fixed inset-0 bg-black/70 flex items-center justify-center p-6 z-50"
           onClick={() => setShowEndSessionModal(false)}
         >
           <div
