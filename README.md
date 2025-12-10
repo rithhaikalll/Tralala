@@ -20,6 +20,13 @@
 |:------:|:-----------:|---------|:-------:|
 | 1 | Activity Recording Module | Pages <br> <ul><li>[Actvity Main Screen](src/pages/ActivityMainScreen.tsx)</li> <li>[Detail Activity Screen](src/pages/DetailActivityScreen.tsx)</li> <li>[Edit Actvity Screen](src/pages/EditActivityScreen.tsx)</li> <li>[Record Actvity Screen](src/pages/RecordActivityScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
 
+# 🏢 Community Subsystem
+🧑‍💻Developer: MUHAMMAD AIDIL HAIKAL BIN MAZALAN
+
+| Sprint | Module Name | FrontEnd | Backend |
+|:------:|:-----------:|--------|:-------:|
+| 1 | Facilities Booking Module | Pages <br> <ul><li>[Create Discussion Screen](src/page/CreateDiscussionScreen.tsx)</li> <li>[Discussion Details Screen](src/pagesDiscussionDetailsScreen.tsx)</li> <li>[Discussion Screen](src/pages/DiscussionScreen.tsx)</li> <li>[My Bookings Screen](src/pages/MyBookingsScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
+
 # 🏢 Facility Subsystem
 🧑‍💻Developer: MUHAMMAD HARITH HAIKAL BIN MOHD SAID
 
