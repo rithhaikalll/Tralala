@@ -1,4 +1,4 @@
-import { Plus, Clock, CheckCircle, Edit2, TrendingUp, Sparkles, BarChart3, FileText } from "lucide-react";
+import { Plus, Clock, CheckCircle, Edit2, TrendingUp, FileText, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -21,13 +21,13 @@ export function ActivityMainScreen({
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "validated":
-        return { bg: "#F0F9FF", text: "#0369A1" };
+        return { bg: "#F0F9FF", text: "#0369A1", icon: CheckCircle };
       case "pending":
-        return { bg: "#FFF7ED", text: "#C2410C" };
+        return { bg: "#FFF7ED", text: "#C2410C", icon: Clock };
       case "rejected":
-        return { bg: "#FEF2F2", text: "#991B1B" };
+        return { bg: "#FEF2F2", text: "#991B1B", icon: XCircle };
       default:
-        return { bg: "#F5F5F5", text: "#6A6A6A" };
+        return { bg: "#F5F5F5", text: "#6A6A6A", icon: Clock };
     }
   };
 
@@ -86,45 +86,56 @@ export function ActivityMainScreen({
           )
         }
       >
-        <h3 className="font-semibold text-[16px] mb-2">{activity.activity_name}</h3>
+        <div className="flex items-start justify-between mb-2">
+          <h3 className="font-semibold text-[16px] mb-2">{activity.activity_name}</h3>
+          {userRole === "student" &&
+          isPending &&
+          isOwner && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate("edit-activity", activity.id); // navigate to edit screen
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors shadow-2xs"
+            >
+              <Edit2 className="w-4 h-4 text-gray-400" />
+            </button>
+          )}
+        </div>
+
         <div className="flex gap-2 mb-2">
-          <span className="px-2 py-1 text-xs rounded" style={{ backgroundColor: colors.bg, color: colors.text }}>
+          <span className="px-2 py-1 text-xs rounded inline-flex items-center gap-1" style={{ backgroundColor: colors.bg, color: colors.text}}>
+            <colors.icon size={12} color={colors.text}/>
             {activity.status}
           </span>
           <span className="text-[#6A6A6A] text-sm">{activity.activity_type}</span>
         </div>
 
-        <div className="text-sm text-[#444] mb-2">
-          {new Date(activity.date).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
+        <div className="space-y-1 text-sm mb-3">
+          <div className="flex justify-between">
+            <span className="text-gray-500">Date</span>
+            <span className="text-gray-900">
+              {new Date(activity.date).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Duration</span>
+            <span className="text-gray-900">{activity.duration}h</span>
+          </div>
         </div>
-
-        {/* Edit button for pending activities of student owner */}
-        {userRole === "student" &&
-        isPending &&
-        isOwner && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigate("edit-activity", activity.id); // navigate to edit screen
-            }}
-            className="w-full h-10 border rounded text-[#6A6A6A] flex items-center justify-center mt-2"
-          >
-            <Edit2 className="w-4 h-4 mr-2" /> Edit Activity
-          </button>
-        )}
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div className="min-h-screen bg-[#f7f7f6] pb-24">
       {/* Header */}
-      <div className="px-6 py-6 border-b" style={{ borderColor: "#E5E5E5", transform: "none"}}>
+      <div className="px-6 py-6 bg-white border-b" style={{ borderColor: "#E5E5E5", transform: "none"}}>
         <h2 className="text-[20px] font-semibold">
           {userRole === "staff" ? "Activity Validation" : "Activity Tracking"}
         </h2>
@@ -137,25 +148,25 @@ export function ActivityMainScreen({
 
       {/* Stats */}
       <div className="px-6 pt-6 pb-4 grid grid-cols-3 gap-3">
-        <div className="p-4 border rounded-lg bg-[#FFF7ED]">
-          <Clock className="w-5 h-5 mb-2 text-[#C2410C]" />
-          <div className="text-lg font-semibold">{pendingCount}</div>
-          <div className="text-xs text-[#C2410C]">Pending</div>
-        </div>
-        <div className="p-4 border rounded-lg bg-[#F0F9FF]">
-          <CheckCircle className="w-5 h-5 mb-2 text-[#0369A1]" />
-          <div className="text-lg font-semibold">{validatedCount}</div>
-          <div className="text-xs text-[#0369A1]">Validated</div>
-        </div>
-        <div className="p-4 border rounded-lg bg-[#FAFAFA]">
+        <div className="p-4 shadow rounded-lg bg-white">
           <TrendingUp className="w-5 h-5 mb-2 text-[#7A0019]" />
           <div className="text-lg font-semibold">{totalHours}</div>
           <div className="text-xs text-[#6A6A6A]">Total Hours</div>
         </div>
+        <div className="p-4 shadow rounded-lg bg-white">
+          <Clock className="w-5 h-5 mb-2 text-[#C2410C]" />
+          <div className="text-lg font-semibold">{pendingCount}</div>
+          <div className="text-xs text-[#C2410C]">Pending</div>
+        </div>
+        <div className="p-4 shadow rounded-lg bg-white">
+          <CheckCircle className="w-5 h-5 mb-2 text-[#0369A1]" />
+          <div className="text-lg font-semibold">{validatedCount}</div>
+          <div className="text-xs text-[#0369A1]">Validated</div>
+        </div>
       </div>
 
       {/* Record Button */}
-      <div className="px-6 pb-5">
+      <div className="px-6 pb-3">
         <button
           onClick={() => onNavigate("activity-record")}
           className="w-full h-12 bg-[#7A0019] text-white rounded-lg flex items-center justify-center gap-2"
@@ -164,75 +175,18 @@ export function ActivityMainScreen({
         </button>
       </div>
 
-      {/* AI & Reports Section */}
-      <div className="px-6 pb-5">
-        <div 
-          className="p-4 border mb-3"
-          style={{
-            borderColor: "#E5E5E5",
-            borderRadius: "12px",
-            backgroundColor: "#FAFAFA"
-          }}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5" style={{ color: "#7A0019" }} strokeWidth={1.5} />
-            <h3 style={{ color: "#1A1A1A", fontWeight: "600", fontSize: "15px" }}>
-              AI-Powered Tools
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => onNavigate("ai-insights")}
-              className="p-3 border flex flex-col items-center gap-2 text-center"
-              style={{
-                borderColor: "#E5E5E5",
-                borderRadius: "10px",
-                backgroundColor: "#FFFFFF"
-              }}
-            >
-              <BarChart3 className="w-5 h-5" style={{ color: "#0369A1" }} strokeWidth={1.5} />
-              <span style={{ color: "#1A1A1A", fontSize: "13px", fontWeight: "500" }}>
-                AI Insights
-              </span>
-            </button>
-
-            <button
-              onClick={() => onNavigate("ai-suggestions")}
-              className="p-3 border flex flex-col items-center gap-2 text-center"
-              style={{
-                borderColor: "#E5E5E5",
-                borderRadius: "10px",
-                backgroundColor: "#FFFFFF"
-              }}
-            >
-              <Sparkles className="w-5 h-5" style={{ color: "#7C3AED" }} strokeWidth={1.5} />
-              <span style={{ color: "#1A1A1A", fontSize: "13px", fontWeight: "500" }}>
-                Suggestions
-              </span>
-            </button>
-          </div>
-        </div>
-
+      <div className="px-4 pb-4 grid gap-2">
         <button
           onClick={() => onNavigate("activity-report")}
-          className="w-full h-11 flex items-center justify-center gap-2 border"
-          style={{
-            borderColor: "#E5E5E5",
-            borderRadius: "10px",
-            backgroundColor: "#FFFFFF",
-            color: "#1A1A1A",
-            fontWeight: "500",
-            fontSize: "14px"
-          }}
+          className="bg-white border border-gray-200 rounded-lg p-3 text-center hover:border-gray-300 transition-colors"
         >
-          <FileText className="w-5 h-5" strokeWidth={1.5} />
-          Generate Activity Report
+          <FileText className="w-5 h-5 text-gray-600 mx-auto mb-1" />
+          <p className="text-xs text-gray-900">Report</p>
         </button>
       </div>
 
       {/* Filters */}
-      <div className="px-6 pb-4 flex gap-2 overflow-auto">
+      <div className="px-6 pb-4 grid gap-2 grid-cols-4">
         {["all", "Pending", "Validated", "Rejected"].map((tab) => (
           <button
             key={tab}
@@ -244,13 +198,13 @@ export function ActivityMainScreen({
               border: filterStatus === tab ? "none" : "1px solid #E5E5E5",
             }}
           >
-            {tab === "all" ? (userRole === "staff" ? "All Submissions" : "All Activities") : tab}
+            {tab === "all" ? (userRole === "staff" ? "All Submissions" : "All") : tab}
           </button>
         ))}
       </div>
 
       {/* Activity List */}
-      <div className="px-6 space-y-4">
+      <div className="px-6 space-y-3 shadow">
         {loading && <p className="text-center text-[#888] py-6">Loading...</p>}
         {filteredActivities.map((activity) => renderActivityCard(activity))}
       </div>

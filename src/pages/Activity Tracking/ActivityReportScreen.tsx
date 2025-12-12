@@ -86,9 +86,9 @@ export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) 
 
       const totalActivities = data?.length || 0;
       // Status summary
-      const validatedActivities = data?.filter((a: any) => a.status === "completed").length || 0;
-      const pendingActivities = data?.filter((a: any) => a.status === "pending").length || 0;
-      const rejectedActivities = data?.filter((a: any) => a.status === "canceled").length || 0;
+      const validatedActivities = data?.filter((a: any) => a.status?.toLowerCase() === "validated").length || 0;
+      const pendingActivities = data?.filter((a: any) => a.status?.toLowerCase() === "pending").length || 0;
+      const rejectedActivities = data?.filter((a: any) => a.status?.toLowerCase() === "canceled").length || 0;
 
       // Category summary
       const categoryMap: Record<string, { count: number; hours: number }> = {};
@@ -176,7 +176,7 @@ ${byCategory.map(c => `${c.category}: ${c.count} activities, ${c.hours} hours`).
   }, [dateRange]);
 
   return (
-    <div className="min-h-screen bg-white pb-8">
+    <div className="min-h-screen bg-[#f7f7f6] pb-8">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white px-6 py-6 border-b" style={{ borderColor: "#E5E5E5" }}>
         <div className="flex items-center gap-3">
@@ -190,13 +190,13 @@ ${byCategory.map(c => `${c.category}: ${c.count} activities, ${c.hours} hours`).
         </div>
       </div>
 
-      <div className="min-h-screen bg-white p-6 space-y-6">
+      <div className="min-h-screen p-6 space-y-6">
       {/* Filters */}
       <div className="flex gap-2 mb-4">
         {["week", "month", "year"].map((range) => (
           <button
             key={range}
-            className={`flex-1 py-2 rounded-lg ${dateRange === range ? "bg-[#7A0019] text-white" : "bg-white border-2 border-gray-200 text-gray-700"}`}
+            className={`flex-1 py-2 rounded-lg ${dateRange === range ? "bg-[#7A0019] text-white" : "bg-white border border-gray-200 text-gray-700"}`}
             onClick={() => setDateRange(range as any)}
           >
             {range.charAt(0).toUpperCase() + range.slice(1)}
@@ -208,17 +208,17 @@ ${byCategory.map(c => `${c.category}: ${c.count} activities, ${c.hours} hours`).
       {reportData && !isLoading && (
         <>
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="p-4 bg-gray-100 rounded-lg flex flex-col items-start">
+            <div className="p-4 bg-white rounded-lg flex flex-col items-start shadow">
               <Activity className="w-5 h-5 mb-1 text-[#7A0019]" />
               <div className="text-xl font-semibold">{reportData.summary.totalActivities}</div>
               <div className="text-gray-500 text-sm">Total Activities</div>
             </div>
-            <div className="p-4 bg-gray-100 rounded-lg flex flex-col items-start">
+            <div className="p-4 bg-white rounded-lg flex flex-col items-start shadow">
               <Clock className="w-5 h-5 mb-1 text-[#7A0019]" />
               <div className="text-xl font-semibold">{reportData.summary.totalHours}</div>
               <div className="text-gray-500 text-sm">Total Hours</div>
             </div>
-            <div className="p-4 bg-blue-100 rounded-lg flex flex-col items-start">
+            <div className="p-4 bg-white rounded-lg flex flex-col items-start shadow">
               <CheckCircle className="w-5 h-5 mb-1 text-blue-600" />
               <div className="text-xl font-semibold">{reportData.summary.validatedActivities}</div>
               <div className="text-blue-600 text-sm">Validated</div>
@@ -228,7 +228,7 @@ ${byCategory.map(c => `${c.category}: ${c.count} activities, ${c.hours} hours`).
           {/* Charts Section */}
           {reportData.byCategory.length > 0 && (
             <div
-              className="p-5 border"
+              className="p-5 border bg-white shadow"
               style={{ borderColor: "#E5E5E5", borderRadius: "12px" }}
             >
               <h3
@@ -260,7 +260,7 @@ ${byCategory.map(c => `${c.category}: ${c.count} activities, ${c.hours} hours`).
 
           {reportData.byMonth && reportData.byMonth.length > 0 && (
             <div
-              className="p-5 border"
+              className="p-5 border bg-white shadow"
               style={{ borderColor: "#E5E5E5", borderRadius: "12px", marginTop: "20px" }}
             >
               <h3
@@ -299,7 +299,7 @@ ${byCategory.map(c => `${c.category}: ${c.count} activities, ${c.hours} hours`).
           )}
 
           {/* Category Breakdown */}
-          <div className="p-4 border rounded mb-4" style={{ borderColor: "#E5E5E5", borderRadius: "12px", marginTop: "20px" }}>
+          <div className="p-4 border rounded mb-4 bg-white shadow" style={{ borderColor: "#E5E5E5", borderRadius: "12px", marginTop: "20px" }}>
             <h3 className="font-semibold mb-2">Activity Types</h3>
             {reportData.byCategory.map((cat, idx) => (
               <div key={idx} className="flex justify-between mb-1">
@@ -320,7 +320,7 @@ ${byCategory.map(c => `${c.category}: ${c.count} activities, ${c.hours} hours`).
           </div>
 
           <button
-            className="w-full py-2 border border-[#7A0019] text-[#7A0019] rounded flex items-center justify-center gap-2"
+            className="w-full py-2 border bg-[#7A0019] border-[#7A0019] text-white rounded flex items-center justify-center gap-2"
             onClick={handleDownload}
           >
             <Download className="w-5 h-5" /> Download Report
