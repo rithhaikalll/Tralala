@@ -30,6 +30,7 @@ import { ActivityMainScreen } from "./pages/Activity Tracking/ActivityMainScreen
 import { RecordActivityScreen } from "./pages/Activity Tracking/RecordActivityScreen";
 import { EditActivityScreen } from "./pages/Activity Tracking/EditActivityScreen";
 import DetailActivityScreen from "./pages/Activity Tracking/DetailActivityScreen";
+import { ActivityReportScreen } from "./pages/Activity Tracking/ActivityReportScreen";
 import {
   FacilityListScreen,
   BookListHeader,
@@ -277,6 +278,7 @@ export default function App() {
     if (screen === "discussion") navigate("/discussion");
     if (screen === "facility-details" && data) navigate(`/facility/${data}`);
     if (screen === "activity-record") navigate("/activity/record");
+    if (screen === "activity-report") navigate("/activity-report");
     if (screen === "activity-main") navigate("activity-main");
     if (screen === "my-bookings") navigate("/my-bookings");
   };
@@ -467,6 +469,7 @@ export default function App() {
                   userRole="student"
                   onNavigate={(screen, data) => {
                     if (screen === "profile") navigate("/profile");
+                    if (screen === "activity-report") navigate("/activity-report");
                     if (screen === "activity-detail" && data)
                       navigate(`/activity/${data}`);
                     if (screen === "detailactivity" && data)
@@ -554,6 +557,19 @@ export default function App() {
             element={
               <RequireAuth authed={authed}>
                 <DetailActivityWrapper />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/activity-report"
+            element={
+              <RequireAuth authed={authed}>
+                <ActivityReportScreen
+                  onNavigate={(screen) => {
+                    if (screen === "activity-main") navigate("/activity-main");
+                  }}
+                />
               </RequireAuth>
             }
           />

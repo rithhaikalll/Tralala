@@ -1,4 +1,4 @@
-import { Plus, Clock, CheckCircle, Edit2, TrendingUp } from "lucide-react";
+import { Plus, Clock, CheckCircle, Edit2, TrendingUp, Sparkles, BarChart3, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -161,6 +161,73 @@ export function ActivityMainScreen({
           className="w-full h-12 bg-[#7A0019] text-white rounded-lg flex items-center justify-center gap-2"
         >
           <Plus className="w-5 h-5" /> Record New Activity
+        </button>
+      </div>
+
+      {/* AI & Reports Section */}
+      <div className="px-6 pb-5">
+        <div 
+          className="p-4 border mb-3"
+          style={{
+            borderColor: "#E5E5E5",
+            borderRadius: "12px",
+            backgroundColor: "#FAFAFA"
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-5 h-5" style={{ color: "#7A0019" }} strokeWidth={1.5} />
+            <h3 style={{ color: "#1A1A1A", fontWeight: "600", fontSize: "15px" }}>
+              AI-Powered Tools
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => onNavigate("ai-insights")}
+              className="p-3 border flex flex-col items-center gap-2 text-center"
+              style={{
+                borderColor: "#E5E5E5",
+                borderRadius: "10px",
+                backgroundColor: "#FFFFFF"
+              }}
+            >
+              <BarChart3 className="w-5 h-5" style={{ color: "#0369A1" }} strokeWidth={1.5} />
+              <span style={{ color: "#1A1A1A", fontSize: "13px", fontWeight: "500" }}>
+                AI Insights
+              </span>
+            </button>
+
+            <button
+              onClick={() => onNavigate("ai-suggestions")}
+              className="p-3 border flex flex-col items-center gap-2 text-center"
+              style={{
+                borderColor: "#E5E5E5",
+                borderRadius: "10px",
+                backgroundColor: "#FFFFFF"
+              }}
+            >
+              <Sparkles className="w-5 h-5" style={{ color: "#7C3AED" }} strokeWidth={1.5} />
+              <span style={{ color: "#1A1A1A", fontSize: "13px", fontWeight: "500" }}>
+                Suggestions
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={() => onNavigate("activity-report")}
+          className="w-full h-11 flex items-center justify-center gap-2 border"
+          style={{
+            borderColor: "#E5E5E5",
+            borderRadius: "10px",
+            backgroundColor: "#FFFFFF",
+            color: "#1A1A1A",
+            fontWeight: "500",
+            fontSize: "14px"
+          }}
+        >
+          <FileText className="w-5 h-5" strokeWidth={1.5} />
+          Generate Activity Report
         </button>
       </div>
 
