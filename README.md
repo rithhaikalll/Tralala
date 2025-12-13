@@ -19,6 +19,7 @@
 | Sprint | Module Name | FrontEnd | Backend |
 |:------:|:-----------:|---------|:-------:|
 | 1 | Activity Recording Module | Pages <br> <ul><li>[Actvity Main Screen](src/pages/ActivityMainScreen.tsx)</li> <li>[Detail Activity Screen](src/pages/DetailActivityScreen.tsx)</li> <li>[Edit Actvity Screen](src/pages/EditActivityScreen.tsx)</li> <li>[Record Actvity Screen](src/pages/RecordActivityScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
+| 2 | Activity History Module | Pages <br> <ul><li>[Actvity Report Screen](src/pages/ActivityReportScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
 
 # 📱 Community Subsystem
 🧑‍💻Developer: MUHAMMAD AIDIL HAIKAL BIN MAZALAN
@@ -33,4 +34,4 @@
 | Sprint | Module Name | FrontEnd | Backend |
 |:------:|:-----------:|--------|:-------:|
 | 1 | Facilities Booking Module | Pages <br> <ul><li>[Facility List Screen](src/page/FacilityListScreen.tsx)</li> <li>[Faciliy Details Screen](src/pages/FacilityDetailsScreen.tsx)</li> <li>[Time Slot Selection Screen](src/pages/TimeSlotSelectionScreen.tsx)</li> <li>[Booking Confirmation Screen](src/pages/BookingConfirmationScreen.tsx)</li> <li>[My Bookings Screen](src/pages/MyBookingsScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
-| 2 | Facility Session Management Module | Pages <br> <ul><li>[Today's Session Screen](src/page/StaffDashboard.tsx)</li> </ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
+| 2 | Facility Session Management Module | Pages <br> <ul><li>[Today's Session Screen](src/pages/StaffDashboard.tsx)</li> </ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
