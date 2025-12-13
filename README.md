@@ -18,8 +18,8 @@
 
 | Sprint | Module Name | FrontEnd | Backend |
 |:------:|:-----------:|---------|:-------:|
-| 1 | Activity Recording Module | Pages <br> <ul><li>[Actvity Main Screen](src/pages/ActivityTracking/ActivityMainScreen.tsx)</li> <li>[Detail Activity Screen](src/pages/ActivityTracking/DetailActivityScreen.tsx)</li> <li>[Edit Actvity Screen](src/pages/ActivityTracking/EditActivityScreen.tsx)</li> <li>[Record Actvity Screen](src/pages/ActivityTracking/RecordActivityScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
-| 2 | Activity History Module | Pages <br> <ul><li>[Actvity Report Screen](src/pages/ActivityTracking/ActivityReportScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
+| 1 | Activity Recording Module | Pages <br> <ul><li>[Actvity Main Screen](src/pages/Activity20%Tracking/ActivityMainScreen.tsx)</li> <li>[Detail Activity Screen](src/pages/Activity20%Tracking/DetailActivityScreen.tsx)</li> <li>[Edit Actvity Screen](src/pages/Activity20%Tracking/EditActivityScreen.tsx)</li> <li>[Record Actvity Screen](src/pages/Activity20%Tracking/RecordActivityScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
+| 2 | Activity History Module | Pages <br> <ul><li>[Actvity Report Screen](src/pages/Activity20%Tracking/ActivityReportScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
 
 # 📱 Community Subsystem
 🧑‍💻Developer: MUHAMMAD AIDIL HAIKAL BIN MAZALAN
