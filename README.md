@@ -19,7 +19,7 @@
 | Sprint | Module Name | FrontEnd | Backend |
 |:------:|:-----------:|---------|:-------:|
 | 1 | Activity Recording Module | Pages <br> <ul><li>[Actvity Main Screen](src/pages/Activity%20Tracking/ActivityMainScreen.tsx)</li> <li>[Detail Activity Screen](src/pages/Activity%20Tracking/DetailActivityScreen.tsx)</li> <li>[Edit Actvity Screen](src/pages/Activity%20Tracking/EditActivityScreen.tsx)</li> <li>[Record Actvity Screen](src/pages/Activity%20Tracking/RecordActivityScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
-| 2 | Activity History Module | Pages <br> <ul><li>[Actvity Report Screen](src/pages/Activity%20Tracking/ActivityReportScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
+| 2 | Activity History Module | Pages <br> <ul><li>[Actvity Report Screen](src/pages/Activity%20Tracking/ActivityReportScreen.tsx)</li> <li>[Badge Collection Screen](src/pages/Activity%20Tracking/BadgeCollectionScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
 
 # 📱 Community Subsystem
 🧑‍💻Developer: MUHAMMAD AIDIL HAIKAL BIN MAZALAN
