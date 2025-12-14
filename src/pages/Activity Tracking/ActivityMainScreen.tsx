@@ -1,4 +1,4 @@
-import { Plus, Clock, CheckCircle, Edit2, TrendingUp, FileText, XCircle } from "lucide-react";
+import { Plus, Clock, CheckCircle, Edit2, TrendingUp, FileText, XCircle, Award } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -51,8 +51,9 @@ export function ActivityMainScreen({
   };
 
   useEffect(() => {
-    loadActivities();
-  }, []);
+  if (!userRole) return; // wait until role is known
+  loadActivities();
+}, [userRole, userId]);
 
   const filteredActivities = filterStatus === "all"
     ? activities
@@ -87,10 +88,14 @@ export function ActivityMainScreen({
         }
       >
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-[16px] mb-2">{activity.activity_name}</h3>
-          {userRole === "student" &&
+          <div>
+            <h3 className="font-semibold text-[16px] mb-2">{activity.activity_name}</h3>
+          </div>
+
+          {(userRole === "student" &&
           isPending &&
-          isOwner && (
+          isOwner) || 
+          (userRole === "staff") ? (
             <button
               type="button"
               onClick={(e) => {
@@ -101,7 +106,7 @@ export function ActivityMainScreen({
             >
               <Edit2 className="w-4 h-4 text-gray-400" />
             </button>
-          )}
+          ) : null}
         </div>
 
         <div className="flex gap-2 mb-2">
@@ -113,6 +118,12 @@ export function ActivityMainScreen({
         </div>
 
         <div className="space-y-1 text-sm mb-3">
+          {userRole === "staff" && activity.recorded_by && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">Submitted by</span>
+              <span className="text-gray-900">{activity.recorded_by}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-gray-500">Date</span>
             <span className="text-gray-900">
@@ -127,6 +138,13 @@ export function ActivityMainScreen({
             <span className="text-gray-500">Duration</span>
             <span className="text-gray-900">{activity.duration}h</span>
           </div>
+
+          {/* Show rejection reason if status is Rejected */}
+          {activity.status?.toLowerCase() === "rejected" && activity.rejection_reason && (
+            <div className="mt-2 p-2 bg-red-50 text-red-700 rounded text-sm">
+              <span className="font-medium">Reason:</span> {activity.rejection_reason}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -146,6 +164,8 @@ export function ActivityMainScreen({
         </p>
       </div>
 
+      {userRole === "student" && (
+      <>
       {/* Stats */}
       <div className="px-6 pt-6 pb-4 grid grid-cols-3 gap-3">
         <div className="p-4 shadow rounded-lg bg-white">
@@ -175,7 +195,14 @@ export function ActivityMainScreen({
         </button>
       </div>
 
-      <div className="px-4 pb-4 grid gap-2">
+      <div className="px-6 pb-4 grid grid-cols-2 gap-2">
+        <button
+          onClick={() => onNavigate("badges")}
+          className="bg-white border border-gray-200 rounded-lg p-3 text-center hover:border-amber-300 transition-colors"
+        >
+          <Award className="w-5 h-5 text-amber-600 mx-auto mb-1" />
+          <p className="text-xs text-gray-900">Badges</p>
+        </button>
         <button
           onClick={() => onNavigate("activity-report")}
           className="bg-white border border-gray-200 rounded-lg p-3 text-center hover:border-gray-300 transition-colors"
@@ -184,9 +211,11 @@ export function ActivityMainScreen({
           <p className="text-xs text-gray-900">Report</p>
         </button>
       </div>
+      </>
+      )}
 
       {/* Filters */}
-      <div className="px-6 pb-4 grid gap-2 grid-cols-4">
+      <div className="px-6 py-2 pb-4 grid gap-2 grid-cols-4">
         {["all", "Pending", "Validated", "Rejected"].map((tab) => (
           <button
             key={tab}
@@ -198,13 +227,13 @@ export function ActivityMainScreen({
               border: filterStatus === tab ? "none" : "1px solid #E5E5E5",
             }}
           >
-            {tab === "all" ? (userRole === "staff" ? "All Submissions" : "All") : tab}
+            {tab === "all" ? (userRole === "staff" ? "All" : "All") : tab}
           </button>
         ))}
       </div>
 
       {/* Activity List */}
-      <div className="px-6 space-y-3 shadow">
+      <div className="px-6 space-y-3">
         {loading && <p className="text-center text-[#888] py-6">Loading...</p>}
         {filteredActivities.map((activity) => renderActivityCard(activity))}
       </div>

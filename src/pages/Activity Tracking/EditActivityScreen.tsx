@@ -56,6 +56,7 @@ export function EditActivityScreen({
         remarks: data.remark,
         student_id: data.student_id,
         status: data.status,
+        rejection_reason: data.rejection_reason || "",
       };
 
       setFormData(mappedData);
@@ -94,6 +95,12 @@ export function EditActivityScreen({
     else if (isNaN(duration) || duration <= 0 || duration > 24)
       newErrors.duration = "Duration must be 0.25 - 24 hours";
 
+    if (userRole === "staff" && formData.status === "Rejected") {
+    if (!formData.rejection_reason?.trim()) {
+      newErrors.rejection_reason = "Rejection reason required";
+    }
+  }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -118,15 +125,18 @@ export function EditActivityScreen({
     try {
         // Ensure correct types and column names match your Supabase table
         const updatePayload: any = {
-        activity_name: formData.activity_name,
-        activity_type: formData.activity_type,
-        date: formData.activity_date
-            ? new Date(formData.activity_date).toISOString()
-            : null,
-        duration: Number(formData.duration_hours) || 0, // must be number
-        remark: formData.remarks || "",
-        recorded_date: new Date().toISOString(),
+          activity_name: formData.activity_name,
+          activity_type: formData.activity_type,
+          date: formData.activity_date ? new Date(formData.activity_date).toISOString() : null,
+          duration: Number(formData.duration_hours) || 0,
+          remark: formData.remarks || "",
+          recorded_date: new Date().toISOString(),
         };
+
+        if (userRole === "staff") {
+          updatePayload.status = formData.status;
+          updatePayload.rejection_reason = formData.rejection_reason || null;
+        }
 
         const { data, error } = await supabase
         .from("recorded_activities")
@@ -272,6 +282,41 @@ export function EditActivityScreen({
             disabled={showPermissionError}
           />
         </div>
+
+        {/* Staff: Approve / Reject */}
+        {userRole === "staff" && (
+          <div className="space-y-4">
+            <label className="block mb-1 font-medium text-sm">Status *</label>
+            <select
+              value={formData.status}
+              onChange={(e) =>
+                setFormData({ ...formData, status: e.target.value, rejection_reason: "" })
+              }
+              className="w-full h-12 px-4 border rounded"
+              style={{ borderColor: errors.status ? "#FCA5A5" : "#E5E5E5" }}
+            >
+              <option value="Pending">Pending</option>
+              <option value="Validated">Validated</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+            {formData.status === "Rejected" && (
+              <div>
+                <label className="block mb-1 font-medium text-sm">Rejection Reason *</label>
+                <textarea
+                  value={formData.rejection_reason}
+                  onChange={(e) =>
+                    setFormData({ ...formData, rejection_reason: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border rounded"
+                  rows={3}
+                />
+                {errors.rejection_reason && (
+                  <p className="text-red-700 text-xs mt-1">{errors.rejection_reason}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Buttons */}
         <div className="mt-8 space-y-3">

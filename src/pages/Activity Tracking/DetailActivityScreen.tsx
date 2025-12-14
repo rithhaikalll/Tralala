@@ -72,6 +72,9 @@ export default function DetailActivityScreen({
           <DetailRow label="Duration" value={`${activity.duration} hours`} />
           <DetailRow label="Remark" value={activity.remark || "—"} />
           <DetailRow label="Status" value={activity.status} />
+          {activity.status?.toLowerCase() === "rejected" && activity.rejection_reason && (
+            <DetailRow label="Rejection Reason" value={activity.rejection_reason} />
+          )}
           <DetailRow label="Recorded By" value={activity.recorded_by} />
           <DetailRow
             label="Recorded At"

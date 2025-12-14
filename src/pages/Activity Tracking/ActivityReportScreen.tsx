@@ -218,11 +218,6 @@ ${byCategory.map(c => `${c.category}: ${c.count} activities, ${c.hours} hours`).
               <div className="text-xl font-semibold">{reportData.summary.totalHours}</div>
               <div className="text-gray-500 text-sm">Total Hours</div>
             </div>
-            <div className="p-4 bg-white rounded-lg flex flex-col items-start shadow">
-              <CheckCircle className="w-5 h-5 mb-1 text-blue-600" />
-              <div className="text-xl font-semibold">{reportData.summary.validatedActivities}</div>
-              <div className="text-blue-600 text-sm">Validated</div>
-            </div>
           </div>
 
           {/* Charts Section */}

@@ -31,6 +31,7 @@ import { RecordActivityScreen } from "./pages/Activity Tracking/RecordActivitySc
 import { EditActivityScreen } from "./pages/Activity Tracking/EditActivityScreen";
 import DetailActivityScreen from "./pages/Activity Tracking/DetailActivityScreen";
 import { ActivityReportScreen } from "./pages/Activity Tracking/ActivityReportScreen";
+import { BadgeCollectionScreen } from "./pages/Activity Tracking/ActivityBadgeScreen";
 import {
   FacilityListScreen,
   BookListHeader,
@@ -154,7 +155,7 @@ function BookingSuccessWrapper() {
   );
 }
 
-function EditActivityWrapper({ userId }: { userId: string }) {
+function EditActivityWrapper({ userId, userRole }: { userId: string; userRole: "student" | "staff" }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -162,6 +163,7 @@ function EditActivityWrapper({ userId }: { userId: string }) {
     <EditActivityScreen
       activityId={id || ""}
       userId={userId}
+      userRole={userRole}
       onNavigate={(screen) => {
         if (screen === "activity-main") navigate("/activity-main");
       }}
@@ -196,6 +198,7 @@ function RequireAuth({
 export default function App() {
   const [authed, setAuthed] = useState(false);
   const [studentName, setStudentName] = useState<string>("Student");
+  const [userRole, setUserRole] = useState<"student" | "staff">("student");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -245,11 +248,12 @@ export default function App() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const role = user?.user_metadata?.role || "student";
+    const role = (user?.user_metadata?.role as "student" | "staff") || "student";
     const displayName =
       (user?.user_metadata?.fullName as string) || name || "User";
 
     setStudentName(displayName);
+    setUserRole(role);
 
     if (id || user?.id) {
       setUserId((id || user?.id) as string);
@@ -466,10 +470,11 @@ export default function App() {
               <RequireAuth authed={authed}>
                 <ActivityMainScreen
                   userId={userId}
-                  userRole="student"
+                  userRole={userRole}
                   onNavigate={(screen, data) => {
                     if (screen === "profile") navigate("/profile");
                     if (screen === "activity-report") navigate("/activity-report");
+                    if (screen === "badges") navigate("/badges");
                     if (screen === "activity-detail" && data)
                       navigate(`/activity/${data}`);
                     if (screen === "detailactivity" && data)
@@ -503,7 +508,7 @@ export default function App() {
             path="/activity/edit/:id"
             element={
               <RequireAuth authed={authed}>
-                <EditActivityWrapper userId={userId} />
+                <EditActivityWrapper userId={userId} userRole={userRole} />
               </RequireAuth>
             }
           />
@@ -568,6 +573,20 @@ export default function App() {
                 <ActivityReportScreen
                   onNavigate={(screen) => {
                     if (screen === "activity-main") navigate("/activity-main");
+                  }}
+                />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/badges"
+            element={
+              <RequireAuth authed={authed}>
+                <BadgeCollectionScreen
+                  onNavigate={(screen) => {
+                    if (screen === "activity-main") navigate("/activity-main");
+                    if (screen === "profile") navigate("/profile");
                   }}
                 />
               </RequireAuth>
@@ -655,6 +674,7 @@ export default function App() {
           location.pathname.startsWith("/activity-history") ||
           location.pathname.match(/^\/activity\/[^/]+$/) || // /activity/:id
           location.pathname.startsWith("/activity/edit") || // /activity/edit/:id
+          location.pathname.startsWith("/badges")
           location.pathname.startsWith("/staff-dashboard") || // hide for staff
           location.pathname.startsWith("/my-bookings"); // 🔴 also hide here
 
