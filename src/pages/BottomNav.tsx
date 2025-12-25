@@ -1,4 +1,5 @@
-import { Home, MessageCircle, Calendar, User, TrendingUp } from "lucide-react";
+import { Home, MessageSquare, Calendar, Activity, User } from "lucide-react";
+import { useUserPreferences } from "../lib/UserPreferencesContext";
 
 interface BottomNavProps {
   activeTab: string;
@@ -6,55 +7,54 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
-  const tabs = [
-    { id: "home", label: "Home", icon: Home },
-    { id: "discussion", label: "Discussion", icon: MessageCircle },
-    { id: "book", label: "Book", icon: Calendar },
-    { id: "activity", label: "Activity", icon: TrendingUp },
-    { id: "profile", label: "Profile", icon: User },
-  ];
+  const { t, theme, preferences } = useUserPreferences();
+
+  // Define all possible items
+  const allItems: Record<string, any> = {
+    home: { icon: Home, label: t("nav_home") },
+    discussion: { icon: MessageSquare, label: t("nav_discuss") },
+    book: { icon: Calendar, label: t("nav_book") },
+    activity: { icon: Activity, label: t("nav_activity") },
+    profile: { icon: User, label: t("nav_profile") },
+  };
+
+  // Use the order from preferences
+  const navOrder = preferences.nav_order || ['home', 'discussion', 'book', 'activity', 'profile'];
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t z-50"
-      style={{
-        borderColor: "#E5E5E5",
-        paddingTop: "8px",
-        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
-        paddingLeft: "8px",
-        paddingRight: "8px",
-        minHeight: "var(--nav-h)",
-        boxSizing: "border-box",
+    <div 
+      className="fixed bottom-0 left-0 right-0 h-20 border-t flex items-center justify-around px-2 z-50 transition-colors duration-300"
+      style={{ 
+        backgroundColor: "var(--bg-primary)",
+        borderColor: theme.border 
       }}
     >
-      <div className="flex items-center justify-around">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className="flex flex-col items-center gap-1 px-3 py-2 flex-1"
+      {navOrder.map((id) => {
+        const item = allItems[id];
+        if (!item) return null; // Safety check
+        
+        const isActive = activeTab === id;
+        const Icon = item.icon;
+
+        return (
+          <button
+            key={id}
+            onClick={() => onTabChange(id)}
+            className="flex flex-col items-center justify-center w-16 h-full space-y-1 group"
+          >
+            <Icon
+              className="w-6 h-6 transition-colors duration-300"
+              style={{ color: isActive ? theme.primary : theme.textSecondary }}
+            />
+            <span
+              className="text-[10px] font-medium transition-colors duration-300"
+              style={{ color: isActive ? theme.primary : theme.textSecondary }}
             >
-              <tab.icon
-                className="w-5 h-5"
-                style={{ color: isActive ? "#7A0019" : "#888888" }}
-                strokeWidth={1.5}
-              />
-              <span
-                className="text-xs"
-                style={{
-                  color: isActive ? "#7A0019" : "#888888",
-                  fontWeight: isActive ? "500" : "400",
-                  fontSize: "11px",
-                }}
-              >
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+              {item.label}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }

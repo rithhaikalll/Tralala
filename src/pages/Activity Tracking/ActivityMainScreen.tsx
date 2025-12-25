@@ -1,6 +1,8 @@
 import { Plus, Clock, CheckCircle, Edit2, TrendingUp, FileText, XCircle, Award } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
+// Accessing global preferences
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface ActivityMainScreenProps {
   onNavigate: (screen: string, data?: any) => void;
@@ -14,20 +16,25 @@ export function ActivityMainScreen({
   userRole,
   userId,
 }: ActivityMainScreenProps) {
+  // Consume theme and translation tools
+  const { theme, t, preferences } = useUserPreferences();
+  
   const [activities, setActivities] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState<"all" | "Pending" | "Validated" | "Rejected">("all");
   const [loading, setLoading] = useState(true);
 
+  // Dynamic status colors based on theme
   const getStatusColor = (status: string) => {
+    const isDark = preferences.theme_mode === 1;
     switch (status?.toLowerCase()) {
       case "validated":
-        return { bg: "#F0F9FF", text: "#0369A1", icon: CheckCircle };
+        return { bg: isDark ? "#064e3b" : "#F0F9FF", text: isDark ? "#34d399" : "#0369A1", icon: CheckCircle };
       case "pending":
-        return { bg: "#FFF7ED", text: "#C2410C", icon: Clock };
+        return { bg: isDark ? "#7c2d12" : "#FFF7ED", text: isDark ? "#fb923c" : "#C2410C", icon: Clock };
       case "rejected":
-        return { bg: "#FEF2F2", text: "#991B1B", icon: XCircle };
+        return { bg: isDark ? "#7f1d1d" : "#FEF2F2", text: isDark ? "#f87171" : "#991B1B", icon: XCircle };
       default:
-        return { bg: "#F5F5F5", text: "#6A6A6A", icon: Clock };
+        return { bg: theme.border, text: theme.textSecondary, icon: Clock };
     }
   };
 
@@ -51,9 +58,9 @@ export function ActivityMainScreen({
   };
 
   useEffect(() => {
-  if (!userRole) return; // wait until role is known
-  loadActivities();
-}, [userRole, userId]);
+    if (!userRole) return;
+    loadActivities();
+  }, [userRole, userId]);
 
   const filteredActivities = filterStatus === "all"
     ? activities
@@ -68,18 +75,14 @@ export function ActivityMainScreen({
 
   const renderActivityCard = (activity: any) => {
     const colors = getStatusColor(activity.status);
-
-    // check if student is owner
-    const isOwner = 
-      userRole === "student" && 
-      activity.student_id?.toString() === userId?.toString();
+    const isOwner = userRole === "student" && activity.student_id?.toString() === userId?.toString();
     const isPending = activity.status?.toLowerCase() === "pending";
 
     return (
       <div
         key={activity.id}
-        className="border bg-white p-5 rounded-lg cursor-pointer"
-        style={{ borderColor: "#E5E5E5" }}
+        className="border p-5 rounded-lg cursor-pointer transition-colors"
+        style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}
         onClick={() =>
           onNavigate(
             userRole === "staff" ? "staff-activity-detail" : "detailactivity",
@@ -89,22 +92,20 @@ export function ActivityMainScreen({
       >
         <div className="flex items-start justify-between mb-2">
           <div>
-            <h3 className="font-semibold text-[16px] mb-2">{activity.activity_name}</h3>
+            <h3 className="font-semibold text-[16px] mb-2" style={{ color: theme.text }}>{activity.activity_name}</h3>
           </div>
 
-          {(userRole === "student" &&
-          isPending &&
-          isOwner) || 
-          (userRole === "staff") ? (
+          {(userRole === "student" && isPending && isOwner) || (userRole === "staff") ? (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onNavigate("edit-activity", activity.id); // navigate to edit screen
+                onNavigate("edit-activity", activity.id);
               }}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors shadow-2xs"
+              className="p-2 rounded-lg transition-colors shadow-sm"
+              style={{ backgroundColor: theme.background }}
             >
-              <Edit2 className="w-4 h-4 text-gray-400" />
+              <Edit2 className="w-4 h-4" style={{ color: theme.textSecondary }} />
             </button>
           ) : null}
         </div>
@@ -112,22 +113,23 @@ export function ActivityMainScreen({
         <div className="flex gap-2 mb-2">
           <span className="px-2 py-1 text-xs rounded inline-flex items-center gap-1" style={{ backgroundColor: colors.bg, color: colors.text}}>
             <colors.icon size={12} color={colors.text}/>
-            {activity.status}
+            {/* Translating status if keys exist */}
+            {activity.status === "Validated" ? t("stat_validated") : activity.status === "Pending" ? t("stat_pending") : t("stat_rejected")}
           </span>
-          <span className="text-[#6A6A6A] text-sm">{activity.activity_type}</span>
+          <span className="text-sm" style={{ color: theme.textSecondary }}>{activity.activity_type}</span>
         </div>
 
         <div className="space-y-1 text-sm mb-3">
           {userRole === "staff" && activity.recorded_by && (
             <div className="flex justify-between">
-              <span className="text-gray-500">Submitted by</span>
-              <span className="text-gray-900">{activity.recorded_by}</span>
+              <span style={{ color: theme.textSecondary }}>Submitted by</span>
+              <span style={{ color: theme.text }}>{activity.recorded_by}</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-gray-500">Date</span>
-            <span className="text-gray-900">
-              {new Date(activity.date).toLocaleDateString('en-US', { 
+            <span style={{ color: theme.textSecondary }}>{t("date") || "Date"}</span>
+            <span style={{ color: theme.text }}>
+              {new Date(activity.date).toLocaleDateString(preferences.language_code === 'ms' ? 'ms-MY' : 'en-US', { 
                 month: 'short', 
                 day: 'numeric', 
                 year: 'numeric' 
@@ -135,13 +137,12 @@ export function ActivityMainScreen({
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">Duration</span>
-            <span className="text-gray-900">{activity.duration}h</span>
+            <span style={{ color: theme.textSecondary }}>{t("duration") || "Duration"}</span>
+            <span style={{ color: theme.text }}>{activity.duration}h</span>
           </div>
 
-          {/* Show rejection reason if status is Rejected */}
           {activity.status?.toLowerCase() === "rejected" && activity.rejection_reason && (
-            <div className="mt-2 p-2 bg-red-50 text-red-700 rounded text-sm">
+            <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded text-sm">
               <span className="font-medium">Reason:</span> {activity.rejection_reason}
             </div>
           )}
@@ -151,16 +152,16 @@ export function ActivityMainScreen({
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f6] pb-24">
+    <div className="min-h-screen pb-24 transition-colors" style={{ backgroundColor: theme.background }}>
       {/* Header */}
-      <div className="px-6 py-6 bg-white border-b" style={{ borderColor: "#E5E5E5", transform: "none"}}>
-        <h2 className="text-[20px] font-semibold">
-          {userRole === "staff" ? "Activity Validation" : "Activity Tracking"}
+      <div className="px-6 py-6 border-b" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+        <h2 className="text-[20px] font-semibold" style={{ color: theme.text }}>
+          {userRole === "staff" ? "Activity Validation" : t("nav_activity")}
         </h2>
-        <p className="text-[#6A6A6A] text-sm mt-1" style={{lineHeight: "1.6"}}>
+        <p className="text-sm mt-1" style={{ lineHeight: "1.6", color: theme.textSecondary }}>
           {userRole === "staff"
             ? "Review and validate student submissions"
-            : "Record and track your sports activities"}
+            : t("track_desc")}
         </p>
       </div>
 
@@ -168,20 +169,20 @@ export function ActivityMainScreen({
       <>
       {/* Stats */}
       <div className="px-6 pt-6 pb-4 grid grid-cols-3 gap-3">
-        <div className="p-4 shadow rounded-lg bg-white">
-          <TrendingUp className="w-5 h-5 mb-2 text-[#7A0019]" />
-          <div className="text-lg font-semibold">{totalHours}</div>
-          <div className="text-xs text-[#6A6A6A]">Total Hours</div>
+        <div className="p-4 shadow rounded-lg" style={{ backgroundColor: theme.cardBg }}>
+          <TrendingUp className="w-5 h-5 mb-2" style={{ color: theme.primary }} />
+          <div className="text-lg font-semibold" style={{ color: theme.text }}>{totalHours}</div>
+          <div className="text-xs" style={{ color: theme.textSecondary }}>{t("stat_total_hours")}</div>
         </div>
-        <div className="p-4 shadow rounded-lg bg-white">
-          <Clock className="w-5 h-5 mb-2 text-[#C2410C]" />
-          <div className="text-lg font-semibold">{pendingCount}</div>
-          <div className="text-xs text-[#C2410C]">Pending</div>
+        <div className="p-4 shadow rounded-lg" style={{ backgroundColor: theme.cardBg }}>
+          <Clock className="w-5 h-5 mb-2" style={{ color: "#C2410C" }} />
+          <div className="text-lg font-semibold" style={{ color: theme.text }}>{pendingCount}</div>
+          <div className="text-xs" style={{ color: "#C2410C" }}>{t("stat_pending")}</div>
         </div>
-        <div className="p-4 shadow rounded-lg bg-white">
-          <CheckCircle className="w-5 h-5 mb-2 text-[#0369A1]" />
-          <div className="text-lg font-semibold">{validatedCount}</div>
-          <div className="text-xs text-[#0369A1]">Validated</div>
+        <div className="p-4 shadow rounded-lg" style={{ backgroundColor: theme.cardBg }}>
+          <CheckCircle className="w-5 h-5 mb-2" style={{ color: "#0369A1" }} />
+          <div className="text-lg font-semibold" style={{ color: theme.text }}>{validatedCount}</div>
+          <div className="text-xs" style={{ color: "#0369A1" }}>{t("stat_validated")}</div>
         </div>
       </div>
 
@@ -189,26 +190,29 @@ export function ActivityMainScreen({
       <div className="px-6 pb-3">
         <button
           onClick={() => onNavigate("activity-record")}
-          className="w-full h-12 bg-[#7A0019] text-white rounded-lg flex items-center justify-center gap-2"
+          className="w-full h-12 text-white rounded-lg flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
+          style={{ backgroundColor: theme.primary }}
         >
-          <Plus className="w-5 h-5" /> Record New Activity
+          <Plus className="w-5 h-5" /> {preferences.language_code === 'ms' ? 'Rekod Aktiviti Baharu' : 'Record New Activity'}
         </button>
       </div>
 
       <div className="px-6 pb-4 grid grid-cols-2 gap-2">
         <button
           onClick={() => onNavigate("badges")}
-          className="bg-white border border-gray-200 rounded-lg p-3 text-center hover:border-amber-300 transition-colors"
+          className="border rounded-lg p-3 text-center transition-colors"
+          style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
         >
           <Award className="w-5 h-5 text-amber-600 mx-auto mb-1" />
-          <p className="text-xs text-gray-900">Badges</p>
+          <p className="text-xs" style={{ color: theme.text }}>{preferences.language_code === 'ms' ? 'Lencana' : 'Badges'}</p>
         </button>
         <button
           onClick={() => onNavigate("activity-report")}
-          className="bg-white border border-gray-200 rounded-lg p-3 text-center hover:border-gray-300 transition-colors"
+          className="border rounded-lg p-3 text-center transition-colors"
+          style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
         >
-          <FileText className="w-5 h-5 text-gray-600 mx-auto mb-1" />
-          <p className="text-xs text-gray-900">Report</p>
+          <FileText className="w-5 h-5 mx-auto mb-1" style={{ color: theme.textSecondary }} />
+          <p className="text-xs" style={{ color: theme.text }}>{preferences.language_code === 'ms' ? 'Laporan' : 'Report'}</p>
         </button>
       </div>
       </>
@@ -220,21 +224,22 @@ export function ActivityMainScreen({
           <button
             key={tab}
             onClick={() => setFilterStatus(tab as any)}
-            className="px-4 py-2 rounded-md text-sm font-medium"
+            
+            className="px-4 py-2 rounded-md text-sm font-medium border transition-all flex items-center justify-center text-center"
             style={{
-              backgroundColor: filterStatus === tab ? "#7A0019" : "#FFF",
-              color: filterStatus === tab ? "#FFF" : "#6A6A6A",
-              border: filterStatus === tab ? "none" : "1px solid #E5E5E5",
+              backgroundColor: filterStatus === tab ? theme.primary : theme.cardBg,
+              color: filterStatus === tab ? "#FFF" : theme.textSecondary,
+              borderColor: filterStatus === tab ? theme.primary : theme.border,
             }}
           >
-            {tab === "all" ? (userRole === "staff" ? "All" : "All") : tab}
+            {tab === "all" ? t("view_all") : tab === "Pending" ? t("stat_pending") : tab === "Validated" ? t("stat_validated") : t("stat_rejected")}
           </button>
         ))}
       </div>
 
       {/* Activity List */}
       <div className="px-6 space-y-3">
-        {loading && <p className="text-center text-[#888] py-6">Loading...</p>}
+        {loading && <p className="text-center py-6" style={{ color: theme.textSecondary }}>{t("view_all")}...</p>}
         {filteredActivities.map((activity) => renderActivityCard(activity))}
       </div>
     </div>

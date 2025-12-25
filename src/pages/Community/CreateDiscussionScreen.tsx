@@ -1,6 +1,8 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+// Access global preferences
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface CreateDiscussionScreenProps {
   onNavigate: (screen: string) => void;
@@ -11,20 +13,21 @@ export function CreateDiscussionScreen({
   onNavigate,
   studentName,
 }: CreateDiscussionScreenProps) {
+  // Consume theme and translation tools
+  const { theme, t, preferences } = useUserPreferences();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(false); // ✅ has setter now
+  const [loading, setLoading] = useState(false);
+
+  const isMs = preferences.language_code === 'ms';
 
   const handlePost = async () => {
     if (!title.trim() || !content.trim()) return;
-
-    // ✅ ignore extra clicks while posting
     if (loading) return;
 
     setLoading(true);
 
     try {
-      // get current user
       const {
         data: { user },
         error: userError,
@@ -32,11 +35,10 @@ export function CreateDiscussionScreen({
 
       if (userError || !user) {
         console.error(userError);
-        alert("You must be logged in to post.");
+        alert(isMs ? "Anda mesti log masuk untuk menghantar." : "You must be logged in to post.");
         return;
       }
 
-      // get full_name from profiles
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("full_name")
@@ -47,7 +49,7 @@ export function CreateDiscussionScreen({
         console.error(profileError);
       }
 
-      const authorName = profile?.full_name || "Student";
+      const authorName = profile?.full_name || studentName || "Student";
 
       const { error: insertError } = await supabase.from("discussions").insert({
         title: title.trim(),
@@ -58,52 +60,55 @@ export function CreateDiscussionScreen({
 
       if (insertError) {
         console.error(insertError);
-        alert("Failed to create discussion.");
+        alert(isMs ? "Gagal mencipta perbincangan." : "Failed to create discussion.");
         return;
       }
 
-      // navigate back to list
       onNavigate("discussion");
     } finally {
-      setLoading(false); // ✅ always reset
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-white">
+    <div className="min-h-screen pb-20 transition-colors duration-300" style={{ backgroundColor: theme.background }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-40 px-6 py-6 bg-white border-b"
-        style={{ borderColor: "#E5E5E5" }}
+        className="sticky top-0 z-40 px-6 py-6 border-b transition-colors"
+        style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => onNavigate("discussion")}
-              style={{ color: "#7A0019" }}
+              style={{ color: theme.primary }}
             >
               <ArrowLeft className="w-6 h-6" strokeWidth={1.5} />
             </button>
             <h2
-              style={{ color: "#000000", fontWeight: "600", fontSize: "20px" }}
+              style={{ color: theme.text, fontWeight: "600", fontSize: "20px" }}
             >
-              New Discussion
+              {isMs ? "Perbincangan Baharu" : "New Discussion"}
             </h2>
           </div>
           <button
             onClick={handlePost}
             disabled={!title.trim() || !content.trim() || loading}
-            className="px-5 h-9 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 h-9 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary,
               color: "#FFFFFF",
               borderRadius: "8px",
-              fontWeight: "500",
+              fontWeight: "600",
               fontSize: "14px",
-              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+              boxShadow: `0 1px 2px ${theme.primary}40`,
             }}
           >
-            {loading ? "Posting..." : "Post"}
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              isMs ? "Hantar" : "Post"
+            )}
           </button>
         </div>
       </div>
@@ -115,22 +120,23 @@ export function CreateDiscussionScreen({
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center"
             style={{
-              backgroundColor: "#F5F5F5",
-              color: "#7A0019",
+              backgroundColor: theme.background,
+              color: theme.primary,
               fontWeight: "600",
               fontSize: "16px",
+              border: `1px solid ${theme.border}`
             }}
           >
             {studentName.charAt(0)}
           </div>
           <div>
             <div
-              style={{ color: "#1A1A1A", fontWeight: "600", fontSize: "15px" }}
+              style={{ color: theme.text, fontWeight: "600", fontSize: "15px" }}
             >
               {studentName}
             </div>
-            <div className="text-xs" style={{ color: "#888888" }}>
-              Posting as yourself
+            <div className="text-xs" style={{ color: theme.textSecondary }}>
+              {isMs ? "Menghantar sebagai diri sendiri" : "Posting as yourself"}
             </div>
           </div>
         </div>
@@ -140,22 +146,23 @@ export function CreateDiscussionScreen({
           <label
             htmlFor="title"
             className="block mb-2 text-sm"
-            style={{ color: "#1A1A1A", fontWeight: "500" }}
+            style={{ color: theme.text, fontWeight: "500" }}
           >
-            Title
+            {isMs ? "Tajuk" : "Title"}
           </label>
           <input
             id="title"
             type="text"
-            placeholder="What would you like to discuss?"
+            placeholder={isMs ? "Apa yang anda ingin bincangkan?" : "What would you like to discuss?"}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full h-12 px-4 border bg-white"
+            className="w-full h-12 px-4 border transition-colors outline-none focus:ring-1"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
+              backgroundColor: theme.cardBg,
               borderRadius: "14px",
               fontSize: "15px",
-              color: "#1A1A1A",
+              color: theme.text,
             }}
           />
         </div>
@@ -165,22 +172,23 @@ export function CreateDiscussionScreen({
           <label
             htmlFor="content"
             className="block mb-2 text-sm"
-            style={{ color: "#1A1A1A", fontWeight: "500" }}
+            style={{ color: theme.text, fontWeight: "500" }}
           >
-            Content
+            {isMs ? "Kandungan" : "Content"}
           </label>
           <textarea
             id="content"
-            placeholder="Share your thoughts with the community..."
+            placeholder={isMs ? "Kongsi fikiran anda dengan komuniti..." : "Share your thoughts with the community..."}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={8}
-            className="w-full px-4 py-3 border bg-white resize-none"
+            className="w-full px-4 py-3 border transition-colors outline-none resize-none"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
+              backgroundColor: theme.cardBg,
               borderRadius: "14px",
               fontSize: "15px",
-              color: "#1A1A1A",
+              color: theme.text,
               lineHeight: "1.6",
             }}
           />
@@ -188,35 +196,30 @@ export function CreateDiscussionScreen({
 
         {/* Guidelines Card */}
         <div
-          className="border bg-white p-4"
-          style={{ borderColor: "#E5E5E5", borderRadius: "14px" }}
+          className="border p-4 transition-colors"
+          style={{ backgroundColor: theme.cardBg, borderColor: theme.border, borderRadius: "14px" }}
         >
           <h4
             className="mb-2"
-            style={{ color: "#1A1A1A", fontWeight: "500", fontSize: "14px" }}
+            style={{ color: theme.text, fontWeight: "600", fontSize: "14px" }}
           >
-            Community Guidelines
+            {isMs ? "Garis Panduan Komuniti" : "Community Guidelines"}
           </h4>
           <ul
             className="space-y-1.5 text-xs"
-            style={{ color: "#555555", lineHeight: "1.6" }}
+            style={{ color: theme.textSecondary, lineHeight: "1.6" }}
           >
-            <li className="flex gap-2">
-              <span className="shrink-0">•</span>
-              <span>Be respectful and courteous to others</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="shrink-0">•</span>
-              <span>Keep discussions relevant to sports and facilities</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="shrink-0">•</span>
-              <span>No spam, harassment, or inappropriate content</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="shrink-0">•</span>
-              <span>Report any violations to administrators</span>
-            </li>
+            {[
+              isMs ? "Bersikap sopan dan menghormati orang lain" : "Be respectful and courteous to others",
+              isMs ? "Pastikan perbincangan relevan dengan sukan dan fasiliti" : "Keep discussions relevant to sports and facilities",
+              isMs ? "Tiada spam, gangguan, atau kandungan yang tidak sesuai" : "No spam, harassment, or inappropriate content",
+              isMs ? "Laporkan sebarang pelanggaran kepada pentadbir" : "Report any violations to administrators"
+            ].map((text, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="shrink-0">•</span>
+                <span>{text}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

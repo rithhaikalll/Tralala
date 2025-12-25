@@ -1,5 +1,6 @@
-// src/pages/Facility/SuccessScreen.tsx
 import { CheckCircle, Calendar, Clock, MapPin } from "lucide-react";
+// 1. Import global preferences context
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface SuccessScreenProps {
   bookingData: {
@@ -13,16 +14,19 @@ interface SuccessScreenProps {
 }
 
 export function SuccessScreen({ bookingData, onNavigate }: SuccessScreenProps) {
+  // 2. Consume theme and translation tools
+  const { theme, t, preferences } = useUserPreferences();
+  const isMs = preferences.language_code === 'ms';
+
   return (
-    // ⬇️ ONLY CHANGE IS HERE: h-full instead of min-h-screen
-    <div className="h-full bg-white flex flex-col">
+    <div className="h-full transition-colors duration-300 flex flex-col" style={{ backgroundColor: theme.background }}>
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         {/* Success Icon */}
-        <div className="mb-8">
+        <div className="mb-8 scale-110">
           <CheckCircle
             className="w-20 h-20"
-            style={{ color: "#7A0019" }}
+            style={{ color: theme.primary }}
             strokeWidth={1.5}
           />
         </div>
@@ -30,20 +34,20 @@ export function SuccessScreen({ bookingData, onNavigate }: SuccessScreenProps) {
         {/* Title */}
         <h1
           className="mb-3 text-center"
-          style={{ color: "#1A1A1A", fontWeight: "600", fontSize: "24px" }}
+          style={{ color: theme.text, fontWeight: "700", fontSize: "24px" }}
         >
-          Booking Confirmed
+          {isMs ? "Tempahan Disahkan" : "Booking Confirmed"}
         </h1>
 
-        {/* Reference + Check-In Code */}
-        <div className="mb-8 text-center">
-          <p className="text-xs mb-1" style={{ color: "#888888" }}>
-            Reference ID
+        {/* Reference + Check-In Code Section */}
+        <div className="mb-8 text-center w-full max-w-xs">
+          <p className="text-[10px] uppercase font-bold tracking-widest mb-1" style={{ color: theme.textSecondary }}>
+            {isMs ? "ID Rujukan" : "Reference ID"}
           </p>
           <p
-            className="text-sm"
+            className="text-sm font-mono"
             style={{
-              color: "#1A1A1A",
+              color: theme.text,
               fontWeight: "600",
               letterSpacing: "0.5px",
             }}
@@ -51,23 +55,23 @@ export function SuccessScreen({ bookingData, onNavigate }: SuccessScreenProps) {
             {bookingData.referenceCode}
           </p>
 
-          <p className="text-xs mt-4 mb-1" style={{ color: "#888888" }}>
-            Check-In Code
+          <p className="text-[10px] uppercase font-bold tracking-widest mt-6 mb-2" style={{ color: theme.textSecondary }}>
+            {isMs ? "Kod Daftar Masuk" : "Check-In Code"}
           </p>
           <div className="flex justify-center">
             <div
-              className="px-6 py-3 border border-dashed"
+              className="px-8 py-4 border border-dashed transition-colors"
               style={{
-                borderRadius: "16px",
-                borderColor: "#F4A7B5",
-                backgroundColor: "#FFF7FA",
+                borderRadius: "20px",
+                borderColor: theme.primary,
+                backgroundColor: theme.primary + '08', // 8% opacity of primary color
               }}
             >
               <span
                 style={{
-                  color: "#B3003B",
-                  fontWeight: 700,
-                  fontSize: "24px",
+                  color: theme.primary,
+                  fontWeight: 800,
+                  fontSize: "28px",
                   letterSpacing: "8px",
                   fontFamily: "monospace",
                 }}
@@ -80,78 +84,54 @@ export function SuccessScreen({ bookingData, onNavigate }: SuccessScreenProps) {
 
         {/* Booking Details Card */}
         <div
-          className="w-full border bg-white p-5 mb-8"
+          className="w-full border p-5 mb-8 transition-colors shadow-sm"
           style={{
-            borderColor: "#E5E5E5",
-            borderRadius: "14px",
-            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+            backgroundColor: theme.cardBg,
+            borderColor: theme.border,
+            borderRadius: "18px",
           }}
         >
           <div className="space-y-5">
             {/* Facility */}
-            <div className="flex items-center gap-3">
-              <MapPin
-                className="w-5 h-5 shrink-0"
-                style={{ color: "#7A0019" }}
-                strokeWidth={1.5}
-              />
+            <div className="flex items-center gap-4">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: theme.primary + '10' }}>
+                <MapPin className="w-5 h-5 shrink-0" style={{ color: theme.primary }} strokeWidth={2} />
+              </div>
               <div>
-                <div className="text-xs mb-0.5" style={{ color: "#888888" }}>
-                  Facility
+                <div className="text-[10px] uppercase font-bold" style={{ color: theme.textSecondary }}>
+                  {isMs ? "Fasiliti" : "Facility"}
                 </div>
-                <div
-                  style={{
-                    color: "#1A1A1A",
-                    fontWeight: "500",
-                    fontSize: "15px",
-                  }}
-                >
+                <div style={{ color: theme.text, fontWeight: "600", fontSize: "15px" }}>
                   {bookingData.facilityName}
                 </div>
               </div>
             </div>
 
             {/* Date */}
-            <div className="flex items-center gap-3">
-              <Calendar
-                className="w-5 h-5 shrink-0"
-                style={{ color: "#7A0019" }}
-                strokeWidth={1.5}
-              />
+            <div className="flex items-center gap-4">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: theme.primary + '10' }}>
+                <Calendar className="w-5 h-5 shrink-0" style={{ color: theme.primary }} strokeWidth={2} />
+              </div>
               <div>
-                <div className="text-xs mb-0.5" style={{ color: "#888888" }}>
-                  Date
+                <div className="text-[10px] uppercase font-bold" style={{ color: theme.textSecondary }}>
+                  {t("date") || (isMs ? "Tarikh" : "Date")}
                 </div>
-                <div
-                  style={{
-                    color: "#1A1A1A",
-                    fontWeight: "500",
-                    fontSize: "15px",
-                  }}
-                >
+                <div style={{ color: theme.text, fontWeight: "600", fontSize: "15px" }}>
                   {bookingData.date}
                 </div>
               </div>
             </div>
 
             {/* Time */}
-            <div className="flex items-center gap-3">
-              <Clock
-                className="w-5 h-5 shrink-0"
-                style={{ color: "#7A0019" }}
-                strokeWidth={1.5}
-              />
+            <div className="flex items-center gap-4">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: theme.primary + '10' }}>
+                <Clock className="w-5 h-5 shrink-0" style={{ color: theme.primary }} strokeWidth={2} />
+              </div>
               <div>
-                <div className="text-xs mb-0.5" style={{ color: "#888888" }}>
-                  Time
+                <div className="text-[10px] uppercase font-bold" style={{ color: theme.textSecondary }}>
+                  {isMs ? "Masa" : "Time"}
                 </div>
-                <div
-                  style={{
-                    color: "#1A1A1A",
-                    fontWeight: "500",
-                    fontSize: "15px",
-                  }}
-                >
+                <div style={{ color: theme.text, fontWeight: "600", fontSize: "15px" }}>
                   {bookingData.time}
                 </div>
               </div>
@@ -161,43 +141,43 @@ export function SuccessScreen({ bookingData, onNavigate }: SuccessScreenProps) {
 
         {/* Info Text */}
         <p
-          className="text-sm text-center mb-10"
-          style={{ color: "#555555", lineHeight: "1.7", maxWidth: "300px" }}
+          className="text-xs text-center mb-10"
+          style={{ color: theme.textSecondary, lineHeight: "1.7", maxWidth: "280px" }}
         >
-          A confirmation email has been sent to your registered email address.
-          Please show your reference ID and check-in code at the facility.
+          {isMs 
+            ? "Emel pengesahan telah dihantar. Sila tunjukkan kod rujukan dan kod daftar masuk anda di fasiliti nanti."
+            : "A confirmation email has been sent. Please show your reference ID and check-in code at the facility."}
         </p>
 
-        {/* Buttons */}
+        {/* Action Buttons */}
         <div className="w-full space-y-3 pb-6">
           <button
             onClick={() => onNavigate("my-bookings")}
-            className="w-full h-12 flex items-center justify-center"
+            className="w-full h-12 flex items-center justify-center transition-all active:scale-95 shadow-lg"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary,
               color: "#FFFFFF",
-              borderRadius: "8px",
-              fontWeight: "500",
+              borderRadius: "12px",
+              fontWeight: "700",
               fontSize: "16px",
-              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
             }}
           >
-            View My Bookings
+            {isMs ? "Lihat Tempahan Saya" : "View My Bookings"}
           </button>
 
           <button
             onClick={() => onNavigate("home")}
-            className="w-full h-12 border flex items-center justify-center"
+            className="w-full h-12 border flex items-center justify-center transition-all active:scale-95"
             style={{
-              borderColor: "#E5E5E5",
-              borderRadius: "8px",
-              color: "#555555",
-              fontWeight: "500",
+              borderColor: theme.border,
+              borderRadius: "12px",
+              color: theme.text,
+              fontWeight: "600",
               fontSize: "16px",
-              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+              backgroundColor: theme.cardBg,
             }}
           >
-            Back to Home
+            {isMs ? "Kembali ke Utama" : "Back to Home"}
           </button>
         </div>
       </div>

@@ -1,15 +1,22 @@
 import {
+  ArrowLeft,
   User,
   Settings,
   HelpCircle,
   ChevronRight,
   Activity,
+  Check,
+  Moon,
+  Sun,
+  Save,
+  LayoutDashboard 
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useUserPreferences } from "../lib/UserPreferencesContext";
 
 interface ProfileScreenProps {
-  studentName: string; // fallback only
+  studentName: string;
   onNavigate: (screen: string) => void;
   onLogout: () => void;
 }
@@ -19,211 +26,301 @@ export function ProfileScreen({
   onNavigate,
   onLogout,
 }: ProfileScreenProps) {
+  const { preferences, updateTheme, updateLanguage, theme } = useUserPreferences();
+  
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [profileName, setProfileName] = useState<string>(studentName);
   const [studentId, setStudentId] = useState<string>("");
+  
+  // Local state for toggles
+  const [isCustomColorMode, setIsCustomColorMode] = useState(false);
+  
+  // Local state for the color picker
+  const [selectedColor, setSelectedColor] = useState(preferences.theme_color);
 
-  // Load profile data
   useEffect(() => {
+    setSelectedColor(preferences.theme_color);
+    
+    const isDefault = 
+      preferences.theme_color === '#7A0019' || 
+      preferences.theme_color === '#9e1c3a';
+    setIsCustomColorMode(!isDefault);
+
     const fetchProfile = async () => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (error || !user) return;
-
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name, matric_id")
         .eq("id", user.id)
         .maybeSingle();
-
       if (profile?.full_name) setProfileName(profile.full_name);
       if (profile?.matric_id) setStudentId(profile.matric_id);
     };
-
     fetchProfile();
-  }, []);
-
-  const confirmLogout = () => {
-    setShowLogoutDialog(false);
-    onLogout();
-  };
+  }, [preferences.theme_color]);
 
   const menuItems = [
     {
       icon: Activity,
-      label: "Activity History",
-      subtitle: "View your booking history",
+      label: preferences.language_code === 'ms' ? "Sejarah Aktiviti" : "Activity History",
+      subtitle: preferences.language_code === 'ms' ? "Lihat sejarah tempahan anda" : "View your booking history",
       action: "activity-history",
     },
     {
+      icon: LayoutDashboard,
+      label: preferences.language_code === 'ms' ? "Susunan Antaramuka" : "Interface Settings",
+      subtitle: preferences.language_code === 'ms' ? "Susun semula widget dashboard" : "Rearrange dashboard widgets",
+      action: "settings/interface", 
+    },
+    {
       icon: Settings,
-      label: "Settings",
-      subtitle: "App preferences",
-      action: "",
+      label: preferences.language_code === 'ms' ? "Tetapan" : "Settings",
+      subtitle: preferences.language_code === 'ms' ? "Tema & Bahasa" : "Theme & Language",
+      action: "settings",
     },
     {
       icon: HelpCircle,
-      label: "Help & Support",
-      subtitle: "Get assistance",
+      label: preferences.language_code === 'ms' ? "Bantuan" : "Help & Support",
+      subtitle: preferences.language_code === 'ms' ? "Dapatkan bantuan" : "Get assistance",
       action: "",
     },
   ];
 
+  const handleMenuClick = (action: string) => {
+    if (action === "settings") {
+      setShowSettings(true);
+    } else if (action) {
+      onNavigate(action);
+    }
+  };
+
+  const handleResetColor = () => {
+    setIsCustomColorMode(false);
+    const defaultColor = preferences.theme_mode === 1 ? '#9e1c3a' : '#7A0019';
+    setSelectedColor(defaultColor);
+    updateTheme(preferences.theme_mode, defaultColor);
+  };
+
+  const handleSaveColor = () => {
+    updateTheme(preferences.theme_mode, selectedColor);
+  };
+
+  if (showSettings) {
+    return (
+      <div className="h-full w-full transition-colors duration-300 relative z-50 overflow-y-auto" style={{ backgroundColor: theme.background, color: theme.text }}>
+        <div className="sticky top-0 border-b px-6 py-4 flex items-center gap-3" style={{ backgroundColor: theme.background, borderColor: theme.border }}>
+           <button onClick={() => setShowSettings(false)} className="p-1">
+             <ArrowLeft className="w-6 h-6" />
+           </button>
+           <h2 className="font-semibold text-lg">
+             {preferences.language_code === 'ms' ? "Tetapan" : "Settings"}
+           </h2>
+        </div>
+
+        <div className="p-6 space-y-8">
+          {/* THEME MODE SECTION */}
+          <section>
+            <h3 className="text-sm font-semibold uppercase mb-4 tracking-wider" style={{ color: theme.textSecondary }}>
+               {preferences.language_code === 'ms' ? "Mod Paparan" : "Display Mode"}
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <button 
+                onClick={() => updateTheme(0)}
+                className="flex flex-col items-center justify-center p-4 rounded-xl border transition-colors"
+                style={{ 
+                  borderColor: preferences.theme_mode === 0 ? theme.primary : theme.border,
+                  backgroundColor: preferences.theme_mode === 0 ? theme.primary + '10' : 'transparent'
+                }}
+              >
+                <Sun className="w-6 h-6 mb-2" style={{ color: preferences.theme_mode === 0 ? theme.primary : theme.textSecondary }} />
+                <span className="text-sm">Light</span>
+              </button>
+
+              <button 
+                onClick={() => updateTheme(1)}
+                className="flex flex-col items-center justify-center p-4 rounded-xl border transition-colors"
+                style={{ 
+                  borderColor: preferences.theme_mode === 1 ? theme.primary : theme.border,
+                  backgroundColor: preferences.theme_mode === 1 ? theme.primary + '10' : 'transparent'
+                }}
+              >
+                <Moon className="w-6 h-6 mb-2" style={{ color: preferences.theme_mode === 1 ? theme.primary : theme.textSecondary }} />
+                <span className="text-sm">Dark</span>
+              </button>
+            </div>
+          </section>
+
+          {/* ACCENT COLOR SECTION */}
+          <section>
+            <h3 className="text-sm font-semibold uppercase mb-4 tracking-wider" style={{ color: theme.textSecondary }}>
+               {preferences.language_code === 'ms' ? "Warna Tema" : "Accent Color"}
+            </h3>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                 <button 
+                  onClick={handleResetColor}
+                  className="p-3 rounded-lg border text-sm font-medium transition-colors"
+                  style={{ 
+                    backgroundColor: !isCustomColorMode ? theme.primary : 'transparent',
+                    color: !isCustomColorMode ? 'white' : theme.textSecondary,
+                    borderColor: !isCustomColorMode ? 'transparent' : theme.border
+                  }}
+                 >
+                   Default
+                 </button>
+                 <button 
+                  onClick={() => setIsCustomColorMode(true)}
+                  className="p-3 rounded-lg border text-sm font-medium transition-colors"
+                  style={{ 
+                    backgroundColor: isCustomColorMode ? theme.primary : 'transparent',
+                    color: isCustomColorMode ? 'white' : theme.textSecondary,
+                    borderColor: isCustomColorMode ? 'transparent' : theme.border
+                  }}
+                 >
+                   Custom
+                 </button>
+              </div>
+
+              {isCustomColorMode && (
+                <div className="border rounded-xl p-4" style={{ borderColor: theme.primary, backgroundColor: theme.cardBg }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-medium" style={{ color: theme.primary }}>Pick Color</span>
+                    <div 
+                       className="w-8 h-8 rounded-full border shadow-sm" 
+                       style={{ backgroundColor: selectedColor, borderColor: theme.border }}
+                    />
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <div className="relative flex-1 h-10">
+                       <input 
+                        type="color" 
+                        value={selectedColor}
+                        onChange={(e) => setSelectedColor(e.target.value)}
+                        className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                       />
+                       <div className="absolute inset-0 border rounded-lg flex items-center justify-center text-sm" style={{ borderColor: theme.border, color: theme.textSecondary, backgroundColor: theme.background }}>
+                         Tap to Select
+                       </div>
+                    </div>
+
+                    <button 
+                      onClick={handleSaveColor}
+                      className="flex items-center gap-2 px-4 h-10 text-white rounded-lg text-sm font-medium active:opacity-90"
+                      style={{ backgroundColor: theme.primary }}
+                    >
+                      <Save className="w-4 h-4" />
+                      Save
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* LANGUAGE SECTION */}
+          <section>
+            <h3 className="text-sm font-semibold uppercase mb-4 tracking-wider" style={{ color: theme.textSecondary }}>
+               {preferences.language_code === 'ms' ? "Bahasa" : "Language"}
+            </h3>
+            <div className="border rounded-xl overflow-hidden" style={{ borderColor: theme.border }}>
+              <button 
+                onClick={() => updateLanguage('en')}
+                className="w-full p-4 flex items-center justify-between border-b active:opacity-70 transition-colors"
+                style={{ borderColor: theme.border }}
+              >
+                <span>English</span>
+                {preferences.language_code === 'en' && <Check className="w-5 h-5" style={{ color: theme.primary }} />}
+              </button>
+              <button 
+                onClick={() => updateLanguage('ms')}
+                className="w-full p-4 flex items-center justify-between active:opacity-70 transition-colors"
+              >
+                <span>Bahasa Melayu</span>
+                {preferences.language_code === 'ms' && <Check className="w-5 h-5" style={{ color: theme.primary }} />}
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full w-full bg-white">
-      <div
-        className="fixed top-0 left-0 right-0 z-40 bg-white px-6 py-6 border-b"
-        style={{ borderColor: "#E5E5E5" }}
-      >
-        <h2 style={{ color: "#1A1A1A", fontWeight: 600, fontSize: 20 }}>
-          Profile
-        </h2>
+    <div className="h-full w-full transition-colors duration-300" style={{ backgroundColor: theme.background, color: theme.text }}>
+      <div className="fixed top-0 left-0 right-0 z-40 px-6 py-6 border-b" style={{ backgroundColor: theme.background, borderColor: theme.border }}>
+        <h2 className="font-semibold text-xl">Profile</h2>
       </div>
 
       <div className="h-22" />
 
-      <div
-        className="px-6 py-2 space-y-6"
-        style={{
-          paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px) + 60px)",
-        }}
-      >
+      <div className="px-6 py-2 space-y-6 pb-24">
         {/* User Card */}
-        <div
-          className="border bg-white p-6 text-center"
-          style={{
-            borderColor: "#E5E5E5",
-            borderRadius: 14,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-          }}
-        >
+        <div className="border p-6 text-center rounded-2xl shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
           <div className="flex justify-center mb-4">
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center border"
-              style={{ borderColor: "#E5E5E5", backgroundColor: "#F5F5F5" }}
-            >
-              <User className="w-10 h-10" style={{ color: "#7A0019" }} />
+            <div className="w-20 h-20 rounded-full flex items-center justify-center border" style={{ borderColor: theme.border, backgroundColor: theme.background }}>
+              <User className="w-10 h-10" style={{ color: theme.primary }} />
             </div>
           </div>
-
-          <h2
-            style={{
-              color: "#1A1A1A",
-              fontWeight: 600,
-              fontSize: 18,
-              marginBottom: 4,
-            }}
-          >
-            {profileName}
-          </h2>
-
-          <p className="text-sm" style={{ color: "#555", lineHeight: 1.6 }}>
-            Student ID: {studentId || "—"}
-          </p>
+          <h2 className="text-lg font-semibold mb-1">{profileName}</h2>
+          <p className="text-sm" style={{ color: theme.textSecondary }}>Student ID: {studentId || "—"}</p>
         </div>
 
         {/* Menu */}
-        <div
-          className="border bg-white overflow-hidden"
-          style={{
-            borderColor: "#E5E5E5",
-            borderRadius: 14,
-            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
-          }}
-        >
+        <div className="border rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
           {menuItems.map((item, index) => (
             <button
               key={index}
-              onClick={() => item.action && onNavigate(item.action)}
-              className="w-full px-4 py-4 flex items-center justify-between border-b last:border-b-0"
-              style={{ borderColor: "#E5E5E5" }}
+              onClick={() => handleMenuClick(item.action)}
+              className="w-full px-4 py-4 flex items-center justify-between border-b last:border-b-0 active:opacity-70 transition-colors"
+              style={{ borderColor: theme.border }}
             >
               <div className="flex items-center gap-3">
-                <item.icon className="w-5 h-5" style={{ color: "#7A0019" }} />
+                <item.icon className="w-5 h-5" style={{ color: theme.primary }} />
                 <div className="text-left">
-                  <div
-                    style={{
-                      color: "#1A1A1A",
-                      fontWeight: 500,
-                      fontSize: 15,
-                    }}
-                  >
-                    {item.label}
-                  </div>
-                  <div
-                    className="text-xs mt-0.5"
-                    style={{ color: "#555", lineHeight: 1.4 }}
-                  >
-                    {item.subtitle}
-                  </div>
+                  <div className="font-medium text-[15px]">{item.label}</div>
+                  <div className="text-xs mt-0.5" style={{ color: theme.textSecondary }}>{item.subtitle}</div>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5" style={{ color: "#888" }} />
+              <ChevronRight className="w-5 h-5" style={{ color: theme.textSecondary }} />
             </button>
           ))}
         </div>
 
         {/* Logout */}
-        <div className="px-6 py-2">
+        <div className="px-0">
           <button
-            onClick={onLogout}
-            className="w-full h-12 border flex items-center justify-center"
-            style={{
-              borderColor: "#7A0019",
-              borderRadius: 8,
-              color: "#7A0019",
-              fontWeight: 500,
-              fontSize: 16,
-              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-            }}
+            onClick={() => setShowLogoutDialog(true)}
+            className="w-full h-12 border rounded-lg font-medium shadow-sm transition-all active:scale-95"
+            style={{ borderColor: theme.primary, color: theme.primary }}
           >
             Sign Out
           </button>
         </div>
       </div>
 
-      {/* Confirmation dialog (unchanged) */}
+      {/* Logout Dialog */}
       {showLogoutDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-6 z-50">
-          <div
-            className="bg-white p-6 w-full max-w-sm border"
-            style={{ borderRadius: 14, borderColor: "#E5E5E5" }}
-          >
-            <h3
-              className="mb-2"
-              style={{ color: "#1A1A1A", fontWeight: 600, fontSize: 18 }}
-            >
-              Log Out?
-            </h3>
-            <p
-              className="text-sm mb-6"
-              style={{ color: "#555", lineHeight: 1.6 }}
-            >
-              Are you sure you want to log out?
-            </p>
+          <div className="p-6 w-full max-w-sm border rounded-2xl" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+            <h3 className="mb-2 font-semibold text-lg">Log Out?</h3>
+            <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>Are you sure you want to log out?</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutDialog(false)}
-                className="flex-1 h-11 border"
-                style={{
-                  borderColor: "#E5E5E5",
-                  borderRadius: 14,
-                  color: "#555",
-                }}
+                className="flex-1 h-11 border rounded-xl transition-colors"
+                style={{ borderColor: theme.border, color: theme.textSecondary }}
               >
                 Cancel
               </button>
               <button
-                onClick={confirmLogout}
-                className="flex-1 h-11"
-                style={{
-                  backgroundColor: "#d4183d",
-                  color: "#fff",
-                  borderRadius: 14,
-                }}
+                onClick={onLogout}
+                className="flex-1 h-11 text-white rounded-xl active:opacity-90"
+                style={{ backgroundColor: theme.primary }}
               >
                 Log Out
               </button>

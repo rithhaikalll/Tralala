@@ -1,7 +1,7 @@
-// src/App.tsx
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { supabase } from "./lib/supabaseClient";
+import { UserPreferencesProvider } from "./lib/UserPreferencesContext"; 
 
 import {
   Routes,
@@ -53,6 +53,9 @@ import {
 import { TimeSlotSelectionScreen } from "./pages/Facility/TimeSlotSelectionScreen";
 import { BookingConfirmationScreen } from "./pages/Facility/BookingConfirmationScreen";
 import { SuccessScreen } from "./pages/Facility/SuccessScreen";
+
+// 1. Import InterfaceSettingsScreen
+import { InterfaceSettingsScreen } from "./pages/InterfaceSettingsScreen";
 
 function DiscussionDetailWrapper({
   onNavigate,
@@ -217,16 +220,19 @@ export default function App() {
     location.pathname.match(/^\/activity\/[^/]+$/) &&
     !location.pathname.startsWith("/activity/record");
 
+  // Logic to hide navbar (Added interface settings route)
   const hideBottomNav =
     location.pathname.startsWith("/facility") ||
     location.pathname.startsWith("/booking") ||
     location.pathname.startsWith("/discussion/create") ||
-    location.pathname.match(/^\/discussion\/\d+$/) ||
+    location.pathname.match(/^\/discussion\/[^/]+$/) ||
     location.pathname.startsWith("/activity-history") ||
-    location.pathname.match(/^\/activity\/[^/]+$/) || // /activity/:id
-    location.pathname.startsWith("/activity/edit") || // /activity/edit/:id
-    location.pathname.startsWith("/staff-dashboard") || // hide for staff
-    location.pathname.startsWith("/my-bookings"); // 🔴 hide on My Bookings
+    location.pathname.match(/^\/activity\/[^/]+$/) ||
+    location.pathname.startsWith("/activity/edit") ||
+    location.pathname.startsWith("/badges") ||
+    location.pathname.startsWith("/staff-dashboard") ||
+    location.pathname.startsWith("/settings/interface") || 
+    location.pathname.startsWith("/my-bookings");
 
   const showBottomNav = authed && !hideBottomNav;
 
@@ -243,7 +249,6 @@ export default function App() {
   const [userId, setUserId] = useState<string>("");
 
   const handleLogin = async (name: string, id?: string) => {
-    // get current user (to read metadata.role)
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -264,7 +269,6 @@ export default function App() {
 
     setAuthed(true);
 
-    // route based on role
     if (role === "staff") {
       navigate("/staff-dashboard", { replace: true });
     } else {
@@ -283,12 +287,8 @@ export default function App() {
     if (screen === "facility-details" && data) navigate(`/facility/${data}`);
     if (screen === "activity-record") navigate("/activity/record");
     if (screen === "activity-report") navigate("/activity-report");
-    if (screen === "activity-main") navigate("activity-main");
+    if (screen === "activity-main") navigate("/activity-main");
     if (screen === "my-bookings") navigate("/my-bookings");
-  };
-
-  const handleNavigateFromDiscussion = (screen: string) => {
-    if (screen === "create-discussion") navigate("/discussion/create");
   };
 
   const onTabChange = (tab: string) => {
@@ -296,393 +296,87 @@ export default function App() {
       home: "/home",
       discussion: "/discussion",
       book: "/book",
-      activity: "/activity",
+      activity: "/activity-main", // Ensure it goes to main screen
       profile: "/profile",
     };
     navigate(map[tab] || "/home");
   };
 
   return (
-    <div className="h-full w-full overflow-hidden">
-      {/* Headers rendered at app level so they stay fixed */}
-      {authed && isFacilityRoute && (
-        <FacilityDetailsHeader onBack={() => navigate("/book")} />
-      )}
-      {authed && isBookRoute && <BookListHeader />}
-      {authed && isHomeRoute && <HomeScreenHeader studentName={studentName} />}
-      {authed && isDiscussionRoute && (
-        <DiscussionScreenHeader onNavigate={handleNavigateFromDiscussion} />
-      )}
-      {authed && isUpcomingRoute && (
-        <MyBookingsScreenHeader onBack={() => navigate("/home")} />
-      )}
-      {authed && isActivityDetailRoute && (
-        <ActivityDetailHeader onBack={() => navigate("/activity-history")} />
-      )}
+    <UserPreferencesProvider>
+      <div className="h-full w-full overflow-hidden bg-[--bg-primary)] text-[--text-primary)] transition-colors duration-300">
+        
+        {authed && isFacilityRoute && (
+          <FacilityDetailsHeader onBack={() => navigate("/book")} />
+        )}
+        {authed && isBookRoute && <BookListHeader />}
+        {authed && isHomeRoute && <HomeScreenHeader studentName={studentName} />}
+        {authed && isDiscussionRoute && (
+          <DiscussionScreenHeader onNavigate={(screen) => navigate("/discussion/create")} />
+        )}
+        {authed && isUpcomingRoute && (
+          <MyBookingsScreenHeader onBack={() => navigate("/home")} />
+        )}
+        {authed && isActivityDetailRoute && (
+          <ActivityDetailHeader onBack={() => navigate("/activity-history")} />
+        )}
 
-      <main
-        className={`content ${showBottomNav ? "with-bottom-nav" : ""} ${
-          isProfileRoute
-            ? "overflow-hidden"
-            : isActivityDetailRoute
-            ? "pt-4"
-            : isFacilityRoute ||
-              isBookRoute ||
-              isHomeRoute ||
-              isDiscussionRoute ||
-              isUpcomingRoute
-            ? "pt-[72px]"
-            : ""
-        }`}
-      >
-        <Routes>
-          {/* Public */}
-          <Route
-            path="/"
-            element={
-              <LoginScreen
-                onLogin={handleLogin}
-                onNavigate={handleNavigateFromLogin}
-              />
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <RegisterScreen
-                onNavigate={(path: string) => {
-                  if (path === "login") navigate("/");
-                }}
-              />
-            }
-          />
-          <Route
-            path="/reset-password-request"
-            element={
-              <ResetPasswordRequestScreen
-                onNavigate={(path: string) => {
-                  if (path === "reset-link-sent") navigate("/reset-link-sent");
-                  if (path === "login") navigate("/");
-                }}
-              />
-            }
-          />
-          <Route
-            path="/reset-link-sent"
-            element={
-              <ResetLinkSentScreen
-                onNavigate={(path: string) => {
-                  if (path === "login") navigate("/");
-                }}
-              />
-            }
-          />
-          <Route
-            path="/reset-password-new"
-            element={
-              <ResetPasswordNewScreen
-                onNavigate={(path: string) => {
-                  if (path === "login") navigate("/");
-                }}
-              />
-            }
-          />
+        <main
+          className={`content ${showBottomNav ? "with-bottom-nav" : ""} ${
+            isProfileRoute || location.pathname.startsWith("/settings/")
+              ? "overflow-hidden"
+              : isActivityDetailRoute
+              ? "pt-4"
+              : isFacilityRoute ||
+                isBookRoute ||
+                isHomeRoute ||
+                isDiscussionRoute ||
+                isUpcomingRoute
+              ? "pt-18"
+              : ""
+          }`}
+        >
+          <Routes>
+            <Route path="/" element={<LoginScreen onLogin={handleLogin} onNavigate={handleNavigateFromLogin} />} />
+            <Route path="/register" element={<RegisterScreen onNavigate={(path) => navigate(path === "login" ? "/" : "/register")} />} />
+            <Route path="/reset-password-request" element={<ResetPasswordRequestScreen onNavigate={(path) => navigate(path)} />} />
+            <Route path="/reset-link-sent" element={<ResetLinkSentScreen onNavigate={(path) => navigate(path)} />} />
+            <Route path="/reset-password-new" element={<ResetPasswordNewScreen onNavigate={(path) => navigate(path)} />} />
 
-          {/* Protected */}
-          <Route
-            path="/home"
-            element={
-              <RequireAuth authed={authed}>
-                <HomeScreen
-                  studentName={studentName}
-                  onNavigate={handleNavigateFromHome}
-                />
-              </RequireAuth>
-            }
-          />
+            {/* Protected */}
+            <Route path="/home" element={<RequireAuth authed={authed}><HomeScreen studentName={studentName} onNavigate={handleNavigateFromHome} /></RequireAuth>} />
+            <Route path="/discussion" element={<RequireAuth authed={authed}><DiscussionScreen onNavigate={(screen, data) => navigate(data ? `/discussion/${data}` : "/discussion/create")} /></RequireAuth>} />
+            <Route path="/discussion/create" element={<RequireAuth authed={authed}><CreateDiscussionScreen studentName={studentName} onNavigate={() => navigate("/discussion")} /></RequireAuth>} />
+            <Route path="/discussion/:id" element={<RequireAuth authed={authed}><DiscussionDetailWrapper studentName={studentName} onNavigate={() => navigate("/discussion")} /></RequireAuth>} />
+            <Route path="/book" element={<RequireAuth authed={authed}><FacilityListScreen onNavigate={(screen, data) => navigate(`/facility/${data}`)} /></RequireAuth>} />
+            
+            {/* Added: Interface Settings Route */}
+            <Route path="/settings/interface" element={<RequireAuth authed={authed}><InterfaceSettingsScreen onBack={() => navigate("/profile")} /></RequireAuth>} />
 
-          <Route
-            path="/discussion"
-            element={
-              <RequireAuth authed={authed}>
-                <DiscussionScreen
-                  onNavigate={(screen, data) => {
-                    if (screen === "create-discussion")
-                      navigate("/discussion/create");
-                    if (screen === "discussion-detail" && data)
-                      navigate(`/discussion/${data}`);
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
+            <Route path="/activity-main" element={<RequireAuth authed={authed}><ActivityMainScreen userId={userId} userRole={userRole} onNavigate={(screen, data) => navigate(data ? `/${screen}/${data}` : `/${screen}`)} /></RequireAuth>} />
+            <Route path="/activity/record" element={<RequireAuth authed={authed}><RecordActivityScreen studentName={studentName} userRole="student" onNavigate={() => navigate("/activity-main")} /></RequireAuth>} />
+            <Route path="/activity/edit/:id" element={<RequireAuth authed={authed}><EditActivityWrapper userId={userId} userRole={userRole} /></RequireAuth>} />
+            <Route path="/profile" element={<RequireAuth authed={authed}><ProfileScreen studentName={studentName} onNavigate={(screen) => navigate(screen === "settings/interface" ? "/settings/interface" : `/${screen}`)} onLogout={() => { setAuthed(false); navigate("/", { replace: true }); }} /></RequireAuth>} />
+            <Route path="/activity-history" element={<RequireAuth authed={authed}><ActivityHistoryScreen onNavigate={(screen, data) => navigate(data ? `/activity/${data}` : "/profile")} /></RequireAuth>} />
+            <Route path="/activity/:id" element={<RequireAuth authed={authed}><ActivityDetailWrapper /></RequireAuth>} />
+            <Route path="/detailactivity/:id" element={<RequireAuth authed={authed}><DetailActivityWrapper /></RequireAuth>} />
+            <Route path="/activity-report" element={<RequireAuth authed={authed}><ActivityReportScreen onNavigate={() => navigate("/activity-main")} /></RequireAuth>} />
+            <Route path="/badges" element={<RequireAuth authed={authed}><BadgeCollectionScreen onNavigate={(screen) => navigate(screen === "activity-main" ? "/activity-main" : "/profile")} /></RequireAuth>} />
+            <Route path="/facility/:id" element={<RequireAuth authed={authed}><FacilityDetailsWrapper /></RequireAuth>} />
+            <Route path="/facility/:id/time-slot" element={<RequireAuth authed={authed}><TimeSlotWrapper /></RequireAuth>} />
+            <Route path="/booking/confirmation" element={<RequireAuth authed={authed}><BookingConfirmationWrapper /></RequireAuth>} />
+            <Route path="/booking/success" element={<RequireAuth authed={authed}><BookingSuccessWrapper /></RequireAuth>} />
+            <Route path="/my-bookings" element={<RequireAuth authed={authed}><MyBookingsScreen /></RequireAuth>} />
+            <Route path="/staff-dashboard" element={<RequireAuth authed={authed}><StaffCheckInDashboardScreen staffName={studentName} onNavigate={() => {}} onLogout={async () => { await supabase.auth.signOut(); setAuthed(false); navigate("/", { replace: true }); }} /></RequireAuth>} />
 
-          <Route
-            path="/discussion/create"
-            element={
-              <RequireAuth authed={authed}>
-                <CreateDiscussionScreen
-                  studentName={studentName}
-                  onNavigate={(screen) => {
-                    if (screen === "discussion") navigate("/discussion");
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
+            <Route path="*" element={<Navigate to={authed ? "/home" : "/"} replace />} />
+          </Routes>
+        </main>
 
-          <Route
-            path="/discussion/:id"
-            element={
-              <RequireAuth authed={authed}>
-                <DiscussionDetailWrapper
-                  studentName={studentName}
-                  onNavigate={(screen) => {
-                    if (screen === "discussion") navigate("/discussion");
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/book"
-            element={
-              <RequireAuth authed={authed}>
-                <FacilityListScreen
-                  onNavigate={(screen, data) => {
-                    if (screen === "facility-details" && data)
-                      navigate(`/facility/${data}`);
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/activity"
-            element={<Navigate to="/activity-main" replace />}
-          />
-
-          <Route
-            path="/activity-main"
-            element={
-              <RequireAuth authed={authed}>
-                <ActivityMainScreen
-                  userId={userId}
-                  userRole={userRole}
-                  onNavigate={(screen, data) => {
-                    if (screen === "profile") navigate("/profile");
-                    if (screen === "activity-report") navigate("/activity-report");
-                    if (screen === "badges") navigate("/badges");
-                    if (screen === "activity-detail" && data)
-                      navigate(`/activity/${data}`);
-                    if (screen === "detailactivity" && data)
-                      navigate(`/detailactivity/${data}`);
-                    if (screen === "activity-record")
-                      navigate("/activity/record");
-                    if (screen === "edit-activity" && data)
-                      navigate(`/activity/edit/${data}`);
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/activity/record"
-            element={
-              <RequireAuth authed={authed}>
-                <RecordActivityScreen
-                  studentName={studentName}
-                  userRole="student"
-                  onNavigate={(screen) => {
-                    if (screen === "activity-main") navigate("/activity-main");
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/activity/edit/:id"
-            element={
-              <RequireAuth authed={authed}>
-                <EditActivityWrapper userId={userId} userRole={userRole} />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/profile"
-            element={
-              <RequireAuth authed={authed}>
-                <ProfileScreen
-                  studentName={studentName}
-                  onNavigate={(screen) => {
-                    if (screen === "my-bookings") navigate("/my-bookings");
-                    if (screen === "activity-history")
-                      navigate("/activity-history");
-                  }}
-                  onLogout={() => {
-                    setAuthed(false);
-                    navigate("/", { replace: true });
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/activity-history"
-            element={
-              <RequireAuth authed={authed}>
-                <ActivityHistoryScreen
-                  onNavigate={(screen, data) => {
-                    if (screen === "profile") navigate("/profile");
-                    if (screen === "activity-detail" && data)
-                      navigate(`/activity/${data}`);
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/activity/:id"
-            element={
-              <RequireAuth authed={authed}>
-                <ActivityDetailWrapper />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/detailactivity/:id"
-            element={
-              <RequireAuth authed={authed}>
-                <DetailActivityWrapper />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/activity-report"
-            element={
-              <RequireAuth authed={authed}>
-                <ActivityReportScreen
-                  onNavigate={(screen) => {
-                    if (screen === "activity-main") navigate("/activity-main");
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/badges"
-            element={
-              <RequireAuth authed={authed}>
-                <BadgeCollectionScreen
-                  onNavigate={(screen) => {
-                    if (screen === "activity-main") navigate("/activity-main");
-                    if (screen === "profile") navigate("/profile");
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/facility/:id"
-            element={
-              <RequireAuth authed={authed}>
-                <FacilityDetailsWrapper />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/facility/:id/time-slot"
-            element={
-              <RequireAuth authed={authed}>
-                <TimeSlotWrapper />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/booking/confirmation"
-            element={
-              <RequireAuth authed={authed}>
-                <BookingConfirmationWrapper />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/booking/success"
-            element={
-              <RequireAuth authed={authed}>
-                <BookingSuccessWrapper />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/my-bookings"
-            element={
-              <RequireAuth authed={authed}>
-                <MyBookingsScreen />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="/staff-dashboard"
-            element={
-              <RequireAuth authed={authed}>
-                <StaffCheckInDashboardScreen
-                  staffName={studentName}
-                  onNavigate={() => {
-                    // if later you want to navigate somewhere from staff dashboard
-                    // e.g. navigate("/profile")
-                  }}
-                  onLogout={async () => {
-                    await supabase.auth.signOut();
-                    setAuthed(false);
-                    navigate("/", { replace: true });
-                  }}
-                />
-              </RequireAuth>
-            }
-          />
-
-          <Route
-            path="*"
-            element={<Navigate to={authed ? "/home" : "/"} replace />}
-          />
-        </Routes>
-      </main>
-
-      {(() => {
-        const hide =
-          location.pathname.startsWith("/facility") ||
-          location.pathname.startsWith("/booking") ||
-          location.pathname.startsWith("/discussion/create") ||
-          location.pathname.match(/^\/discussion\/\d+$/) ||
-          location.pathname.startsWith("/activity-history") ||
-          location.pathname.match(/^\/activity\/[^/]+$/) || // /activity/:id
-          location.pathname.startsWith("/activity/edit") || // /activity/edit/:id
-          location.pathname.startsWith("/badges")
-          location.pathname.startsWith("/staff-dashboard") || // hide for staff
-          location.pathname.startsWith("/my-bookings"); // 🔴 also hide here
-
-        const show = authed && !hide;
-        return show ? (
+        {showBottomNav && (
           <BottomNav activeTab={activeTab} onTabChange={onTabChange} />
-        ) : null;
-      })()}
-    </div>
+        )}
+      </div>
+    </UserPreferencesProvider>
   );
 }

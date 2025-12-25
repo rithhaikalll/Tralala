@@ -1,6 +1,7 @@
-// src/pages/BookingConfirmationScreen.tsx
 import { Calendar, Clock, MapPin, Info } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
+// 1. Import global preferences context
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface BookingConfirmationScreenProps {
   bookingData: {
@@ -16,28 +17,21 @@ export function BookingConfirmationScreen({
   bookingData,
   onNavigate,
 }: BookingConfirmationScreenProps) {
+  // 2. Consume theme and translation tools
+  const { theme, t, preferences } = useUserPreferences();
+  const isMs = preferences.language_code === 'ms';
+
   const handleConfirm = async () => {
-    // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("You must be logged in to book.");
+      alert(isMs ? "Anda mesti log masuk untuk menempah." : "You must be logged in to book.");
       return;
     }
 
-    // Reference ID (can stay alphanumeric)
-    const referenceCode =
-      "UTM" + Math.random().toString(36).substr(2, 9).toUpperCase();
+    const referenceCode = "UTM" + Math.random().toString(36).substr(2, 9).toUpperCase();
+    const checkInCode = String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
 
-    // 🔢 6-digit NUMERIC check-in code (000000 – 999999)
-    const checkInCode = String(Math.floor(Math.random() * 1_000_000)).padStart(
-      6,
-      "0"
-    );
-
-    // Insert booking + store check_in_code
     const { data, error } = await supabase
       .from("facility_bookings")
       .insert({
@@ -47,18 +41,17 @@ export function BookingConfirmationScreen({
         time_label: bookingData.time,
         status: "confirmed",
         reference_code: referenceCode,
-        check_in_code: checkInCode, // 👈 NEW
+        check_in_code: checkInCode,
       })
       .select()
       .single();
 
     if (error || !data) {
       console.error("Booking failed", error);
-      alert("Failed to confirm booking. Please try again.");
+      alert(isMs ? "Gagal mengesahkan tempahan. Sila cuba lagi." : "Failed to confirm booking. Please try again.");
       return;
     }
 
-    // Activity log (unchanged, still uses returned row id)
     try {
       await supabase.from("activity_logs").insert({
         user_id: user.id,
@@ -79,7 +72,6 @@ export function BookingConfirmationScreen({
       console.error("Failed to log activity", e);
     }
 
-    // ⬇️ Pass both ref + 6-digit code to SuccessScreen
     onNavigate("success", {
       ...bookingData,
       referenceCode,
@@ -88,64 +80,49 @@ export function BookingConfirmationScreen({
   };
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full transition-colors duration-300" style={{ backgroundColor: theme.background }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-40 px-6 py-6 bg-white border-b"
-        style={{ borderColor: "#E5E5E5" }}
+        className="sticky top-0 z-40 px-6 py-6 border-b transition-colors"
+        style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
       >
-        <h2 style={{ color: "#1A1A1A", fontWeight: 600, fontSize: "20px" }}>
-          Booking Details
+        <h2 style={{ color: theme.text, fontWeight: 600, fontSize: "20px" }}>
+          {isMs ? "Butiran Tempahan" : "Booking Details"}
         </h2>
       </div>
 
       {/* Content */}
-      <div
-        className="px-6 py-4"
-        style={{
-          paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px) + 60px)",
-        }}
-      >
+      <div className="px-6 py-4" style={{ paddingBottom: "120px" }}>
         <div className="space-y-8">
           {/* Booking Summary Card */}
           <div
-            className="border bg-white p-5"
+            className="border p-5 transition-colors shadow-sm"
             style={{
-              borderColor: "#E5E5E5",
+              backgroundColor: theme.cardBg,
+              borderColor: theme.border,
               borderRadius: "14px",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
             }}
           >
             <h3
               className="mb-5"
               style={{
-                color: "#1A1A1A",
+                color: theme.text,
                 fontWeight: 600,
                 fontSize: "18px",
               }}
             >
-              Booking Summary
+              {isMs ? "Ringkasan Tempahan" : "Booking Summary"}
             </h3>
 
             <div className="space-y-5">
               {/* Facility Name */}
               <div className="flex items-start gap-3">
-                <MapPin
-                  className="w-5 h-5 mt-0.5 shrink-0"
-                  style={{ color: "#7A0019" }}
-                  strokeWidth={1.5}
-                />
+                <MapPin className="w-5 h-5 mt-0.5 shrink-0" style={{ color: theme.primary }} strokeWidth={1.5} />
                 <div>
-                  <div className="text-xs mb-1" style={{ color: "#888888" }}>
-                    Facility
+                  <div className="text-xs mb-1" style={{ color: theme.textSecondary }}>
+                    {isMs ? "Fasiliti" : "Facility"}
                   </div>
-                  <div
-                    style={{
-                      color: "#1A1A1A",
-                      fontWeight: 500,
-                      fontSize: "15px",
-                    }}
-                  >
+                  <div style={{ color: theme.text, fontWeight: 500, fontSize: "15px" }}>
                     {bookingData.facilityName}
                   </div>
                 </div>
@@ -153,22 +130,12 @@ export function BookingConfirmationScreen({
 
               {/* Date */}
               <div className="flex items-start gap-3">
-                <Calendar
-                  className="w-5 h-5 mt-0.5 shrink-0"
-                  style={{ color: "#7A0019" }}
-                  strokeWidth={1.5}
-                />
+                <Calendar className="w-5 h-5 mt-0.5 shrink-0" style={{ color: theme.primary }} strokeWidth={1.5} />
                 <div>
-                  <div className="text-xs mb-1" style={{ color: "#888888" }}>
-                    Date
+                  <div className="text-xs mb-1" style={{ color: theme.textSecondary }}>
+                    {t("date") || (isMs ? "Tarikh" : "Date")}
                   </div>
-                  <div
-                    style={{
-                      color: "#1A1A1A",
-                      fontWeight: 500,
-                      fontSize: "15px",
-                    }}
-                  >
+                  <div style={{ color: theme.text, fontWeight: 500, fontSize: "15px" }}>
                     {bookingData.date}
                   </div>
                 </div>
@@ -176,22 +143,12 @@ export function BookingConfirmationScreen({
 
               {/* Time */}
               <div className="flex items-start gap-3">
-                <Clock
-                  className="w-5 h-5 mt-0.5 shrink-0"
-                  style={{ color: "#7A0019" }}
-                  strokeWidth={1.5}
-                />
+                <Clock className="w-5 h-5 mt-0.5 shrink-0" style={{ color: theme.primary }} strokeWidth={1.5} />
                 <div>
-                  <div className="text-xs mb-1" style={{ color: "#888888" }}>
-                    Time
+                  <div className="text-xs mb-1" style={{ color: theme.textSecondary }}>
+                    {isMs ? "Masa" : "Time"}
                   </div>
-                  <div
-                    style={{
-                      color: "#1A1A1A",
-                      fontWeight: 500,
-                      fontSize: "15px",
-                    }}
-                  >
+                  <div style={{ color: theme.text, fontWeight: 500, fontSize: "15px" }}>
                     {bookingData.time}
                   </div>
                 </div>
@@ -201,32 +158,19 @@ export function BookingConfirmationScreen({
 
           {/* Notice */}
           <div
-            className="flex gap-3 p-4 border bg-white"
-            style={{ borderColor: "#E5E5E5", borderRadius: "14px" }}
+            className="flex gap-3 p-4 border transition-colors"
+            style={{ backgroundColor: theme.cardBg, borderColor: theme.border, borderRadius: "14px" }}
           >
-            <Info
-              className="w-5 h-5 shrink-0 mt-0.5"
-              style={{ color: "#888888" }}
-              strokeWidth={1.5}
-            />
+            <Info className="w-5 h-5 shrink-0 mt-0.5" style={{ color: theme.textSecondary }} strokeWidth={1.5} />
             <div>
-              <h4
-                className="mb-1"
-                style={{
-                  color: "#1A1A1A",
-                  fontWeight: 500,
-                  fontSize: "14px",
-                }}
-              >
-                Important Notice
+              <h4 className="mb-1" style={{ color: theme.text, fontWeight: 600, fontSize: "14px" }}>
+                {isMs ? "Notis Penting" : "Important Notice"}
               </h4>
-              <p
-                className="text-xs"
-                style={{ color: "#555555", lineHeight: "1.6" }}
-              >
-                Please arrive 10 minutes before your scheduled time. Late
-                arrivals may result in reduced session time. Cancellations must
-                be made at least 2 hours in advance.
+              <p className="text-xs" style={{ color: theme.textSecondary, lineHeight: "1.6" }}>
+                {isMs 
+                  ? "Sila tiba 10 minit sebelum waktu dijadualkan. Ketibaan lewat mungkin menyebabkan pengurangan masa sesi. Pembatalan mestilah dibuat sekurang-kurangnya 2 jam awal."
+                  : "Please arrive 10 minutes before your scheduled time. Late arrivals may result in reduced session time. Cancellations must be made at least 2 hours in advance."
+                }
               </p>
             </div>
           </div>
@@ -234,38 +178,36 @@ export function BookingConfirmationScreen({
 
         {/* Fixed Footer Buttons */}
         <div
-          className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t px-4 py-4 z-50"
-          style={{ borderColor: "#E5E5E5" }}
+          className="fixed bottom-0 left-0 right-0 max-w-md mx-auto border-t px-4 py-4 z-50 transition-colors"
+          style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
         >
           <div className="flex gap-3">
             <button
               onClick={() => onNavigate("time-slot")}
-              className="flex-1 h-12 flex items-center justify-center border"
+              className="flex-1 h-12 flex items-center justify-center border transition-all active:scale-95"
               style={{
-                borderColor: "#E5E5E5",
-                borderRadius: "8px",
-                color: "#555555",
-                fontWeight: 500,
+                borderColor: theme.border,
+                borderRadius: "12px",
+                color: theme.textSecondary,
+                fontWeight: 600,
                 fontSize: "16px",
-                backgroundColor: "#FFFFFF",
-                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+                backgroundColor: theme.background,
               }}
             >
-              Cancel
+              {t("cancel") || (isMs ? "Batal" : "Cancel")}
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 h-12 flex items-center justify-center"
+              className="flex-1 h-12 flex items-center justify-center transition-all active:scale-95 shadow-lg"
               style={{
-                backgroundColor: "#7A0019",
+                backgroundColor: theme.primary,
                 color: "#FFFFFF",
-                borderRadius: "8px",
-                fontWeight: 500,
+                borderRadius: "12px",
+                fontWeight: 700,
                 fontSize: "16px",
-                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
               }}
             >
-              Confirm Booking
+              {isMs ? "Sahkan Tempahan" : "Confirm Booking"}
             </button>
           </div>
         </div>

@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
+// Accessing global preferences
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface BadgeCollectionScreenProps {
   onNavigate: (screen: string, data?: any) => void;
@@ -35,6 +37,9 @@ interface StudentBadge {
 }
 
 export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps) {
+  // Consume theme and translation tools
+  const { theme, t, preferences } = useUserPreferences();
+  
   const [badges, setBadges] = useState<StudentBadge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] =
@@ -55,40 +60,22 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
 
   const fetchBadges = async () => {
     setIsLoading(true);
-
     try {
-      const {
-        data: { user }
-      } = await supabase.auth.getUser();
-
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // ✅ Fetch ALL badges, LEFT JOIN student_badges
       const { data, error } = await supabase
         .from("badges")
         .select(`
-          id,
-          name,
-          icon,
-          rarity,
-          points,
-          description,
-          criteria,
-          student_badges (
-            status,
-            earned_at,
-            progress,
-            current_count,
-            total_required
-          )
+          id, name, icon, rarity, points, description, criteria,
+          student_badges ( status, earned_at, progress, current_count, total_required )
         `)
         .eq("student_badges.student_id", user.id);
 
       if (error) throw error;
 
       const allBadges: StudentBadge[] = (data || []).map((b: any) => {
-        const sb = b.student_badges?.[0]; // may be undefined
-
+        const sb = b.student_badges?.[0];
         return {
           badgeId: b.id,
           badge: {
@@ -109,8 +96,6 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
       });
 
       setBadges(allBadges);
-
-      // 📊 Stats
       setStats({
         total: allBadges.length,
         earned: allBadges.filter(b => b.status === "earned").length,
@@ -123,7 +108,6 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
       });
     } catch (err) {
       console.error(err);
-      alert("Failed to load badges");
     } finally {
       setIsLoading(false);
     }
@@ -134,9 +118,10 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
       ? badges
       : badges.filter(b => b.status === selectedFilter);
 
+  // Formatting date based on language_code
   const formatDate = (date?: string) =>
     date
-      ? new Date(date).toLocaleDateString("en-US", {
+      ? new Date(date).toLocaleDateString(preferences.language_code === 'ms' ? 'ms-MY' : 'en-US', {
           month: "short",
           day: "numeric",
           year: "numeric"
@@ -144,99 +129,83 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
       : "";
 
   const getRarityStyle = (rarity: string) => {
+    const isDark = preferences.theme_mode === 1;
     switch (rarity) {
       case "common":
-        return {
-          bg: "bg-gray-100",
-          border: "border-gray-300",
-          text: "text-gray-700"
-        };
+        return { bg: isDark ? "bg-gray-800" : "bg-gray-100", border: isDark ? "border-gray-700" : "border-gray-300", text: isDark ? "text-gray-400" : "text-gray-700" };
       case "rare":
-        return {
-          bg: "bg-blue-50",
-          border: "border-blue-300",
-          text: "text-blue-700"
-        };
+        return { bg: isDark ? "bg-blue-900/30" : "bg-blue-50", border: isDark ? "border-blue-800" : "border-blue-300", text: "text-blue-500" };
       case "epic":
-        return {
-          bg: "bg-purple-50",
-          border: "border-purple-300",
-          text: "text-purple-700"
-        };
+        return { bg: isDark ? "bg-purple-900/30" : "bg-purple-50", border: isDark ? "border-purple-800" : "border-purple-300", text: "text-purple-500" };
       case "legendary":
-        return {
-          bg: "bg-yellow-50",
-          border: "border-yellow-300",
-          text: "text-yellow-700"
-        };
+        return { bg: isDark ? "bg-yellow-900/30" : "bg-yellow-50", border: isDark ? "border-yellow-800" : "border-yellow-300", text: "text-yellow-600" };
       default:
-        return {
-          bg: "bg-gray-100",
-          border: "border-gray-300",
-          text: "text-gray-700"
-        };
+        return { bg: isDark ? "bg-gray-800" : "bg-gray-100", border: isDark ? "border-gray-700" : "border-gray-300", text: "text-gray-400" };
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#7A0019] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.background }}>
+        <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: theme.primary }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f6] pb-8">
+    <div className="min-h-screen pb-8 transition-colors duration-300" style={{ backgroundColor: theme.background }}>
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white px-6 py-6 border-b" style={{ borderColor: "#E5E5E5" }}>
+      <div className="sticky top-0 z-40 px-6 py-6 border-b" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
         <div className="flex items-center gap-3">
           <button onClick={() => onNavigate("activity-main")}>
-            <ArrowLeft className="w-6 h-6 text-[#7A0019]" />
+            <ArrowLeft className="w-6 h-6" style={{ color: theme.primary }} />
           </button>
           <div>
-            <h2 className="text-[20px] font-semibold">Badge Collection</h2>
-            <p className="text-[#6A6A6A] text-sm mt-1">
-              Earn badges by completing activities
+            <h2 className="text-[20px] font-semibold" style={{ color: theme.text }}>
+              {/* Manual translation for missing key */}
+              {preferences.language_code === 'ms' ? 'Koleksi Lencana' : 'Badge Collection'}
+            </h2>
+            <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>
+              {t("track_desc")}
             </p>
           </div>
         </div>
       </div>
 
-      <div>
-        <div className="max-w-6xl mx-auto px-4 py-4">
+      <div className="max-w-6xl mx-auto px-4 py-4">
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded-lg p-3 border transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle className="w-4 h-4" style={{ color: theme.primary }} />
+              <span className="text-xs font-medium" style={{ color: theme.textSecondary }}>{t("stat_total_hours")}</span>
+            </div>
+            <div className="text-2xl font-bold" style={{ color: theme.text }}>{stats.totalPoints}</div>
+          </div>
+          
+          <div className="rounded-lg p-3 border transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex items-center gap-2 mb-1">
+              <Award className="w-4 h-4 text-green-600" />
+              <span className="text-xs text-green-600 font-medium">{t("stat_validated")}</span>
+            </div>
+            <div className="text-2xl font-bold text-green-600">{stats.earned}</div>
+          </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="bg-white text-[#7A0019] rounded-lg p-3 shadow shadow-red-300">
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle className="w-4 h-4" />
-                <span className="text-xs opacity-90">Points</span>
-              </div>
-              <div className="text-2xl">{stats.totalPoints}</div>
+          <div className="rounded-lg p-3 border transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex items-center gap-2 mb-1">
+              <XCircle className="w-4 h-4 text-gray-500" />
+              <span className="text-xs text-gray-500 font-medium">{t("stat_rejected")}</span>
             </div>
-            <div className="bg-white shadow shadow-green-300 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Award className="w-4 h-4 text-green-600" />
-                <span className="text-xs text-green-700">Earned</span>
-              </div>
-              <div className="text-2xl text-green-900">{stats.earned}</div>
+            <div className="text-2xl font-bold" style={{ color: theme.text }}>{stats.locked}</div>
+          </div>
+
+          <div className="rounded-lg p-3 border transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="w-4 h-4 text-blue-500" />
+              <span className="text-xs text-blue-500 font-medium">{t("stat_pending")}</span>
             </div>
-            <div className="bg-white shadow shadow-gray-400 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <XCircle className="w-4 h-4 text-gray-600" />
-                <span className="text-xs text-gray-700">Locked</span>
-              </div>
-              <div className="text-2xl text-gray-900">{stats.locked}</div>
-            </div>
-            <div className="bg-white shadow shadow-blue-300 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="w-4 h-4 text-blue-600" />
-                <span className="text-xs text-blue-700">Progress</span>
-              </div>
-              <div className="text-2xl text-blue-900">
-                {stats.total > 0 ? Math.round((stats.earned / stats.total) * 100) : 0}%
-              </div>
+            <div className="text-2xl font-bold" style={{ color: theme.text }}>
+              {stats.total > 0 ? Math.round((stats.earned / stats.total) * 100) : 0}%
             </div>
           </div>
         </div>
@@ -248,19 +217,20 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
           <button
             key={f}
             onClick={() => setSelectedFilter(f as any)}
-            className={`px-4 py-2 rounded-lg ${
-              selectedFilter === f
-                ? "bg-[#7A0019] text-white"
-                : "bg-white shadow"
-            }`}
+            className="px-4 py-2 rounded-lg font-medium transition-all duration-200 border"
+            style={{ 
+                backgroundColor: selectedFilter === f ? theme.primary : theme.cardBg,
+                borderColor: selectedFilter === f ? theme.primary : theme.border,
+                color: selectedFilter === f ? "#FFFFFF" : theme.text
+            }}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {f === 'all' ? t('view_all') : f === 'earned' ? t('stat_validated') : t('stat_rejected')}
           </button>
         ))}
       </div>
 
       {/* Grid */}
-      <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 gap-4">
         {filteredBadges.map(b => {
           const style = getRarityStyle(b.badge.rarity);
           const locked = b.status === "locked";
@@ -269,30 +239,23 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
             <button
               key={b.badgeId}
               onClick={() => setSelectedBadge(b)}
-              className={`border-2 rounded-xl p-4 bg-white text-center ${style.border} ${
-                locked ? "opacity-60" : ""
+              className={`border-2 rounded-xl p-4 text-center transition-all active:scale-95 ${style.border} ${
+                locked ? "opacity-50 grayscale" : ""
               }`}
+              style={{ backgroundColor: theme.cardBg }}
             >
-              <div
-                className={`w-20 h-20 mx-auto mb-3 rounded-full flex items-center justify-center text-4xl ${style.bg}`}
-              >
-                {locked ? <XCircle className="w-8 h-8 text-gray-400" /> : b.badge.icon}
+              <div className={`w-20 h-20 mx-auto mb-3 rounded-full flex items-center justify-center text-4xl shadow-inner ${style.bg}`}>
+                {locked ? <XCircle className="w-8 h-8" style={{ color: theme.textSecondary }} /> : b.badge.icon}
               </div>
 
-              <h3 className="text-sm font-medium">{b.badge.name}</h3>
-              <div className={`text-xs mt-1 ${style.text}`}>
-                {b.badge.rarity.charAt(0).toUpperCase() + b.badge.rarity.slice(1)}
+              <h3 className="text-sm font-bold" style={{ color: theme.text }}>{b.badge.name}</h3>
+              <div className={`text-[10px] font-black uppercase tracking-wider mt-1 ${style.text}`}>
+                {b.badge.rarity}
               </div>
 
               {b.status === "earned" && b.earnedAt && (
-                <div className="text-xs text-green-600 mt-1">
-                  Earned {formatDate(b.earnedAt)}
-                </div>
-              )}
-
-              {b.status === "locked" && (
-                <div className="text-xs mt-2 text-gray-600">
-                  {b.currentCount} / {b.totalRequired}
+                <div className="text-[10px] text-green-600 mt-2 font-bold py-1 rounded">
+                  {t("stat_validated")} {formatDate(b.earnedAt)}
                 </div>
               )}
             </button>
@@ -303,25 +266,31 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
       {/* Modal */}
       {selectedBadge && (
         <div
-          className="fixed inset-0 bg-black/50 flex p-6 items-center justify-center"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex p-6 items-center justify-center z-50 animate-in fade-in"
           onClick={() => setSelectedBadge(null)}
         >
           <div
-            className="bg-white rounded-xl p-6 max-w-md w-full"
+            className="rounded-2xl p-8 max-w-md w-full shadow-2xl border"
+            style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
             onClick={e => e.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold text-center mb-2">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center text-6xl" style={{ backgroundColor: theme.background }}>
+                {selectedBadge.status === "locked" ? <XCircle className="w-12 h-12" style={{ color: theme.textSecondary }} /> : selectedBadge.badge.icon}
+            </div>
+            
+            <h2 className="text-2xl font-bold text-center mb-2" style={{ color: theme.text }}>
               {selectedBadge.badge.name}
             </h2>
-            <p className="text-sm text-gray-600 text-center">
+            <p className="text-sm text-center leading-relaxed" style={{ color: theme.textSecondary }}>
               {selectedBadge.badge.description}
             </p>
 
             <button
               onClick={() => setSelectedBadge(null)}
-              className="mt-6 w-full bg-red-900 text-white py-2 rounded-lg "
+              className="mt-8 w-full py-3 rounded-xl font-bold text-white transition-transform active:scale-95"
+              style={{ backgroundColor: theme.primary }}
             >
-              Close
+              {t("cancel")}
             </button>
           </div>
         </div>

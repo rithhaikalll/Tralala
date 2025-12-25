@@ -1,8 +1,9 @@
-// src/pages/FacilityListScreen.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 import { supabase } from "../../lib/supabaseClient";
+// 1. Import global preferences context
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface FacilityListScreenProps {
   onNavigate: (screen: string, data?: string) => void;
@@ -16,25 +17,33 @@ type Facility = {
 };
 
 export function BookListHeader() {
+  // 2. Consume theme context for Header
+  const { theme, preferences } = useUserPreferences();
+  const isMs = preferences.language_code === 'ms';
+
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-50 bg-white px-6 py-6 border-b"
-      style={{ borderColor: "#E5E5E5", transform: "none" }}
+      className="fixed top-0 left-0 right-0 z-50 px-6 py-6 border-b transition-colors duration-300"
+      style={{ backgroundColor: theme.cardBg, borderColor: theme.border, transform: "none" }}
     >
-      <h2 style={{ color: "#1A1A1A", fontWeight: 600, fontSize: "20px" }}>
-        Book Facility
+      <h2 style={{ color: theme.text, fontWeight: 600, fontSize: "20px" }}>
+        {isMs ? "Tempah Fasiliti" : "Book Facility"}
       </h2>
       <p
         className="text-sm mt-1"
-        style={{ color: "#555555", lineHeight: "1.6" }}
+        style={{ color: theme.textSecondary, lineHeight: "1.6" }}
       >
-        Choose your preferred sport
+        {isMs ? "Pilih sukan pilihan anda" : "Choose your preferred sport"}
       </p>
     </div>
   );
 }
 
 export function FacilityListScreen({ onNavigate }: FacilityListScreenProps) {
+  // 3. Consume context for dynamic styles and language
+  const { theme, t, preferences } = useUserPreferences();
+  const isMs = preferences.language_code === 'ms';
+
   const [query, setQuery] = useState("");
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,17 +57,15 @@ export function FacilityListScreen({ onNavigate }: FacilityListScreenProps) {
 
       const { data, error } = await supabase
         .from("facilities")
-        .select("id, name, location, image_url") // no category
+        .select("id, name, location, image_url")
         .order("name", { ascending: true });
 
       if (error) {
-        console.error("Error loading facilities", error);
         setErrorMsg(error.message);
         setFacilities([]);
       } else {
         setFacilities(data || []);
       }
-
       setLoading(false);
     };
 
@@ -84,11 +91,9 @@ export function FacilityListScreen({ onNavigate }: FacilityListScreenProps) {
   };
 
   return (
-    <div className="h-full bg-white">
-      {/* spacer reserved by app-level header (same as DiscussionScreen) */}
+    <div className="h-full transition-colors duration-300" style={{ backgroundColor: theme.background }}>
       <div className="h-10" />
 
-      {/* Content – same padding pattern as DiscussionScreen */}
       <div
         className="px-6 py-2 space-y-6"
         style={{
@@ -99,7 +104,7 @@ export function FacilityListScreen({ onNavigate }: FacilityListScreenProps) {
         <div className="relative">
           <Search
             className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
-            style={{ color: "#888888" }}
+            style={{ color: theme.textSecondary }}
             strokeWidth={1.5}
           />
           <input
@@ -108,17 +113,18 @@ export function FacilityListScreen({ onNavigate }: FacilityListScreenProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onEnterBlur}
-            placeholder="Search facilities…"
-            className="w-full h-12 pl-12 pr-10 border bg-white"
+            placeholder={isMs ? "Cari fasiliti..." : "Search facilities…"}
+            className="w-full h-12 pl-12 pr-10 border transition-colors outline-none focus:ring-1"
             aria-label="Search facilities"
             inputMode="search"
             autoCorrect="off"
             spellCheck={false}
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
+              backgroundColor: theme.cardBg,
               borderRadius: "14px",
               fontSize: "15px",
-              color: "#1A1A1A",
+              color: theme.text,
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
             }}
           />
@@ -128,22 +134,26 @@ export function FacilityListScreen({ onNavigate }: FacilityListScreenProps) {
               onClick={clearQuery}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded"
               aria-label="Clear search"
-              style={{ color: "#888888" }}
+              style={{ color: theme.textSecondary }}
             >
               <X className="w-4 h-4" strokeWidth={1.5} />
             </button>
           )}
         </div>
 
-        {/* Loading / error */}
+        {/* Loading / error states */}
         {loading && (
-          <p className="text-sm" style={{ color: "#888888" }}>
-            Loading facilities…
-          </p>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="animate-spin mr-2" style={{ color: theme.primary }} />
+            <p className="text-sm" style={{ color: theme.textSecondary }}>
+              {t("view_all")}...
+            </p>
+          </div>
         )}
+        
         {errorMsg && (
-          <p className="text-sm text-red-500">
-            Failed to load facilities: {errorMsg}
+          <p className="text-sm text-red-500 text-center py-8">
+            {isMs ? "Gagal memuatkan fasiliti" : "Failed to load facilities"}: {errorMsg}
           </p>
         )}
 
@@ -151,24 +161,24 @@ export function FacilityListScreen({ onNavigate }: FacilityListScreenProps) {
         <div className="space-y-4 pb-4">
           {!loading && !errorMsg && filtered.length === 0 ? (
             <div
-              className="text-sm text-center py-8"
-              style={{ color: "#888888" }}
+              className="text-sm text-center py-12"
+              style={{ color: theme.textSecondary }}
             >
-              No facilities match “{query}”.
+              {isMs ? `Tiada fasiliti sepadan dengan "${query}"` : `No facilities match “${query}”.`}
             </div>
           ) : (
             filtered.map((facility) => (
               <button
                 key={facility.id}
                 onClick={() => onNavigate("facility-details", facility.id)}
-                className="w-full border bg-white overflow-hidden text-left"
+                className="w-full border overflow-hidden text-left transition-all active:scale-[0.98] shadow-sm"
                 style={{
-                  borderColor: "#E5E5E5",
+                  backgroundColor: theme.cardBg,
+                  borderColor: theme.border,
                   borderRadius: "14px",
-                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
                 }}
               >
-                {facility.image_url && (
+                {facility.image_url ? (
                   <div className="w-full h-48">
                     <ImageWithFallback
                       src={facility.image_url}
@@ -176,12 +186,16 @@ export function FacilityListScreen({ onNavigate }: FacilityListScreenProps) {
                       className="w-full h-full object-cover"
                     />
                   </div>
+                ) : (
+                  <div className="w-full h-24 flex items-center justify-center" style={{ backgroundColor: theme.background }}>
+                     <p className="text-xs" style={{ color: theme.textSecondary }}>{isMs ? "Tiada imej" : "No image"}</p>
+                  </div>
                 )}
                 <div className="p-4">
                   <h4
                     className="mb-1"
                     style={{
-                      color: "#1A1A1A",
+                      color: theme.text,
                       fontWeight: 600,
                       fontSize: "16px",
                     }}
@@ -190,7 +204,7 @@ export function FacilityListScreen({ onNavigate }: FacilityListScreenProps) {
                   </h4>
                   <p
                     className="text-sm"
-                    style={{ color: "#555555", lineHeight: "1.6" }}
+                    style={{ color: theme.textSecondary, lineHeight: "1.6" }}
                   >
                     {facility.location}
                   </p>
