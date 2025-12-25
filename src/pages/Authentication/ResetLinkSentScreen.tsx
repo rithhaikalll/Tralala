@@ -1,11 +1,16 @@
 import { Mail } from "lucide-react";
 import { Button } from "../../components/ui/button";
+// Import context untuk tema
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface ResetLinkSentScreenProps {
   onNavigate: (screen: string) => void;
 }
 
 export function ResetLinkSentScreen({ onNavigate }: ResetLinkSentScreenProps) {
+  // Ambil data tema daripada context
+  const { theme } = useUserPreferences();
+
   const handleResend = () => {
     // Optional: you can pass the email here as a prop and call
     // supabase.auth.resetPasswordForEmail(email) again.
@@ -13,7 +18,10 @@ export function ResetLinkSentScreen({ onNavigate }: ResetLinkSentScreenProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div 
+      className="min-h-screen flex flex-col transition-colors duration-300"
+      style={{ backgroundColor: theme.background }} // Mengikut latar belakang tema
+    >
       {/* Main Content - Centered */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-sm text-center">
@@ -22,7 +30,7 @@ export function ResetLinkSentScreen({ onNavigate }: ResetLinkSentScreenProps) {
             <Mail
               className="w-16 h-16"
               strokeWidth={1.5}
-              style={{ color: "#7A0019" }}
+              style={{ color: theme.primary }} // Menggunakan warna utama tema
             />
           </div>
 
@@ -30,7 +38,7 @@ export function ResetLinkSentScreen({ onNavigate }: ResetLinkSentScreenProps) {
           <h1
             className="mb-3"
             style={{
-              color: "#7A0019",
+              color: theme.primary, // Mengikut warna primary tema
               fontWeight: "600",
               fontSize: "24px",
               letterSpacing: "-0.02em",
@@ -43,7 +51,7 @@ export function ResetLinkSentScreen({ onNavigate }: ResetLinkSentScreenProps) {
           <p
             className="mb-8 mx-auto"
             style={{
-              color: "#6A6A6A",
+              color: theme.textSecondary, // Mengikut warna teks sekunder tema
               lineHeight: "1.6",
               fontSize: "15px",
               maxWidth: "80%",
@@ -56,14 +64,14 @@ export function ResetLinkSentScreen({ onNavigate }: ResetLinkSentScreenProps) {
           {/* Return to Login Button */}
           <Button
             onClick={() => onNavigate("login")}
-            className="w-full h-12 flex items-center justify-center"
+            className="w-full h-12 flex items-center justify-center transition-all active:scale-95"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary, // Butang mengikut warna primary tema
               color: "#FFFFFF",
-              borderRadius: "8px",
-              fontWeight: "500",
+              borderRadius: "12px",
+              fontWeight: "600",
               fontSize: "16px",
-              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
             }}
           >
             Return to Login
@@ -71,12 +79,12 @@ export function ResetLinkSentScreen({ onNavigate }: ResetLinkSentScreenProps) {
 
           {/* Resend Link */}
           <div className="text-center pt-6">
-            <p className="text-sm" style={{ color: "#6A6A6A" }}>
+            <p className="text-sm" style={{ color: theme.textSecondary }}>
               Didn't receive the email?{" "}
               <button
                 onClick={handleResend}
-                className="underline"
-                style={{ color: "#7A0019", fontWeight: "500" }}
+                className="underline font-semibold"
+                style={{ color: theme.primary }} // Pautan mengikut warna primary tema
               >
                 Resend Link
               </button>
@@ -86,11 +94,11 @@ export function ResetLinkSentScreen({ onNavigate }: ResetLinkSentScreenProps) {
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-8 text-center">
-        <p className="text-xs" style={{ color: "#888888", lineHeight: "1.6" }}>
+      <div className="px-6 py-8 text-center mt-auto">
+        <p className="text-xs" style={{ color: theme.textSecondary, lineHeight: "1.6" }}>
           UTMGo+ Sport Facility Booking System
         </p>
-        <p className="text-xs mt-1" style={{ color: "#888888" }}>
+        <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
           Version 1.0.0
         </p>
       </div>

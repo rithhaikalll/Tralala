@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "../../components/ui/button";
 import { supabase } from "../../lib/supabaseClient";
+// Import context untuk tema
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface ResetPasswordNewScreenProps {
   onNavigate: (screen: string) => void;
@@ -9,6 +11,9 @@ interface ResetPasswordNewScreenProps {
 export function ResetPasswordNewScreen({
   onNavigate,
 }: ResetPasswordNewScreenProps) {
+  // Ambil data tema daripada context
+  const { theme } = useUserPreferences();
+
   const [formData, setFormData] = useState({
     newPassword: "",
     confirmPassword: "",
@@ -45,23 +50,27 @@ export function ResetPasswordNewScreen({
     }
 
     setSuccessMsg("Password updated successfully. You can now log in.");
-    onNavigate("login");
+    // Memberi sedikit masa untuk pengguna melihat mesej berjaya sebelum navigasi
+    setTimeout(() => onNavigate("login"), 2000);
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-6">
+    <div 
+      className="min-h-screen flex items-center justify-center px-6 transition-colors duration-300"
+      style={{ backgroundColor: theme.background }} // Latar belakang dinamik
+    >
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="mb-8 text-center">
           <h1
             className="mb-2"
-            style={{ color: "#7A0019", fontWeight: "600", fontSize: "24px" }}
+            style={{ color: theme.primary, fontWeight: "600", fontSize: "24px" }} // Warna tajuk dinamik
           >
             Create New Password
           </h1>
           <p
             className="text-sm"
-            style={{ color: "#6A6A6A", lineHeight: "1.6" }}
+            style={{ color: theme.textSecondary, lineHeight: "1.6" }} // Warna teks sekunder dinamik
           >
             Enter your new password below.
           </p>
@@ -73,7 +82,7 @@ export function ResetPasswordNewScreen({
           <div>
             <label
               className="block mb-2 text-sm"
-              style={{ color: "#6A6A6A", fontWeight: "500" }}
+              style={{ color: theme.textSecondary, fontWeight: "500" }}
             >
               New Password
             </label>
@@ -83,12 +92,13 @@ export function ResetPasswordNewScreen({
               onChange={(e) =>
                 setFormData({ ...formData, newPassword: e.target.value })
               }
-              className="w-full h-12 px-4 border bg-white"
+              className="w-full h-12 px-4 border transition-colors"
               style={{
-                borderColor: "#E5E5E5",
-                borderRadius: "8px",
+                borderColor: theme.border,
+                borderRadius: "12px",
                 fontSize: "15px",
-                color: "#1A1A1A",
+                backgroundColor: theme.cardBg, // Latar belakang input dinamik
+                color: theme.text, // Warna teks input dinamik
               }}
               placeholder="Enter new password"
             />
@@ -98,7 +108,7 @@ export function ResetPasswordNewScreen({
           <div>
             <label
               className="block mb-2 text-sm"
-              style={{ color: "#6A6A6A", fontWeight: "500" }}
+              style={{ color: theme.textSecondary, fontWeight: "500" }}
             >
               Confirm New Password
             </label>
@@ -108,32 +118,33 @@ export function ResetPasswordNewScreen({
               onChange={(e) =>
                 setFormData({ ...formData, confirmPassword: e.target.value })
               }
-              className="w-full h-12 px-4 border bg-white"
+              className="w-full h-12 px-4 border transition-colors"
               style={{
-                borderColor: "#E5E5E5",
-                borderRadius: "8px",
+                borderColor: theme.border,
+                borderRadius: "12px",
                 fontSize: "15px",
-                color: "#1A1A1A",
+                backgroundColor: theme.cardBg, // Latar belakang input dinamik
+                color: theme.text, // Warna teks input dinamik
               }}
               placeholder="Re-enter new password"
             />
           </div>
 
-          {errorMsg && <p className="text-sm text-red-500 mt-1">{errorMsg}</p>}
+          {errorMsg && <p className="text-sm text-red-500 mt-1 font-medium">{errorMsg}</p>}
           {successMsg && (
-            <p className="text-sm text-green-600 mt-1">{successMsg}</p>
+            <p className="text-sm text-green-600 mt-1 font-medium">{successMsg}</p>
           )}
 
           {/* Update Password Button */}
           <Button
             onClick={handleUpdatePassword}
             disabled={loading}
-            className="w-full h-12 mt-8 flex items-center justify-center disabled:opacity-60"
+            className="w-full h-12 mt-8 flex items-center justify-center disabled:opacity-60 transition-all active:scale-95 shadow-md"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary, // Warna butang dinamik
               color: "#FFFFFF",
-              borderRadius: "8px",
-              fontWeight: "500",
+              borderRadius: "12px",
+              fontWeight: "600",
               fontSize: "16px",
             }}
           >
@@ -144,8 +155,8 @@ export function ResetPasswordNewScreen({
           <div className="text-center pt-4">
             <button
               onClick={() => onNavigate("login")}
-              className="text-sm underline"
-              style={{ color: "#6A6A6A" }}
+              className="text-sm underline font-medium transition-opacity active:opacity-60"
+              style={{ color: theme.textSecondary }} // Warna teks pautan dinamik
             >
               Back to Login
             </button>

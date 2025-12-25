@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { supabase } from "../../lib/supabaseClient";
+// Import context untuk tema
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface ResetPasswordRequestScreenProps {
   onNavigate: (screen: string) => void;
@@ -10,6 +12,9 @@ interface ResetPasswordRequestScreenProps {
 export function ResetPasswordRequestScreen({
   onNavigate,
 }: ResetPasswordRequestScreenProps) {
+  // Ambil data tema daripada context
+  const { theme } = useUserPreferences();
+  
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -25,7 +30,7 @@ export function ResetPasswordRequestScreen({
     setLoading(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      // Where the user will be sent AFTER clicking the email link
+      // Di mana pengguna akan dihantar SELEPAS mengklik pautan e-mel
       redirectTo: `${window.location.origin}/reset-password-new`,
     });
 
@@ -36,25 +41,28 @@ export function ResetPasswordRequestScreen({
       return;
     }
 
-    // Go to "Check your email" screen
+    // Pergi ke skrin "Check your email"
     onNavigate("reset-link-sent");
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div 
+      className="min-h-screen flex flex-col transition-colors duration-300"
+      style={{ backgroundColor: theme.background }} // Latar belakang dinamik
+    >
       {/* Header */}
       <div className="px-6 py-12 text-center">
         <h1
           className="text-3xl mb-2"
           style={{
-            color: "#7A0019",
+            color: theme.primary, // Warna tajuk mengikut primary tema
             fontWeight: "600",
             letterSpacing: "-0.02em",
           }}
         >
           Reset Password
         </h1>
-        <p className="text-sm" style={{ color: "#6A6A6A", lineHeight: "1.6" }}>
+        <p className="text-sm" style={{ color: theme.textSecondary, lineHeight: "1.6" }}>
           Enter your email and we will send you a reset link.
         </p>
       </div>
@@ -67,7 +75,7 @@ export function ResetPasswordRequestScreen({
             <label
               htmlFor="email"
               className="block mb-2 text-sm"
-              style={{ color: "#1A1A1A", fontWeight: "500" }}
+              style={{ color: theme.text, fontWeight: "500" }} // Warna label dinamik
             >
               Email Address
             </label>
@@ -79,7 +87,9 @@ export function ResetPasswordRequestScreen({
               onChange={(e) => setEmail(e.target.value)}
               className="h-12 px-4 border"
               style={{
-                borderColor: "#E5E5E5",
+                borderColor: theme.border, // Warna sempadan dinamik
+                backgroundColor: theme.cardBg, // Latar belakang input dinamik
+                color: theme.text, // Warna teks input dinamik
                 borderRadius: "14px",
                 fontSize: "15px",
               }}
@@ -92,14 +102,13 @@ export function ResetPasswordRequestScreen({
           <Button
             onClick={handleSendResetLink}
             disabled={loading}
-            className="w-full h-12 mt-8 flex items-center justify-center disabled:opacity-60"
+            className="w-full h-12 mt-8 flex items-center justify-center disabled:opacity-60 transition-all active:scale-95 shadow-md"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary, // Warna butang primary dinamik
               color: "#FFFFFF",
-              borderRadius: "8px",
-              fontWeight: "500",
+              borderRadius: "12px",
+              fontWeight: "600",
               fontSize: "16px",
-              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
             }}
           >
             {loading ? "Sending..." : "Send Reset Link"}
@@ -109,8 +118,8 @@ export function ResetPasswordRequestScreen({
           <div className="text-center pt-2">
             <button
               onClick={() => onNavigate("login")}
-              className="text-sm"
-              style={{ color: "#7A0019", fontWeight: "500" }}
+              className="text-sm font-semibold transition-opacity active:opacity-60"
+              style={{ color: theme.primary }} // Warna pautan dinamik
             >
               Back to Login
             </button>
@@ -119,11 +128,11 @@ export function ResetPasswordRequestScreen({
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-8 text-center">
-        <p className="text-xs" style={{ color: "#888888", lineHeight: "1.6" }}>
+      <div className="px-6 py-8 text-center mt-auto">
+        <p className="text-xs" style={{ color: theme.textSecondary, lineHeight: "1.6" }}>
           UTMGo+ Sport Facility Booking System
         </p>
-        <p className="text-xs mt-1" style={{ color: "#888888" }}>
+        <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
           Version 1.0.0
         </p>
       </div>

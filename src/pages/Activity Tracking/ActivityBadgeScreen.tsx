@@ -1,5 +1,4 @@
 import {
-  Plus,
   Clock,
   CheckCircle,
   TrendingUp,
@@ -9,7 +8,6 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
-// Accessing global preferences
 import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface BadgeCollectionScreenProps {
@@ -37,9 +35,11 @@ interface StudentBadge {
 }
 
 export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps) {
-  // Consume theme and translation tools
+  // --- 1. SINKRONISASI TEMA & BAHASA ---
   const { theme, t, preferences } = useUserPreferences();
-  
+  const isMs = preferences.language_code === 'ms';
+  const isDark = preferences.theme_mode === 1;
+
   const [badges, setBadges] = useState<StudentBadge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] =
@@ -68,7 +68,9 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
         .from("badges")
         .select(`
           id, name, icon, rarity, points, description, criteria,
-          student_badges ( status, earned_at, progress, current_count, total_required )
+          student_badges (
+            status, earned_at, progress, current_count, total_required
+          )
         `)
         .eq("student_badges.student_id", user.id);
 
@@ -118,36 +120,55 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
       ? badges
       : badges.filter(b => b.status === selectedFilter);
 
-  // Formatting date based on language_code
   const formatDate = (date?: string) =>
     date
-      ? new Date(date).toLocaleDateString(preferences.language_code === 'ms' ? 'ms-MY' : 'en-US', {
+      ? new Date(date).toLocaleDateString(isMs ? "ms-MY" : "en-US", {
           month: "short",
           day: "numeric",
           year: "numeric"
         })
       : "";
 
+  // --- 2. GAYA RARITY DINAMIK MENGIKUT TEMA ---
   const getRarityStyle = (rarity: string) => {
-    const isDark = preferences.theme_mode === 1;
     switch (rarity) {
       case "common":
-        return { bg: isDark ? "bg-gray-800" : "bg-gray-100", border: isDark ? "border-gray-700" : "border-gray-300", text: isDark ? "text-gray-400" : "text-gray-700" };
+        return {
+          bg: isDark ? "rgba(113, 113, 122, 0.1)" : "bg-gray-100",
+          border: isDark ? "border-zinc-700" : "border-gray-300",
+          text: isDark ? "text-zinc-400" : "text-gray-700"
+        };
       case "rare":
-        return { bg: isDark ? "bg-blue-900/30" : "bg-blue-50", border: isDark ? "border-blue-800" : "border-blue-300", text: "text-blue-500" };
+        return {
+          bg: isDark ? "rgba(59, 130, 246, 0.1)" : "bg-blue-50",
+          border: isDark ? "border-blue-900/50" : "border-blue-300",
+          text: "text-blue-500"
+        };
       case "epic":
-        return { bg: isDark ? "bg-purple-900/30" : "bg-purple-50", border: isDark ? "border-purple-800" : "border-purple-300", text: "text-purple-500" };
+        return {
+          bg: isDark ? "rgba(168, 85, 247, 0.1)" : "bg-purple-50",
+          border: isDark ? "border-purple-900/50" : "border-purple-300",
+          text: "text-purple-500"
+        };
       case "legendary":
-        return { bg: isDark ? "bg-yellow-900/30" : "bg-yellow-50", border: isDark ? "border-yellow-800" : "border-yellow-300", text: "text-yellow-600" };
+        return {
+          bg: isDark ? "rgba(234, 179, 8, 0.1)" : "bg-yellow-50",
+          border: isDark ? "border-yellow-900/50" : "border-yellow-300",
+          text: "text-yellow-600"
+        };
       default:
-        return { bg: isDark ? "bg-gray-800" : "bg-gray-100", border: isDark ? "border-gray-700" : "border-gray-300", text: "text-gray-400" };
+        return {
+          bg: isDark ? "rgba(113, 113, 122, 0.1)" : "bg-gray-100",
+          border: "border-gray-300",
+          text: "text-gray-700"
+        };
     }
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.background }}>
-        <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: theme.primary }} />
+        <div className="w-8 h-8 border-4 animate-spin rounded-full" style={{ borderColor: theme.primary, borderTopColor: 'transparent' }} />
       </div>
     );
   }
@@ -162,11 +183,10 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
           </button>
           <div>
             <h2 className="text-[20px] font-semibold" style={{ color: theme.text }}>
-              {/* Manual translation for missing key */}
-              {preferences.language_code === 'ms' ? 'Koleksi Lencana' : 'Badge Collection'}
+              {isMs ? "Koleksi Lencana" : "Badge Collection"}
             </h2>
             <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>
-              {t("track_desc")}
+              {isMs ? "Kumpul lencana dengan melengkapkan aktiviti" : "Earn badges by completing activities"}
             </p>
           </div>
         </div>
@@ -174,123 +194,128 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
 
       <div className="max-w-6xl mx-auto px-4 py-4">
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="rounded-lg p-3 border transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="rounded-lg p-3 border shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle className="w-4 h-4" style={{ color: theme.primary }} />
-              <span className="text-xs font-medium" style={{ color: theme.textSecondary }}>{t("stat_total_hours")}</span>
+              <span className="text-xs font-medium" style={{ color: theme.textSecondary }}>{isMs ? "Mata" : "Points"}</span>
             </div>
             <div className="text-2xl font-bold" style={{ color: theme.text }}>{stats.totalPoints}</div>
           </div>
           
-          <div className="rounded-lg p-3 border transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+          <div className="rounded-lg p-3 border shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
             <div className="flex items-center gap-2 mb-1">
-              <Award className="w-4 h-4 text-green-600" />
-              <span className="text-xs text-green-600 font-medium">{t("stat_validated")}</span>
+              <Award className="w-4 h-4 text-green-500" />
+              <span className="text-xs font-medium" style={{ color: theme.textSecondary }}>{isMs ? "Diterima" : "Earned"}</span>
             </div>
             <div className="text-2xl font-bold text-green-600">{stats.earned}</div>
           </div>
 
-          <div className="rounded-lg p-3 border transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+          <div className="rounded-lg p-3 border shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
             <div className="flex items-center gap-2 mb-1">
-              <XCircle className="w-4 h-4 text-gray-500" />
-              <span className="text-xs text-gray-500 font-medium">{t("stat_rejected")}</span>
+              <XCircle className="w-4 h-4 text-zinc-500" />
+              <span className="text-xs font-medium" style={{ color: theme.textSecondary }}>{isMs ? "Terkunci" : "Locked"}</span>
             </div>
             <div className="text-2xl font-bold" style={{ color: theme.text }}>{stats.locked}</div>
           </div>
 
-          <div className="rounded-lg p-3 border transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+          <div className="rounded-lg p-3 border shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="w-4 h-4 text-blue-500" />
-              <span className="text-xs text-blue-500 font-medium">{t("stat_pending")}</span>
+              <span className="text-xs font-medium" style={{ color: theme.textSecondary }}>Progress</span>
             </div>
-            <div className="text-2xl font-bold" style={{ color: theme.text }}>
+            <div className="text-2xl font-bold text-blue-600">
               {stats.total > 0 ? Math.round((stats.earned / stats.total) * 100) : 0}%
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Filters */}
-      <div className="px-4 py-1 grid grid-cols-3 gap-2">
-        {["all", "earned", "locked"].map(f => (
-          <button
-            key={f}
-            onClick={() => setSelectedFilter(f as any)}
-            className="px-4 py-2 rounded-lg font-medium transition-all duration-200 border"
-            style={{ 
-                backgroundColor: selectedFilter === f ? theme.primary : theme.cardBg,
-                borderColor: selectedFilter === f ? theme.primary : theme.border,
-                color: selectedFilter === f ? "#FFFFFF" : theme.text
-            }}
-          >
-            {f === 'all' ? t('view_all') : f === 'earned' ? t('stat_validated') : t('stat_rejected')}
-          </button>
-        ))}
-      </div>
-
-      {/* Grid */}
-      <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        {filteredBadges.map(b => {
-          const style = getRarityStyle(b.badge.rarity);
-          const locked = b.status === "locked";
-
-          return (
+        {/* Filters */}
+        <div className="grid grid-cols-3 gap-2 mb-6">
+          {["all", "earned", "locked"].map(f => (
             <button
-              key={b.badgeId}
-              onClick={() => setSelectedBadge(b)}
-              className={`border-2 rounded-xl p-4 text-center transition-all active:scale-95 ${style.border} ${
-                locked ? "opacity-50 grayscale" : ""
-              }`}
-              style={{ backgroundColor: theme.cardBg }}
+              key={f}
+              onClick={() => setSelectedFilter(f as any)}
+              className="px-4 py-2 rounded-lg font-medium transition-all border"
+              style={{
+                backgroundColor: selectedFilter === f ? theme.primary : theme.cardBg,
+                color: selectedFilter === f ? "#FFFFFF" : theme.textSecondary,
+                borderColor: selectedFilter === f ? theme.primary : theme.border
+              }}
             >
-              <div className={`w-20 h-20 mx-auto mb-3 rounded-full flex items-center justify-center text-4xl shadow-inner ${style.bg}`}>
-                {locked ? <XCircle className="w-8 h-8" style={{ color: theme.textSecondary }} /> : b.badge.icon}
-              </div>
-
-              <h3 className="text-sm font-bold" style={{ color: theme.text }}>{b.badge.name}</h3>
-              <div className={`text-[10px] font-black uppercase tracking-wider mt-1 ${style.text}`}>
-                {b.badge.rarity}
-              </div>
-
-              {b.status === "earned" && b.earnedAt && (
-                <div className="text-[10px] text-green-600 mt-2 font-bold py-1 rounded">
-                  {t("stat_validated")} {formatDate(b.earnedAt)}
-                </div>
-              )}
+              {f === 'all' ? (isMs ? "Semua" : "All") : 
+               f === 'earned' ? (isMs ? "Diterima" : "Earned") : 
+               (isMs ? "Terkunci" : "Locked")}
             </button>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filteredBadges.map(b => {
+            const style = getRarityStyle(b.badge.rarity);
+            const locked = b.status === "locked";
+
+            return (
+              <button
+                key={b.badgeId}
+                onClick={() => setSelectedBadge(b)}
+                className={`border-2 rounded-xl p-4 text-center transition-all active:scale-95 ${style.border}`}
+                style={{ 
+                    backgroundColor: theme.cardBg, 
+                    opacity: locked ? 0.5 : 1 
+                }}
+              >
+                <div className={`w-20 h-20 mx-auto mb-3 rounded-full flex items-center justify-center text-4xl border ${style.bg} ${style.border}`}>
+                  {locked ? <XCircle className="w-8 h-8 text-zinc-500" /> : b.badge.icon}
+                </div>
+
+                <h3 className="text-sm font-bold" style={{ color: theme.text }}>{b.badge.name}</h3>
+                <div className={`text-[10px] font-black uppercase mt-1 ${style.text}`}>
+                  {b.badge.rarity}
+                </div>
+
+                {b.status === "earned" && b.earnedAt && (
+                  <div className="text-[10px] text-green-500 font-bold mt-1">
+                    {isMs ? "Diterima" : "Earned"} {formatDate(b.earnedAt)}
+                  </div>
+                )}
+
+                {locked && (
+                  <div className="text-[10px] mt-2 font-bold" style={{ color: theme.textSecondary }}>
+                    {b.currentCount} / {b.totalRequired}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal Detail */}
       {selectedBadge && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex p-6 items-center justify-center z-50 animate-in fade-in"
-          onClick={() => setSelectedBadge(null)}
-        >
-          <div
-            className="rounded-2xl p-8 max-w-md w-full shadow-2xl border"
+        <div className="fixed inset-0 bg-black/60 flex p-6 items-center justify-center z-[60] backdrop-blur-sm" onClick={() => setSelectedBadge(null)}>
+          <div 
+            className="rounded-2xl p-6 max-w-sm w-full border animate-in zoom-in-95" 
             style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
             onClick={e => e.stopPropagation()}
           >
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center text-6xl" style={{ backgroundColor: theme.background }}>
-                {selectedBadge.status === "locked" ? <XCircle className="w-12 h-12" style={{ color: theme.textSecondary }} /> : selectedBadge.badge.icon}
+            <div className={`w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center text-5xl ${getRarityStyle(selectedBadge.badge.rarity).bg}`}>
+              {selectedBadge.status === 'locked' ? "🔒" : selectedBadge.badge.icon}
             </div>
-            
-            <h2 className="text-2xl font-bold text-center mb-2" style={{ color: theme.text }}>
+            <h2 className="text-xl font-bold text-center mb-2" style={{ color: theme.text }}>
               {selectedBadge.badge.name}
             </h2>
-            <p className="text-sm text-center leading-relaxed" style={{ color: theme.textSecondary }}>
-              {selectedBadge.badge.description}
+            <p className="text-sm text-center mb-6" style={{ color: theme.textSecondary }}>
+              {selectedBadge.badge.description || (isMs ? "Tiada penerangan." : "No description available.")}
             </p>
 
             <button
               onClick={() => setSelectedBadge(null)}
-              className="mt-8 w-full py-3 rounded-xl font-bold text-white transition-transform active:scale-95"
+              className="w-full py-3 rounded-xl font-bold text-white transition-all active:scale-95"
               style={{ backgroundColor: theme.primary }}
             >
-              {t("cancel")}
+              {isMs ? "Tutup" : "Close"}
             </button>
           </div>
         </div>

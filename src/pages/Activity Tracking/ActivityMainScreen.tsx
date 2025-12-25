@@ -113,7 +113,6 @@ export function ActivityMainScreen({
         <div className="flex gap-2 mb-2">
           <span className="px-2 py-1 text-xs rounded inline-flex items-center gap-1" style={{ backgroundColor: colors.bg, color: colors.text}}>
             <colors.icon size={12} color={colors.text}/>
-            {/* Translating status if keys exist */}
             {activity.status === "Validated" ? t("stat_validated") : activity.status === "Pending" ? t("stat_pending") : t("stat_rejected")}
           </span>
           <span className="text-sm" style={{ color: theme.textSecondary }}>{activity.activity_type}</span>
@@ -224,7 +223,6 @@ export function ActivityMainScreen({
           <button
             key={tab}
             onClick={() => setFilterStatus(tab as any)}
-            
             className="px-4 py-2 rounded-md text-sm font-medium border transition-all flex items-center justify-center text-center"
             style={{
               backgroundColor: filterStatus === tab ? theme.primary : theme.cardBg,

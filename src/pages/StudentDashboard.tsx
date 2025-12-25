@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { supabase } from "../lib/supabaseClient";
-// 1. Import global preferences context
 import { useUserPreferences } from "../lib/UserPreferencesContext";
 
 interface HomeScreenProps {
@@ -24,7 +23,11 @@ export function HomeScreenHeader({ studentName }: { studentName: string }) {
   return (
     <div
       className="fixed top-0 left-0 right-0 z-50 px-6 py-6 border-b transition-colors duration-300"
-      style={{ backgroundColor: theme.cardBg, borderColor: theme.border, transform: "none" }}
+      style={{ 
+        backgroundColor: theme.cardBg, 
+        borderColor: theme.border,
+        transform: "none" 
+      }}
     >
       <h1
         className="mb-1"
@@ -44,39 +47,18 @@ export function HomeScreenHeader({ studentName }: { studentName: string }) {
   );
 }
 
-type RecommendedFacility = {
-  id: string;
-  name: string;
-  location: string | null;
-  image_url: string | null;
-};
-
-type UpcomingBooking = {
-  id: string;
-  date_label: string;
-  time_label: string;
-  status: string;
-  facilities: {
-    name: string;
-    location: string | null;
-  } | null;
-};
-
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
-  // 2. Consume preferences for UC15 implementation
   const { theme, t, preferences } = useUserPreferences();
   const isMs = preferences.language_code === 'ms';
 
-  const [recommended, setRecommended] = useState<RecommendedFacility | null>(null);
+  const [recommended, setRecommended] = useState<any>(null);
   const [loadingRecommended, setLoadingRecommended] = useState(true);
   const [stats, setStats] = useState({ total: 0, validated: 0, pending: 0 });
-  const [upcomingBooking, setUpcomingBooking] = useState<UpcomingBooking | null>(null);
+  const [upcomingBooking, setUpcomingBooking] = useState<any>(null);
   const [loadingUpcoming, setLoadingUpcoming] = useState(true);
 
-  // Load stats, recommended, and upcoming logic stays the same
   useEffect(() => {
     const loadDashboardData = async () => {
-      // Activity Stats
       const { data: act } = await supabase.from("recorded_activities").select("status, duration");
       if (act) {
         setStats({
@@ -85,16 +67,14 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           total: act.filter((a) => a.status === "Validated").reduce((sum, a) => sum + Number(a.duration), 0),
         });
       }
-      // Recommended Facility
       const { data: fac } = await supabase.from("facilities").select("id, name, location, image_url").limit(1);
-      if (fac) setRecommended(fac[0] as RecommendedFacility);
+      if (fac) setRecommended(fac[0]);
       setLoadingRecommended(false);
       
-      // Upcoming Booking
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: bookings } = await supabase.from("facility_bookings").select("id, date_label, time_label, status, facilities(name, location)").eq("user_id", user.id).in("status", ["pending", "approved", "confirmed", "checked_in"]).limit(1);
-        if (bookings?.[0]) setUpcomingBooking(bookings[0] as any);
+        if (bookings?.[0]) setUpcomingBooking(bookings[0]);
       }
       setLoadingUpcoming(false);
     };
@@ -106,19 +86,16 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     { id: "n2", title: isMs ? "Peraturan Tempahan Baharu Waktu Puncak" : "New Booking Rules for Peak Hours", body: isMs ? "Setiap pelajar boleh menempah sehingga 2 slot seminggu." : "Each student can book up to 2 slots per week.", date: "8 March 2025" },
   ];
 
-  // --- IMPLEMENTASI UC15: WIDGET RENDERER ---
   const renderWidget = (key: string) => {
     switch (key) {
       case 'upcoming':
         return (
           <section key="upcoming" className="border shadow-sm transition-colors duration-300" style={{ backgroundColor: theme.cardBg, borderColor: theme.border, borderRadius: "14px" }}>
             <div className="p-4">
-              <p className="text-xs mb-1 font-bold tracking-widest" style={{ color: theme.primary }}>
+              <p className="text-[10px] mb-1 font-bold tracking-widest" style={{ color: theme.primary }}>
                 {isMs ? "TEMPAHAN AKAN DATANG" : "UPCOMING BOOKING"}
               </p>
-              {loadingUpcoming ? (
-                <p className="text-sm" style={{ color: theme.textSecondary }}>{t("view_all")}...</p>
-              ) : upcomingBooking ? (
+              {upcomingBooking ? (
                 <>
                   <h2 className="mb-2 font-bold text-lg" style={{ color: theme.text }}>{upcomingBooking.facilities?.name}</h2>
                   <div className="space-y-1">
@@ -226,7 +203,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     <div className="h-full transition-colors duration-300" style={{ backgroundColor: theme.background }}>
       <div className="h-10" />
       <div className="px-6 py-2 space-y-8" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px) + 60px)" }}>
-        {/* Render widgets according to the order saved in preferences */}
+        {/* Render widgets mengikut urutan DB (UC15) */}
         {preferences.dashboard_order.map((key) => renderWidget(key))}
       </div>
     </div>

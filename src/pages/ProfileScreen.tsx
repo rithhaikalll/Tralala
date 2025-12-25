@@ -9,7 +9,8 @@ import {
   Moon,
   Sun,
   Save,
-  LayoutDashboard 
+  LayoutDashboard,
+  MoveVertical
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
@@ -32,6 +33,8 @@ export function ProfileScreen({
   const [showSettings, setShowSettings] = useState(false);
   const [profileName, setProfileName] = useState<string>(studentName);
   const [studentId, setStudentId] = useState<string>("");
+  // Tambah state untuk peranan pengguna
+  const [userRole, setUserRole] = useState<"student" | "staff">("student");
   
   // Local state for toggles
   const [isCustomColorMode, setIsCustomColorMode] = useState(false);
@@ -50,43 +53,74 @@ export function ProfileScreen({
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, matric_id")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (profile?.full_name) setProfileName(profile.full_name);
-      if (profile?.matric_id) setStudentId(profile.matric_id);
+
+      // Ambil role daripada metadata
+      const role = user.user_metadata?.role || "student";
+      setUserRole(role);
+
+      // Tentukan logik pengambilan data profil berdasarkan role
+      if (role === 'staff') {
+        const { data: staffProfile } = await supabase
+          .from("staff_profiles")
+          .select("full_name")
+          .eq("user_id", user.id) // Berdasarkan image_52e828.png
+          .maybeSingle();
+
+        if (staffProfile?.full_name) setProfileName(staffProfile.full_name);
+      } else {
+        const { data: studentProfile } = await supabase
+          .from("profiles")
+          .select("full_name, matric_id")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (studentProfile?.full_name) setProfileName(studentProfile.full_name);
+        if (studentProfile?.matric_id) setStudentId(studentProfile.matric_id);
+      }
     };
     fetchProfile();
   }, [preferences.theme_color]);
 
+  // Bina menuItems secara dinamik berdasarkan peranan pengguna
   const menuItems = [
     {
       icon: Activity,
       label: preferences.language_code === 'ms' ? "Sejarah Aktiviti" : "Activity History",
       subtitle: preferences.language_code === 'ms' ? "Lihat sejarah tempahan anda" : "View your booking history",
       action: "activity-history",
+      show: true // Sentiasa tunjuk history
     },
     {
       icon: LayoutDashboard,
-      label: preferences.language_code === 'ms' ? "Susunan Antaramuka" : "Interface Settings",
+      label: preferences.language_code === 'ms' ? "Susunan Dashboard" : "Dashboard Settings",
       subtitle: preferences.language_code === 'ms' ? "Susun semula widget dashboard" : "Rearrange dashboard widgets",
       action: "settings/interface", 
+      show: userRole === 'student' // Hanya untuk student
+    },
+    {
+      icon: MoveVertical,
+      label: preferences.language_code === 'ms' ? "Susunan Navbar" : "Navbar Settings",
+      subtitle: preferences.language_code === 'ms' ? "Susun semula menu bawah" : "Rearrange bottom navigation",
+      action: "settings/navbar", 
+      show: userRole === 'student' // Hanya untuk student
     },
     {
       icon: Settings,
       label: preferences.language_code === 'ms' ? "Tetapan" : "Settings",
-      subtitle: preferences.language_code === 'ms' ? "Tema & Bahasa" : "Theme & Language",
+      subtitle: userRole === 'staff' 
+        ? (preferences.language_code === 'ms' ? "Pilihan aplikasi" : "App preferences") // Paparan mengikut image_52e00c.png
+        : (preferences.language_code === 'ms' ? "Tema & Bahasa" : "Theme & Language"),
       action: "settings",
+      show: true
     },
     {
       icon: HelpCircle,
       label: preferences.language_code === 'ms' ? "Bantuan" : "Help & Support",
       subtitle: preferences.language_code === 'ms' ? "Dapatkan bantuan" : "Get assistance",
       action: "",
+      show: true
     },
-  ];
+  ].filter(item => item.show); // Tapis item yang tidak perlu ditunjukkan
 
   const handleMenuClick = (action: string) => {
     if (action === "settings") {
@@ -170,7 +204,7 @@ export function ProfileScreen({
                     borderColor: !isCustomColorMode ? 'transparent' : theme.border
                   }}
                  >
-                   Default
+                  Default
                  </button>
                  <button 
                   onClick={() => setIsCustomColorMode(true)}
@@ -181,7 +215,7 @@ export function ProfileScreen({
                     borderColor: isCustomColorMode ? 'transparent' : theme.border
                   }}
                  >
-                   Custom
+                  Custom
                  </button>
               </div>
 
@@ -267,10 +301,13 @@ export function ProfileScreen({
             </div>
           </div>
           <h2 className="text-lg font-semibold mb-1">{profileName}</h2>
-          <p className="text-sm" style={{ color: theme.textSecondary }}>Student ID: {studentId || "—"}</p>
+          {/* Label dinamik (Staff Member vs Student ID) mengikut imej dibekalkan */}
+          <p className="text-sm" style={{ color: theme.textSecondary }}>
+            {userRole === 'staff' ? 'Staff Member' : `Student ID: ${studentId || "—"}`}
+          </p>
         </div>
 
-        {/* Menu */}
+        {/* Menu yang ditapis mengikut role */}
         <div className="border rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
           {menuItems.map((item, index) => (
             <button

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, GripVertical, RotateCcw, Save, LayoutDashboard, Loader2 } from "lucide-react";
+import { ArrowLeft, MoveVertical, RotateCcw, Save, Home, MessageSquare, Book, Compass, User, Loader2 } from "lucide-react";
 import { 
   DndContext, 
   closestCenter, 
@@ -20,7 +20,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useUserPreferences } from "../lib/UserPreferencesContext";
 
-function SortableItem({ id, label, theme }: any) {
+function SortableNavItem({ id, label, icon: Icon, theme }: any) {
   const {
     attributes,
     listeners,
@@ -30,58 +30,59 @@ function SortableItem({ id, label, theme }: any) {
     isDragging
   } = useSortable({ id });
 
-  const combinedStyle = {
+  const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     backgroundColor: theme.cardBg,
     borderColor: isDragging ? theme.primary : theme.border,
-    zIndex: isDragging ? 50 : 0,
-    boxShadow: isDragging ? "0 8px 20px rgba(0,0,0,0.15)" : "none"
+    zIndex: isDragging ? 50 : 0
   };
 
   return (
     <div
       ref={setNodeRef}
-      style={combinedStyle}
-      className="flex items-center gap-4 p-4 border rounded-xl mb-3 shadow-sm transition-colors touch-none"
+      style={style}
+      className="flex items-center gap-4 p-5 border-2 rounded-2xl mb-4 transition-all touch-none"
     >
-      <div {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing p-2 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-        <GripVertical size={20} style={{ color: theme.primary }} />
+      <div {...attributes} {...listeners} 
+           className="flex items-center justify-center w-12 h-12 rounded-xl active:scale-95 cursor-grab"
+           style={{ backgroundColor: theme.primary + '15', color: theme.primary }}>
+        <MoveVertical size={24} />
       </div>
-      <span className="font-medium flex-1" style={{ color: theme.text }}>
-        {label}
-      </span>
+      
+      <Icon size={22} style={{ color: theme.primary }} />
+      <span className="font-bold text-lg flex-1" style={{ color: theme.text }}>{label}</span>
     </div>
   );
 }
 
-export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
-  const { theme, preferences, updateInterface, resetInterface } = useUserPreferences();
+export function NavbarSettingsScreen({ onBack }: { onBack: () => void }) {
+  const { theme, preferences, updateNavOrder, resetInterface, t } = useUserPreferences();
   const isMs = preferences.language_code === 'ms';
-
-  const [items, setItems] = useState<string[]>(preferences.dashboard_order || []);
+  
+  const [items, setItems] = useState<string[]>(preferences.nav_order || []);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sync state apabila preferences berubah (termasuk selepas reset)
   useEffect(() => {
-    if (preferences.dashboard_order) {
-      setItems(preferences.dashboard_order);
+    if (preferences.nav_order) {
+      setItems(preferences.nav_order);
       setHasChanges(false);
     }
-  }, [preferences.dashboard_order]);
+  }, [preferences.nav_order]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const widgetLabels: Record<string, string> = {
-    upcoming: isMs ? "Tempahan Akan Datang" : "Upcoming Bookings",
-    recommended: isMs ? "Syor Fasiliti" : "Facility Recommendations",
-    tracking: isMs ? "Jejak Aktiviti" : "Activity Tracking",
-    news: isMs ? "Berita Sukan" : "Sports News"
+  const navMeta: Record<string, { label: string, icon: any }> = {
+    home: { label: t('nav_home'), icon: Home },
+    discussion: { label: t('nav_discuss'), icon: MessageSquare },
+    book: { label: t('nav_book'), icon: Book },
+    activity: { label: t('nav_activity'), icon: Compass },
+    profile: { label: t('nav_profile'), icon: User }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -91,7 +92,7 @@ export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
         const oldIndex = prev.indexOf(active.id as string);
         const newIndex = prev.indexOf(over.id as string);
         const newOrder = arrayMove(prev, oldIndex, newIndex);
-        setHasChanges(JSON.stringify(newOrder) !== JSON.stringify(preferences.dashboard_order));
+        setHasChanges(JSON.stringify(newOrder) !== JSON.stringify(preferences.nav_order));
         return newOrder;
       });
     }
@@ -100,9 +101,9 @@ export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await updateInterface('dashboard', items); 
+      await updateNavOrder(items);
       setHasChanges(false);
-      alert(isMs ? "Susunan Dashboard berjaya disimpan!" : "Dashboard arrangement saved!");
+      alert(isMs ? "Susunan Navbar berjaya disimpan!" : "Navbar order saved!");
     } catch (error) {
       alert(isMs ? "Ralat semasa menyimpan." : "Error saving.");
     } finally {
@@ -111,9 +112,9 @@ export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
   };
 
   const handleReset = async () => {
-    if(window.confirm(isMs ? "Set semula susunan dashboard?" : "Reset dashboard arrangement?")) {
-      await resetInterface('dashboard');
-      // UI akan sync melalui useEffect
+    if(window.confirm(isMs ? "Set semula susunan navbar?" : "Reset navbar order?")) {
+      await resetInterface('nav');
+      // UI akan dikemas kini secara automatik melalui useEffect preferences.nav_order
     }
   };
 
@@ -123,35 +124,25 @@ export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
            style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
         <div className="flex items-center gap-3">
           <button onClick={onBack} style={{ color: theme.primary }} className="active:scale-90 transition-transform">
-            <ArrowLeft size={24} />
+            <ArrowLeft size={28} />
           </button>
           <h2 className="font-bold text-xl" style={{ color: theme.text }}>
-            {isMs ? "Susunan Dashboard" : "Dashboard Settings"}
+            {isMs ? "Susun Menu Bawah" : "Reorder Navbar"}
           </h2>
         </div>
         <button onClick={handleReset} className="active:rotate-[-90deg] transition-transform">
-          <RotateCcw size={20} style={{ color: theme.primary }} />
+          <RotateCcw size={22} style={{ color: theme.primary }} />
         </button>
       </div>
 
       <div className="p-6 flex-1 overflow-y-auto">
-        <div className="flex items-center gap-3 mb-6 p-4 rounded-2xl" style={{ backgroundColor: theme.primary + '10' }}>
-          <LayoutDashboard style={{ color: theme.primary }} />
-          <div>
-            <h3 className="font-bold text-sm" style={{ color: theme.text }}>
-                {isMs ? "Susun Semula Dashboard" : "Rearrange Dashboard"}
-            </h3>
-            <p className="text-xs" style={{ color: theme.textSecondary }}>
-                {isMs ? "Tarik ikon untuk ubah kedudukan widget." : "Drag icon to change widget positions."}
-            </p>
-          </div>
-        </div>
-
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={items} strategy={verticalListSortingStrategy}>
-            {items.map((id) => (
-              <SortableItem key={id} id={id} label={widgetLabels[id]} theme={theme} />
-            ))}
+            <div className="space-y-1">
+              {items.map((id) => (
+                <SortableNavItem key={id} id={id} label={navMeta[id]?.label || id} icon={navMeta[id]?.icon || Compass} theme={theme} />
+              ))}
+            </div>
           </SortableContext>
         </DndContext>
       </div>
@@ -160,10 +151,10 @@ export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
         <button 
           onClick={handleSave} 
           disabled={!hasChanges || isSaving} 
-          className="w-full h-12 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50" 
+          className="w-full h-14 rounded-2xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50" 
           style={{ backgroundColor: theme.primary }}
         >
-          {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+          {isSaving ? <Loader2 className="animate-spin" size={22} /> : <Save size={22} />}
           {isMs ? "Simpan Susunan" : "Save Arrangement"}
         </button>
       </div>

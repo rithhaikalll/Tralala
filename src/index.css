@@ -1,92 +1,70 @@
 @import "tailwindcss";
 
-body {
-  background: white;
-  color: #1a1a1a;
-}
-
-/* Lock the page and stop rubber-band */
-html,
-body {
+/* 1. Reset asas untuk mengelakkan sebarang ruang putih luar */
+html, body {
   height: 100%;
   margin: 0;
-  overflow: hidden;
-  overscroll-behavior: none;
+  padding: 0;
+  background-color: #121212; /* Warna tema gelap anda */
+  overflow: hidden; /* Matikan skrol pada body utama */
 }
 
-/* Pin the app to the visual viewport (keyboard-safe) */
 #root {
-  position: fixed;
-  inset: 0; /* top/right/bottom/left: 0 */
-  height: 100dvh; /* dynamic viewport height */
-  overflow: clip; /* no scrollbars at root */
+  width: 100%;
+  height: 100dvh; /* Dynamic viewport height untuk mobile */
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary, #121212);
+  max-width: 448px; /* Mengikut saiz aplikasi anda */
+  margin: 0 auto;
+  position: relative;
 }
 
-/* Fallback for older browsers */
-@supports not (height: 100dvh) {
-  #root {
-    height: 100vh;
-  }
-}
-
-/* ---- Safe-area + app shell helpers ---- */
-:root {
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-
-  --nav-h: 56px; /* bottom nav height */
-  --footer-h: 64px; /* comment bar height */
-}
-
-.app-shell {
-  height: 100dvh;
-  overflow: hidden;
-}
-
-/* Main scrollable area for each screen */
+/* 2. Kawasan kandungan utama yang boleh diskrol */
 .content {
-  height: 100%;
-  overflow: auto;
+  flex: 1; /* Ambil semua ruang yang tinggal di antara header & navbar */
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  background-color: var(--bg-primary, #121212);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
-/* Leave space for bottom nav when it's visible */
-.with-bottom-nav {
-  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+/* Hilangkan scrollbar untuk rupa yang lebih bersih */
+.content::-webkit-scrollbar {
+  display: none;
 }
 
-/* Detail screens that only need space for the footer (no bottom nav) */
-.discussion-detail-page {
-  height: 100%;
-  overflow: auto;
-  padding-bottom: calc(var(--footer-h) + env(safe-area-inset-bottom, 0px));
+/* 3. Pastikan setiap halaman di dalam Routes mengisi ruang sepenuhnya */
+.content > div {
+  flex: 1;
+  min-height: 100%;
+  width: 100%;
+  background-color: var(--bg-primary, #121212);
 }
 
-/* Generic fixed footer (comment input bars, etc.) */
-.fixed-footer {
-  position: fixed;
-  left: 0;
-  right: 0;
+/* 4. Header Fixed Styling */
+header.fixed-header-top {
+  position: sticky; /* Sticky lebih baik daripada fixed dalam flexbox container */
+  top: 0;
+  width: 100%;
+  z-index: 50;
+  background-color: var(--bg-primary, #121212);
+  flex-shrink: 0; /* Jangan biarkan header mengecil */
+}
+
+/* 5. Navbar Fixed Styling */
+nav.fixed-bottom-nav {
+  position: sticky;
   bottom: 0;
-  max-width: 28rem; /* matches max-w-md layout */
-  margin-left: auto;
-  margin-right: auto;
-  background: #ffffff;
-  border-top: 1px solid var(--border, #e5e5e5);
-  padding: 16px 24px;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  z-index: 60; /* above any bottom nav */
-  box-sizing: border-box;
-}
-
-/* Hide the default clear button in search inputs */
-input[type="search"]::-webkit-search-cancel-button,
-input[type="search"]::-webkit-search-decoration,
-input[type="search"]::-webkit-search-results-button,
-input[type="search"]::-webkit-search-results-decoration {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.font-varela {
-  font-family: "Varela Round", sans-serif;
+  width: 100%;
+  z-index: 50;
+  background-color: var(--bg-primary, #121212);
+  flex-shrink: 0;
+  /* Tambah padding bawah untuk peranti tanpa butang (home bar) */
+  padding-bottom: env(safe-area-inset-bottom, 0px); 
 }

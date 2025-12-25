@@ -1,12 +1,17 @@
 import { useState } from "react";
 import { Button } from "../../components/ui/button";
 import { supabase } from "../../lib/supabaseClient";
+// Import context untuk tema
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface RegisterScreenProps {
   onNavigate: (screen: string) => void;
 }
 
 export function RegisterScreen({ onNavigate }: RegisterScreenProps) {
+  // Ambil data tema daripada context
+  const { theme } = useUserPreferences();
+
   const [formData, setFormData] = useState({
     fullName: "",
     studentId: "",
@@ -79,25 +84,28 @@ export function RegisterScreen({ onNavigate }: RegisterScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-6">
-      <div className="w-full max-w-md">
+    <div 
+      className="min-h-screen flex items-center justify-center px-6 transition-colors duration-300"
+      style={{ backgroundColor: theme.background }}
+    >
+      <div className="w-full max-w-md py-10">
         <div className="mb-8 text-center">
           <h1
             className="mb-2"
-            style={{ color: "#7A0019", fontWeight: "600", fontSize: "24px" }}
+            style={{ color: theme.primary, fontWeight: "600", fontSize: "24px" }}
           >
             Create Your Account
           </h1>
-          <p className="text-sm" style={{ color: "#6A6A6A" }}>
+          <p className="text-sm" style={{ color: theme.textSecondary }}>
             Register to access UTM facility bookings.
           </p>
         </div>
 
         {/* FORM */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* FULL NAME */}
           <div>
-            <label className="block mb-2 text-sm" style={{ color: "#6A6A6A" }}>
+            <label className="block mb-2 text-sm font-medium" style={{ color: theme.text }}>
               Full Name
             </label>
             <input
@@ -106,15 +114,20 @@ export function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               onChange={(e) =>
                 setFormData({ ...formData, fullName: e.target.value })
               }
-              className="w-full h-12 px-4 border bg-white"
-              style={{ borderColor: "#E5E5E5", borderRadius: "8px" }}
+              className="w-full h-12 px-4 border transition-colors"
+              style={{ 
+                borderColor: theme.border, 
+                borderRadius: "12px", 
+                backgroundColor: theme.cardBg,
+                color: theme.text
+              }}
               placeholder="Enter your full name"
             />
           </div>
 
           {/* STUDENT ID */}
           <div>
-            <label className="block mb-2 text-sm" style={{ color: "#6A6A6A" }}>
+            <label className="block mb-2 text-sm font-medium" style={{ color: theme.text }}>
               Student ID
             </label>
             <input
@@ -123,15 +136,20 @@ export function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               onChange={(e) =>
                 setFormData({ ...formData, studentId: e.target.value })
               }
-              className="w-full h-12 px-4 border bg-white"
-              style={{ borderColor: "#E5E5E5", borderRadius: "8px" }}
+              className="w-full h-12 px-4 border transition-colors"
+              style={{ 
+                borderColor: theme.border, 
+                borderRadius: "12px", 
+                backgroundColor: theme.cardBg,
+                color: theme.text
+              }}
               placeholder="Enter your student ID"
             />
           </div>
 
           {/* EMAIL */}
           <div>
-            <label className="block mb-2 text-sm" style={{ color: "#6A6A6A" }}>
+            <label className="block mb-2 text-sm font-medium" style={{ color: theme.text }}>
               Email Address
             </label>
             <input
@@ -140,15 +158,20 @@ export function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="w-full h-12 px-4 border bg-white"
-              style={{ borderColor: "#E5E5E5", borderRadius: "8px" }}
+              className="w-full h-12 px-4 border transition-colors"
+              style={{ 
+                borderColor: theme.border, 
+                borderRadius: "12px", 
+                backgroundColor: theme.cardBg,
+                color: theme.text
+              }}
               placeholder="you@graduate.utm.my"
             />
           </div>
 
           {/* PASSWORD */}
           <div>
-            <label className="block mb-2 text-sm" style={{ color: "#6A6A6A" }}>
+            <label className="block mb-2 text-sm font-medium" style={{ color: theme.text }}>
               Password
             </label>
             <input
@@ -157,15 +180,20 @@ export function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
-              className="w-full h-12 px-4 border bg-white"
-              style={{ borderColor: "#E5E5E5", borderRadius: "8px" }}
+              className="w-full h-12 px-4 border transition-colors"
+              style={{ 
+                borderColor: theme.border, 
+                borderRadius: "12px", 
+                backgroundColor: theme.cardBg,
+                color: theme.text
+              }}
               placeholder="Create a password"
             />
           </div>
 
           {/* CONFIRM PASSWORD */}
           <div>
-            <label className="block mb-2 text-sm" style={{ color: "#6A6A6A" }}>
+            <label className="block mb-2 text-sm font-medium" style={{ color: theme.text }}>
               Confirm Password
             </label>
             <input
@@ -174,35 +202,41 @@ export function RegisterScreen({ onNavigate }: RegisterScreenProps) {
               onChange={(e) =>
                 setFormData({ ...formData, confirmPassword: e.target.value })
               }
-              className="w-full h-12 px-4 border bg-white"
-              style={{ borderColor: "#E5E5E5", borderRadius: "8px" }}
+              className="w-full h-12 px-4 border transition-colors"
+              style={{ 
+                borderColor: theme.border, 
+                borderRadius: "12px", 
+                backgroundColor: theme.cardBg,
+                color: theme.text
+              }}
               placeholder="Re-enter password"
             />
           </div>
 
-          {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
-          {successMsg && <p className="text-sm text-green-600">{successMsg}</p>}
+          {errorMsg && <p className="text-sm text-red-500 font-medium">{errorMsg}</p>}
+          {successMsg && <p className="text-sm text-green-600 font-medium">{successMsg}</p>}
 
           <Button
             onClick={handleRegister}
             disabled={loading}
-            className="w-full h-12 mt-8"
+            className="w-full h-12 mt-4 transition-all active:scale-95 shadow-sm"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary,
               color: "white",
-              borderRadius: "8px",
+              borderRadius: "12px",
+              fontWeight: "600"
             }}
           >
             {loading ? "Creating account..." : "Register"}
           </Button>
 
           <div className="text-center pt-4">
-            <p className="text-sm" style={{ color: "#6A6A6A" }}>
+            <p className="text-sm" style={{ color: theme.textSecondary }}>
               Already have an account?
               <button
                 onClick={() => onNavigate("login")}
-                className="underline ml-1"
-                style={{ color: "#7A0019" }}
+                className="underline ml-1 font-semibold"
+                style={{ color: theme.primary }}
               >
                 Log In
               </button>

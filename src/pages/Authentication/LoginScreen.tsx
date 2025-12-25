@@ -3,6 +3,8 @@ import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+// Import context untuk tema
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface LoginScreenProps {
   onLogin: (name: string, id: string) => void;
@@ -10,6 +12,9 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
+  // Ambil data tema daripada context
+  const { theme } = useUserPreferences();
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -57,13 +62,13 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
   };
 
   return (
-    <div className="flex flex-col bg-white h-full">
+    <div className="flex flex-col h-full transition-colors duration-300" style={{ backgroundColor: theme.background }}>
       {/* Header */}
       <div className="px-6 py-12 text-center">
         <h1
           className="text-3xl mb-3 font-varela"
           style={{
-            color: "#7A0019",
+            color: theme.primary, // Menggunakan warna primary tema
             fontWeight: 600,
             letterSpacing: "-0.02em",
           }}
@@ -71,7 +76,7 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
           UTMGo+
         </h1>
 
-        <p className="text-sm" style={{ color: "#555555", lineHeight: "1.6" }}>
+        <p className="text-sm" style={{ color: theme.textSecondary, lineHeight: "1.6" }}>
           Sign in to book your sports facilities
         </p>
       </div>
@@ -84,7 +89,7 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
             <label
               htmlFor="email"
               className="block mb-2 text-sm"
-              style={{ color: "#1A1A1A", fontWeight: 500 }}
+              style={{ color: theme.text, fontWeight: 500 }}
             >
               Email
             </label>
@@ -99,7 +104,9 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
               spellCheck={false}
               className="h-12 px-4 border text-[16px]"
               style={{
-                borderColor: "#E5E5E5",
+                borderColor: theme.border,
+                backgroundColor: theme.cardBg,
+                color: theme.text,
                 borderRadius: "14px",
                 fontSize: "16px",
               }}
@@ -111,7 +118,7 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
             <label
               htmlFor="password"
               className="block mb-2 text-sm"
-              style={{ color: "#1A1A1A", fontWeight: 500 }}
+              style={{ color: theme.text, fontWeight: 500 }}
             >
               Password
             </label>
@@ -125,7 +132,9 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
                 autoComplete="current-password"
                 className="h-12 px-4 pr-12 border text-[16px]"
                 style={{
-                  borderColor: "#E5E5E5",
+                  borderColor: theme.border,
+                  backgroundColor: theme.cardBg,
+                  color: theme.text,
                   borderRadius: "14px",
                   fontSize: "16px",
                 }}
@@ -134,7 +143,7 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2"
-                style={{ color: "#888888" }}
+                style={{ color: theme.textSecondary }}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
@@ -153,14 +162,14 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
           <Button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full h-12 mt-6 flex items-center justify-center disabled:opacity-60"
+            className="w-full h-12 mt-6 flex items-center justify-center disabled:opacity-60 transition-all active:scale-95"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary,
               color: "#FFFFFF",
-              borderRadius: "8px",
-              fontWeight: 500,
+              borderRadius: "12px",
+              fontWeight: 600,
               fontSize: "16px",
-              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
             }}
           >
             {loading ? "Signing in..." : "Sign In"}
@@ -170,8 +179,8 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
           <div className="text-center pt-2">
             <button
               onClick={() => onNavigate("reset-password-request")}
-              className="text-sm"
-              style={{ color: "#7A0019", fontWeight: 500 }}
+              className="text-sm transition-opacity active:opacity-60"
+              style={{ color: theme.primary, fontWeight: 500 }}
             >
               Forgot Password?
             </button>
@@ -179,12 +188,12 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
 
           {/* Register Link */}
           <div className="text-center pt-2">
-            <p className="text-sm" style={{ color: "#6A6A6A" }}>
+            <p className="text-sm" style={{ color: theme.textSecondary }}>
               Don't have an account?{" "}
               <button
                 onClick={() => onNavigate("register")}
-                className="underline"
-                style={{ color: "#7A0019", fontWeight: 500 }}
+                className="underline transition-opacity active:opacity-60"
+                style={{ color: theme.primary, fontWeight: 600 }}
               >
                 Register
               </button>
@@ -194,11 +203,11 @@ export function LoginScreen({ onLogin, onNavigate }: LoginScreenProps) {
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-8 text-center">
-        <p className="text-xs" style={{ color: "#888888", lineHeight: "1.6" }}>
+      <div className="px-6 py-8 text-center mt-auto">
+        <p className="text-xs" style={{ color: theme.textSecondary, lineHeight: "1.6" }}>
           UTMGo+ Sport Facility Booking System
         </p>
-        <p className="text-xs mt-1" style={{ color: "#888888" }}>
+        <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
           Version 1.0.0
         </p>
       </div>
