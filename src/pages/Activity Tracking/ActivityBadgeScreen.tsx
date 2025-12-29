@@ -294,7 +294,7 @@ export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps
 
       {/* Modal Detail */}
       {selectedBadge && (
-        <div className="fixed inset-0 bg-black/60 flex p-6 items-center justify-center z-[60] backdrop-blur-sm" onClick={() => setSelectedBadge(null)}>
+        <div className="fixed inset-0 bg-black/60 flex p-6 items-center justify-center z-60 backdrop-blur-sm" onClick={() => setSelectedBadge(null)}>
           <div 
             className="rounded-2xl p-6 max-w-sm w-full border animate-in zoom-in-95" 
             style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}

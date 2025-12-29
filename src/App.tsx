@@ -21,6 +21,9 @@ import { ResetPasswordNewScreen } from "./pages/Authentication/ResetPasswordNewS
 import { ResetLinkSentScreen } from "./pages/Authentication/ResetLinkSentScreen";
 import { HomeScreen, HomeScreenHeader } from "./pages/StudentDashboard";
 import { StaffCheckInDashboardScreen } from "./pages/StaffDashboard";
+// Import the Admin Dashboard
+import { AdminDashboard } from "./pages/AdminDashboard"; 
+
 import { BottomNav } from "./pages/BottomNav";
 import { ProfileScreen } from "./pages/ProfileScreen";
 import { EditProfileScreen } from "./pages/EditProfileScreen"; 
@@ -119,10 +122,10 @@ function RequireAuth({ authed, children }: { authed: boolean; children: ReactNod
 export default function App() {
   const [authed, setAuthed] = useState(false);
   const [studentName, setStudentName] = useState<string>("Student");
-  // NEW: Add global state for profile picture
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   
-  const [userRole, setUserRole] = useState<"student" | "staff">("student");
+  // UPDATED: Added "admin" to role type
+  const [userRole, setUserRole] = useState<"student" | "staff" | "admin">("student");
   const [userId, setUserId] = useState<string>("");
   const [studentId, setStudentId] = useState<string>(
     localStorage.getItem("utm-student-id") || ""
@@ -147,6 +150,10 @@ export default function App() {
     if (role === 'staff') {
         const { data } = await supabase.from("staff_profiles").select("full_name").eq("user_id", uid).maybeSingle();
         if (data) coreName = data.full_name;
+    } else if (role === 'admin') {
+        // Fallback for Admin
+        coreName = "Admin"; 
+        if (details?.full_name) coreName = details.full_name;
     } else {
         const { data } = await supabase.from("profiles").select("full_name, matric_id").eq("id", uid).maybeSingle();
         if (data) {
@@ -165,6 +172,8 @@ export default function App() {
       localStorage.setItem("utm-student-id", matric);
     } else if (role === 'staff') {
       setStudentId("Staff");
+    } else if (role === 'admin') {
+      setStudentId("Admin");
     }
   };
 
@@ -172,7 +181,7 @@ export default function App() {
     const syncSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const role = (session.user.user_metadata?.role as "student" | "staff") || "student";
+        const role = (session.user.user_metadata?.role as "student" | "staff" | "admin") || "student";
         setUserId(session.user.id);
         setUserRole(role);
         setAuthed(true);
@@ -183,7 +192,7 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const role = (session.user.user_metadata?.role as "student" | "staff") || "student";
+        const role = (session.user.user_metadata?.role as "student" | "staff" | "admin") || "student";
         setUserRole(role);
         setAuthed(true);
         fetchUserData(session.user.id, role);
@@ -196,9 +205,13 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const hideBottomNav = location.pathname === "/" || location.pathname.startsWith("/register") || location.pathname.startsWith("/facility") || location.pathname.startsWith("/booking") || location.pathname.startsWith("/discussion/create") || location.pathname.match(/^\/discussion\/[^/]+$/) || location.pathname.startsWith("/activity-history") || location.pathname.match(/^\/activity\/[^/]+$/) || location.pathname.startsWith("/activity/edit") || location.pathname.startsWith("/badges") || location.pathname.startsWith("/settings/") || location.pathname === "/edit-profile" || location.pathname.startsWith("/my-bookings");
+  // UPDATED: Hide bottom nav if role is ADMIN (Admin has its own internal nav)
+  const hideBottomNav = userRole === "admin" || location.pathname === "/" || location.pathname.startsWith("/register") || location.pathname.startsWith("/facility") || location.pathname.startsWith("/booking") || location.pathname.startsWith("/discussion/create") || location.pathname.match(/^\/discussion\/[^/]+$/) || location.pathname.startsWith("/activity-history") || location.pathname.match(/^\/activity\/[^/]+$/) || location.pathname.startsWith("/activity/edit") || location.pathname.startsWith("/badges") || location.pathname.startsWith("/settings/") || location.pathname === "/edit-profile" || location.pathname.startsWith("/my-bookings") || location.pathname === "/admin-dashboard";
+  
   const showBottomNav = authed && !hideBottomNav;
-  const hasHeader = authed && (location.pathname.startsWith("/facility") || location.pathname.startsWith("/book") || (location.pathname === "/home" && userRole === "student") || (location.pathname.startsWith("/discussion") && !location.pathname.includes("/discussion/")) || location.pathname === "/my-bookings" || (location.pathname.match(/^\/activity\/[^/]+$/) && !location.pathname.startsWith("/activity/record")));
+
+  // UPDATED: Header Logic
+  const hasHeader = authed && userRole !== "admin" && (location.pathname.startsWith("/facility") || location.pathname.startsWith("/book") || (location.pathname === "/home" && userRole === "student") || (location.pathname.startsWith("/discussion") && !location.pathname.includes("/discussion/")) || location.pathname === "/my-bookings" || (location.pathname.match(/^\/activity\/[^/]+$/) && !location.pathname.startsWith("/activity/record")));
   
   const activeTab = useMemo(() => {
     const p = location.pathname;
@@ -211,13 +224,19 @@ export default function App() {
 
   const handleLogin = async (name: string, id?: string) => {
     const { data: { user } } = await supabase.auth.getUser();
-    const role = (user?.user_metadata?.role as "student" | "staff") || "student";
+    const role = (user?.user_metadata?.role as "student" | "staff" | "admin") || "student";
     fetchUserData(user?.id || "", role);
     setStudentName(name); 
     setUserRole(role);
     setUserId(user?.id || id || "");
     setAuthed(true);
-    navigate("/home", { replace: true });
+
+    // UPDATED: Redirect Admin to specific dashboard
+    if (role === 'admin') {
+      navigate("/admin-dashboard", { replace: true });
+    } else {
+      navigate("/home", { replace: true });
+    }
   };
 
   const handleLogout = async () => {
@@ -232,9 +251,7 @@ export default function App() {
     navigate(map[tab] || "/home");
   };
 
-  // Callback function passed to EditProfileScreen to update global state on save
   const handleProfileUpdate = (newName: string) => {
-    // Re-fetch data to get new name AND new picture url
     fetchUserData(userId, userRole);
   };
 
@@ -244,10 +261,8 @@ export default function App() {
       <div className="h-full w-full bg-[--bg-primary)] text-[--text-primary)] transition-colors duration-300 flex flex-col overflow-hidden">
         {hasHeader && (
           <header className="fixed-header-top">
-             {/* Pass profilePicture to Header if you want it there too */}
             {location.pathname === "/home" && userRole === "student" && <HomeScreenHeader studentName={studentName} />}
-            {/* ... other headers ... */}
-             {location.pathname.startsWith("/facility") && <FacilityDetailsHeader onBack={() => navigate("/book")} />}
+            {location.pathname.startsWith("/facility") && <FacilityDetailsHeader onBack={() => navigate("/book")} />}
             {location.pathname.startsWith("/book") && <BookListHeader />}
             {location.pathname.startsWith("/discussion") && !location.pathname.includes("/discussion/") && <DiscussionScreenHeader onNavigate={() => navigate("/discussion/create")} />}
             {location.pathname === "/my-bookings" && <MyBookingsScreenHeader onBack={() => navigate("/home")} />}
@@ -259,29 +274,50 @@ export default function App() {
           <div className="flex-1 flex flex-col w-full bg-[--bg-primary)]">
             <Routes>
               {/* ... (Auth Routes) ... */}
-               <Route path="/" element={<LoginScreen onLogin={handleLogin} onNavigate={(p) => navigate(p === "register" ? "/register" : "/reset-password-request")} />} />
+              <Route path="/" element={<LoginScreen onLogin={handleLogin} onNavigate={(p) => navigate(p === "register" ? "/register" : "/reset-password-request")} />} />
               <Route path="/register" element={<RegisterScreen onNavigate={(p) => navigate(p === "login" ? "/" : "/register")} />} />
               <Route path="/reset-password-request" element={<ResetPasswordRequestScreen onNavigate={(p) => navigate(p)} />} />
               <Route path="/reset-link-sent" element={<ResetLinkSentScreen onNavigate={(p) => navigate(p)} />} />
               <Route path="/reset-password-new" element={<ResetPasswordNewScreen onNavigate={(p) => navigate(p)} />} />
 
-              <Route path="/home" element={<RequireAuth authed={authed}>{userRole === "staff" ? <StaffCheckInDashboardScreen staffName={studentName} onNavigate={(p) => navigate(p)} onLogout={handleLogout} /> : <HomeScreen studentName={studentName} onNavigate={(s, d) => { if(s==="book") navigate("/book"); if(s==="discussion") navigate("/discussion"); if(s==="facility-details" && d) navigate(`/facility/${d}`); if(s==="activity-record") navigate("/activity/record"); if(s==="activity-main") navigate("/activity-main"); if(s==="my-bookings") navigate("/my-bookings"); }} />}</RequireAuth>} />
+              {/* UPDATED: Admin Route */}
+              <Route 
+                path="/admin-dashboard" 
+                element={
+                  <RequireAuth authed={authed}>
+                    <AdminDashboard 
+                      onNavigate={(screen) => navigate(screen)} 
+                      onLogout={handleLogout} 
+                    />
+                  </RequireAuth>
+                } 
+              />
+
+              <Route path="/home" element={
+                <RequireAuth authed={authed}>
+                  {userRole === "staff" 
+                    ? <StaffCheckInDashboardScreen staffName={studentName} onNavigate={(p) => navigate(p)} onLogout={handleLogout} /> 
+                    : userRole === "admin"
+                      ? <Navigate to="/admin-dashboard" replace />
+                      : <HomeScreen studentName={studentName} onNavigate={(s, d) => { if(s==="book") navigate("/book"); if(s==="discussion") navigate("/discussion"); if(s==="facility-details" && d) navigate(`/facility/${d}`); if(s==="activity-record") navigate("/activity/record"); if(s==="activity-main") navigate("/activity-main"); if(s==="my-bookings") navigate("/my-bookings"); }} />
+                  }
+                </RequireAuth>
+              } />
+
               <Route path="/discussion" element={<RequireAuth authed={authed}><DiscussionScreen onNavigate={(s, d) => navigate(d ? `/discussion/${d}` : "/discussion/create")} /></RequireAuth>} />
-              {/* ... (Other Routes) ... */}
-               <Route path="/discussion/create" element={<RequireAuth authed={authed}><CreateDiscussionScreen studentName={studentName} onNavigate={() => navigate("/discussion")} /></RequireAuth>} />
+              <Route path="/discussion/create" element={<RequireAuth authed={authed}><CreateDiscussionScreen studentName={studentName} onNavigate={() => navigate("/discussion")} /></RequireAuth>} />
               <Route path="/discussion/:id" element={<RequireAuth authed={authed}><DiscussionDetailWrapper studentName={studentName} onNavigate={() => navigate("/discussion")} /></RequireAuth>} />
               <Route path="/book" element={<RequireAuth authed={authed}><FacilityListScreen onNavigate={(s, d) => navigate(`/facility/${d}`)} /></RequireAuth>} />
               
-              {/* UPDATED: Pass profilePicture and studentId to ProfileScreen */}
               <Route 
                 path="/profile" 
                 element={
                   <RequireAuth authed={authed}>
                     <ProfileScreen 
                       studentName={studentName}
-                      profilePictureUrl={profilePicture} // Pass the picture
-                      studentId={studentId} // Pass the ID
-                      userRole={userRole} // Pass the Role
+                      profilePictureUrl={profilePicture}
+                      studentId={studentId}
+                      userRole={userRole as "student" | "staff"} 
                       onNavigate={(s) => navigate(s.startsWith("settings/") ? `/${s}` : `/${s}`)} 
                       onLogout={handleLogout} 
                     />
@@ -295,19 +331,18 @@ export default function App() {
                   <RequireAuth authed={authed}>
                     <EditProfileScreen 
                       userId={userId} 
-                      userRole={userRole} 
+                      userRole={userRole as "student" | "staff"} 
                       studentId={studentId} 
                       onNavigate={(s) => navigate(`/${s}`)} 
-                      // Pass the refresher function
                       onSaveProfile={handleProfileUpdate} 
                     />
                   </RequireAuth>
                 } 
               />
-               {/* ... (Rest of routes remain the same) ... */}
-                 <Route path="/activity-main" element={<RequireAuth authed={authed}><ActivityMainScreen userId={userId} userRole={userRole} onNavigate={(s, d) => { if (s === "activity-record") navigate("/activity/record"); else if (s === "activity-report") navigate("/activity-report"); else if (s === "badges") navigate("/badges"); else if (s === "detailactivity" && d) navigate(`/detailactivity/${d}`); else if (s === "edit-activity" && d) navigate(`/activity/edit/${d}`); else navigate("/activity-main"); }} /></RequireAuth>} />
-              <Route path="/activity/record" element={<RequireAuth authed={authed}><RecordActivityScreen studentName={studentName} userRole={userRole} onNavigate={() => navigate("/activity-main")} /></RequireAuth>} />
-              <Route path="/activity/edit/:id" element={<RequireAuth authed={authed}><EditActivityWrapper userId={userId} userRole={userRole} /></RequireAuth>} />
+              
+              <Route path="/activity-main" element={<RequireAuth authed={authed}><ActivityMainScreen userId={userId} userRole={userRole as "student" | "staff"} onNavigate={(s, d) => { if (s === "activity-record") navigate("/activity/record"); else if (s === "activity-report") navigate("/activity-report"); else if (s === "badges") navigate("/badges"); else if (s === "detailactivity" && d) navigate(`/detailactivity/${d}`); else if (s === "edit-activity" && d) navigate(`/activity/edit/${d}`); else navigate("/activity-main"); }} /></RequireAuth>} />
+              <Route path="/activity/record" element={<RequireAuth authed={authed}><RecordActivityScreen studentName={studentName} userRole={userRole as "student" | "staff"} onNavigate={() => navigate("/activity-main")} /></RequireAuth>} />
+              <Route path="/activity/edit/:id" element={<RequireAuth authed={authed}><EditActivityWrapper userId={userId} userRole={userRole as "student" | "staff"} /></RequireAuth>} />
               <Route path="/activity-history" element={<RequireAuth authed={authed}><ActivityHistoryScreen onNavigate={(s, d) => navigate(d ? `/activity/${d}` : "/profile")} /></RequireAuth>} />
               <Route path="/activity/:id" element={<RequireAuth authed={authed}><ActivityDetailWrapper /></RequireAuth>} />
               <Route path="/detailactivity/:id" element={<RequireAuth authed={authed}><DetailActivityWrapper /></RequireAuth>} />
