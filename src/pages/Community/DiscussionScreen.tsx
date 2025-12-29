@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Plus, MessageCircle, Heart } from "lucide-react";
+import { Plus, MessageCircle, Heart, User } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
-// 1. Import the global preferences hook
 import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface Discussion {
@@ -10,6 +9,7 @@ interface Discussion {
   content: string;
   created_at: string;
   author_name?: string | null;
+  author_avatar_url?: string | null;
   commentsCount: number;
   likesCount: number;
 }
@@ -23,7 +23,6 @@ export function DiscussionScreenHeader({
 }: {
   onNavigate: (screen: string) => void;
 }) {
-  // 2. Consume global theme and translation tools
   const { theme, t, preferences } = useUserPreferences();
   const isMs = preferences.language_code === 'ms';
 
@@ -78,6 +77,7 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
       setLoading(true);
       setErrorMsg(null);
 
+      // UPDATED: Fetch 'full_name' along with 'profile_picture_url'
       const { data, error } = await supabase
         .from("discussions")
         .select(`
@@ -87,7 +87,11 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
           created_at,
           author_name,
           discussion_comments(count),
-          discussion_likes(count)
+          discussion_likes(count),
+          profile_details:profile_details!author_id (
+            profile_picture_url,
+            full_name
+          )
         `)
         .order("created_at", { ascending: false });
 
@@ -96,15 +100,23 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
         setErrorMsg(error.message);
         setDiscussions([]);
       } else {
-        const mapped: Discussion[] = (data || []).map((row: any) => ({
-          id: row.id,
-          title: row.title,
-          content: row.content,
-          created_at: row.created_at,
-          author_name: row.author_name,
-          commentsCount: row.discussion_comments?.[0]?.count ?? 0,
-          likesCount: row.discussion_likes?.[0]?.count ?? 0,
-        }));
+        const mapped: Discussion[] = (data || []).map((row: any) => {
+          const profile = Array.isArray(row.profile_details) 
+            ? row.profile_details[0] 
+            : row.profile_details;
+
+          return {
+            id: row.id,
+            title: row.title,
+            content: row.content,
+            created_at: row.created_at,
+            // UPDATED: Use the live profile name if available, otherwise use the old snapshot
+            author_name: profile?.full_name || row.author_name || "Anonymous",
+            author_avatar_url: profile?.profile_picture_url || null,
+            commentsCount: row.discussion_comments?.[0]?.count ?? 0,
+            likesCount: row.discussion_likes?.[0]?.count ?? 0,
+          };
+        });
         setDiscussions(mapped);
       }
       setLoading(false);
@@ -124,9 +136,9 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
         }}
       >
         {loading && (
-          <p className="text-sm" style={{ color: theme.textSecondary }}>
-            {t("view_all")}...
-          </p>
+          <div className="flex justify-center p-4">
+             <Loader2 className="animate-spin" style={{ color: theme.primary }} />
+          </div>
         )}
 
         {errorMsg && (
@@ -154,9 +166,9 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
             }}
           >
             <div className="flex items-start gap-3">
-              {/* Avatar */}
+              {/* Avatar Section */}
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
                 style={{
                   backgroundColor: theme.background,
                   color: theme.primary,
@@ -164,7 +176,15 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
                   border: `1px solid ${theme.border}`
                 }}
               >
-                {(post.author_name || "U").charAt(0)}
+                {post.author_avatar_url ? (
+                  <img 
+                    src={post.author_avatar_url} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{(post.author_name || "U").charAt(0)}</span>
+                )}
               </div>
 
               {/* Content */}
@@ -177,7 +197,8 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
                       fontSize: "15px",
                     }}
                   >
-                    {post.author_name || "Anonymous"}
+                    {/* This will now display "Rifqi Razali" instead of "Rifqi" */}
+                    {post.author_name}
                   </span>
                   <span className="text-[10px]" style={{ color: theme.textSecondary }}>
                     {new Date(post.created_at).toLocaleString(preferences.language_code === 'ms' ? 'ms-MY' : 'en-US')}
@@ -218,5 +239,26 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
         ))}
       </div>
     </div>
+  );
+}
+
+// Helper Loader
+function Loader2({ className, style }: { className?: string; style?: any }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      style={style}
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
   );
 }

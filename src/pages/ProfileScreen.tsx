@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   User,
+  Edit,
   Settings,
   HelpCircle,
   ChevronRight,
@@ -10,7 +11,10 @@ import {
   Sun,
   Save,
   LayoutDashboard,
-  MoveVertical
+  MoveVertical,
+  Trash2,
+  AlertTriangle,
+  Loader2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
@@ -18,109 +22,88 @@ import { useUserPreferences } from "../lib/UserPreferencesContext";
 
 interface ProfileScreenProps {
   studentName: string;
+  profilePictureUrl: string | null;
+  studentId: string;
+  userRole: "student" | "staff";
   onNavigate: (screen: string) => void;
   onLogout: () => void;
 }
 
 export function ProfileScreen({
   studentName,
+  profilePictureUrl,
+  studentId,
+  userRole,
   onNavigate,
   onLogout,
 }: ProfileScreenProps) {
   const { preferences, updateTheme, updateLanguage, theme } = useUserPreferences();
-  
+  const isMs = preferences.language_code === 'ms';
+
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [profileName, setProfileName] = useState<string>(studentName);
-  const [studentId, setStudentId] = useState<string>("");
-  // Tambah state untuk peranan pengguna
-  const [userRole, setUserRole] = useState<"student" | "staff">("student");
   
-  // Local state for toggles
+  // --- UC26: Delete Account States ---
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const [isCustomColorMode, setIsCustomColorMode] = useState(false);
-  
-  // Local state for the color picker
   const [selectedColor, setSelectedColor] = useState(preferences.theme_color);
 
   useEffect(() => {
     setSelectedColor(preferences.theme_color);
-    
     const isDefault = 
       preferences.theme_color === '#7A0019' || 
       preferences.theme_color === '#9e1c3a';
     setIsCustomColorMode(!isDefault);
-
-    const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Ambil role daripada metadata
-      const role = user.user_metadata?.role || "student";
-      setUserRole(role);
-
-      // Tentukan logik pengambilan data profil berdasarkan role
-      if (role === 'staff') {
-        const { data: staffProfile } = await supabase
-          .from("staff_profiles")
-          .select("full_name")
-          .eq("user_id", user.id) // Berdasarkan image_52e828.png
-          .maybeSingle();
-
-        if (staffProfile?.full_name) setProfileName(staffProfile.full_name);
-      } else {
-        const { data: studentProfile } = await supabase
-          .from("profiles")
-          .select("full_name, matric_id")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (studentProfile?.full_name) setProfileName(studentProfile.full_name);
-        if (studentProfile?.matric_id) setStudentId(studentProfile.matric_id);
-      }
-    };
-    fetchProfile();
   }, [preferences.theme_color]);
 
-  // Bina menuItems secara dinamik berdasarkan peranan pengguna
   const menuItems = [
     {
+      icon: Edit,
+      label: isMs ? "Edit Profil" : "Edit Profile",
+      subtitle: isMs ? "Kemas kini maklumat peribadi" : "Update your personal information",
+      action: "edit-profile",
+      show: true 
+    },
+    {
       icon: Activity,
-      label: preferences.language_code === 'ms' ? "Sejarah Aktiviti" : "Activity History",
-      subtitle: preferences.language_code === 'ms' ? "Lihat sejarah tempahan anda" : "View your booking history",
+      label: isMs ? "Sejarah Aktiviti" : "Activity History",
+      subtitle: isMs ? "Lihat sejarah tempahan anda" : "View your booking history",
       action: "activity-history",
-      show: true // Sentiasa tunjuk history
+      show: true 
     },
     {
       icon: LayoutDashboard,
-      label: preferences.language_code === 'ms' ? "Susunan Dashboard" : "Dashboard Settings",
-      subtitle: preferences.language_code === 'ms' ? "Susun semula widget dashboard" : "Rearrange dashboard widgets",
+      label: isMs ? "Susunan Dashboard" : "Dashboard Settings",
+      subtitle: isMs ? "Susun semula widget dashboard" : "Rearrange dashboard widgets",
       action: "settings/interface", 
-      show: userRole === 'student' // Hanya untuk student
+      show: userRole === 'student' 
     },
     {
       icon: MoveVertical,
-      label: preferences.language_code === 'ms' ? "Susunan Navbar" : "Navbar Settings",
-      subtitle: preferences.language_code === 'ms' ? "Susun semula menu bawah" : "Rearrange bottom navigation",
+      label: isMs ? "Susunan Navbar" : "Navbar Settings",
+      subtitle: isMs ? "Susun semula menu bawah" : "Rearrange bottom navigation",
       action: "settings/navbar", 
-      show: userRole === 'student' // Hanya untuk student
+      show: userRole === 'student' 
     },
     {
       icon: Settings,
-      label: preferences.language_code === 'ms' ? "Tetapan" : "Settings",
+      label: isMs ? "Tetapan" : "Settings",
       subtitle: userRole === 'staff' 
-        ? (preferences.language_code === 'ms' ? "Pilihan aplikasi" : "App preferences") // Paparan mengikut image_52e00c.png
-        : (preferences.language_code === 'ms' ? "Tema & Bahasa" : "Theme & Language"),
+        ? (isMs ? "Pilihan aplikasi" : "App preferences") 
+        : (isMs ? "Tema & Bahasa" : "Theme & Language"),
       action: "settings",
       show: true
     },
     {
       icon: HelpCircle,
-      label: preferences.language_code === 'ms' ? "Bantuan" : "Help & Support",
-      subtitle: preferences.language_code === 'ms' ? "Dapatkan bantuan" : "Get assistance",
+      label: isMs ? "Bantuan" : "Help & Support",
+      subtitle: isMs ? "Dapatkan bantuan" : "Get assistance",
       action: "",
       show: true
     },
-  ].filter(item => item.show); // Tapis item yang tidak perlu ditunjukkan
+  ].filter(item => item.show); 
 
   const handleMenuClick = (action: string) => {
     if (action === "settings") {
@@ -141,6 +124,40 @@ export function ProfileScreen({
     updateTheme(preferences.theme_mode, selectedColor);
   };
 
+  // --- UC26: COMPREHENSIVE DELETE LOGIC ---
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // NOTE: We rely on the SQL function 'delete_user_account' to handle deletions.
+      // It runs with admin privileges (security definer) to bypass RLS issues
+      // with tables like 'profile_details'.
+
+      const { error: rpcError } = await supabase.rpc('delete_user_account');
+      
+      if (rpcError) {
+        throw new Error(rpcError.message);
+      }
+
+      // If successful, sign out locally
+      await onLogout(); 
+
+    } catch (error: any) {
+      console.error("Delete failed", error);
+      // Detailed error alert for debugging
+      alert(isMs 
+        ? `Gagal memadam akaun: ${error.message}` 
+        : `Failed to delete account: ${error.message}`
+      );
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  // --- RENDER SETTINGS SUB-SCREEN ---
   if (showSettings) {
     return (
       <div className="h-full w-full transition-colors duration-300 relative z-50 overflow-y-auto" style={{ backgroundColor: theme.background, color: theme.text }}>
@@ -149,7 +166,7 @@ export function ProfileScreen({
              <ArrowLeft className="w-6 h-6" />
            </button>
            <h2 className="font-semibold text-lg">
-             {preferences.language_code === 'ms' ? "Tetapan" : "Settings"}
+             {isMs ? "Tetapan" : "Settings"}
            </h2>
         </div>
 
@@ -157,7 +174,7 @@ export function ProfileScreen({
           {/* THEME MODE SECTION */}
           <section>
             <h3 className="text-sm font-semibold uppercase mb-4 tracking-wider" style={{ color: theme.textSecondary }}>
-               {preferences.language_code === 'ms' ? "Mod Paparan" : "Display Mode"}
+               {isMs ? "Mod Paparan" : "Display Mode"}
             </h3>
             
             <div className="grid grid-cols-2 gap-3 mb-6">
@@ -190,7 +207,7 @@ export function ProfileScreen({
           {/* ACCENT COLOR SECTION */}
           <section>
             <h3 className="text-sm font-semibold uppercase mb-4 tracking-wider" style={{ color: theme.textSecondary }}>
-               {preferences.language_code === 'ms' ? "Warna Tema" : "Accent Color"}
+               {isMs ? "Warna Tema" : "Accent Color"}
             </h3>
 
             <div className="space-y-4">
@@ -259,7 +276,7 @@ export function ProfileScreen({
           {/* LANGUAGE SECTION */}
           <section>
             <h3 className="text-sm font-semibold uppercase mb-4 tracking-wider" style={{ color: theme.textSecondary }}>
-               {preferences.language_code === 'ms' ? "Bahasa" : "Language"}
+               {isMs ? "Bahasa" : "Language"}
             </h3>
             <div className="border rounded-xl overflow-hidden" style={{ borderColor: theme.border }}>
               <button 
@@ -284,30 +301,34 @@ export function ProfileScreen({
     );
   }
 
+  // --- MAIN RENDER ---
   return (
     <div className="h-full w-full transition-colors duration-300" style={{ backgroundColor: theme.background, color: theme.text }}>
       <div className="fixed top-0 left-0 right-0 z-40 px-6 py-6 border-b" style={{ backgroundColor: theme.background, borderColor: theme.border }}>
-        <h2 className="font-semibold text-xl">Profile</h2>
+        <h2 className="font-semibold text-xl">{isMs ? "Profil" : "Profile"}</h2>
       </div>
 
       <div className="h-22" />
 
-      <div className="px-6 py-2 space-y-6 pb-24">
+      <div className="px-6 py-2 space-y-6 pb-28">
         {/* User Card */}
         <div className="border p-6 text-center rounded-2xl shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
           <div className="flex justify-center mb-4">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center border" style={{ borderColor: theme.border, backgroundColor: theme.background }}>
-              <User className="w-10 h-10" style={{ color: theme.primary }} />
+            <div className="w-20 h-20 rounded-full flex items-center justify-center border overflow-hidden" style={{ borderColor: theme.border, backgroundColor: theme.background }}>
+              {profilePictureUrl ? (
+                <img src={profilePictureUrl} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-10 h-10" style={{ color: theme.primary }} />
+              )}
             </div>
           </div>
-          <h2 className="text-lg font-semibold mb-1">{profileName}</h2>
-          {/* Label dinamik (Staff Member vs Student ID) mengikut imej dibekalkan */}
+          <h2 className="text-lg font-semibold mb-1">{studentName}</h2>
           <p className="text-sm" style={{ color: theme.textSecondary }}>
             {userRole === 'staff' ? 'Staff Member' : `Student ID: ${studentId || "—"}`}
           </p>
         </div>
 
-        {/* Menu yang ditapis mengikut role */}
+        {/* Menu Items */}
         <div className="border rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
           {menuItems.map((item, index) => (
             <button
@@ -328,38 +349,87 @@ export function ProfileScreen({
           ))}
         </div>
 
-        {/* Logout */}
-        <div className="px-0">
+        {/* Action Buttons */}
+        <div className="space-y-3">
+          {/* Logout */}
           <button
             onClick={() => setShowLogoutDialog(true)}
             className="w-full h-12 border rounded-lg font-medium shadow-sm transition-all active:scale-95"
             style={{ borderColor: theme.primary, color: theme.primary }}
           >
-            Sign Out
+            {isMs ? "Log Keluar" : "Sign Out"}
+          </button>
+
+          {/* UC26: DELETE ACCOUNT BUTTON */}
+          <button
+            onClick={() => setShowDeleteDialog(true)}
+            className="w-full h-12 flex items-center justify-center gap-2 font-medium transition-all active:scale-95"
+            style={{ color: "#ef4444" }} 
+          >
+            <Trash2 className="w-4 h-4" />
+            {isMs ? "Padam Akaun" : "Delete Account"}
           </button>
         </div>
       </div>
 
       {/* Logout Dialog */}
       {showLogoutDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-6 z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-6 z-50 animate-in fade-in">
           <div className="p-6 w-full max-w-sm border rounded-2xl" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-            <h3 className="mb-2 font-semibold text-lg">Log Out?</h3>
-            <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>Are you sure you want to log out?</p>
+            <h3 className="mb-2 font-semibold text-lg">{isMs ? "Log Keluar?" : "Log Out?"}</h3>
+            <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>{isMs ? "Adakah anda pasti mahu log keluar?" : "Are you sure you want to log out?"}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutDialog(false)}
-                className="flex-1 h-11 border rounded-xl transition-colors"
+                className="flex-1 h-11 border rounded-xl transition-colors font-medium"
                 style={{ borderColor: theme.border, color: theme.textSecondary }}
               >
-                Cancel
+                {isMs ? "Batal" : "Cancel"}
               </button>
               <button
                 onClick={onLogout}
-                className="flex-1 h-11 text-white rounded-xl active:opacity-90"
+                className="flex-1 h-11 text-white rounded-xl active:opacity-90 font-bold"
                 style={{ backgroundColor: theme.primary }}
               >
-                Log Out
+                {isMs ? "Log Keluar" : "Log Out"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UC26: DELETE ACCOUNT DIALOG */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center px-6 z-50 animate-in fade-in">
+          <div className="p-6 w-full max-w-sm border rounded-2xl shadow-xl" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+            <div className="flex items-center gap-3 mb-4 text-[#ef4444]">
+              <AlertTriangle className="w-6 h-6" />
+              <h3 className="font-bold text-lg">{isMs ? "Padam Akaun?" : "Delete Account?"}</h3>
+            </div>
+            
+            <p className="text-sm mb-6" style={{ color: theme.textSecondary, lineHeight: '1.6' }}>
+              {isMs 
+                ? "Tindakan ini akan memadamkan profil anda secara kekal. Data ini tidak boleh dikembalikan." 
+                : "This action will permanently delete your profile. This cannot be undone."}
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={isDeleting}
+                className="flex-1 h-11 border rounded-xl transition-colors font-medium"
+                style={{ borderColor: theme.border, color: theme.textSecondary }}
+              >
+                {isMs ? "Batal" : "Cancel"}
+              </button>
+              
+              <button
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="flex-1 h-11 text-white rounded-xl active:opacity-90 font-bold flex items-center justify-center gap-2"
+                style={{ backgroundColor: "#ef4444" }}
+              >
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : (isMs ? "Padam" : "Delete")}
               </button>
             </div>
           </div>
