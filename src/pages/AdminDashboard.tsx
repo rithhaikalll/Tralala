@@ -79,23 +79,49 @@ export function AdminDashboard({ onNavigate, onLogout }: AdminDashboardProps) {
     setShowEditDialog(true);
   };
 
+  // --- FIXED: UPDATE LOGIC ---
   const confirmEdit = async () => {
     if (!selectedUser || !editName.trim() || isProcessing) return;
+    
     setIsProcessing(true);
+    const targetUserId = selectedUser.id;
+    const newName = editName.trim();
+
     try {
       const tableName = selectedUser.role === "staff" ? "staff_profiles" : "profiles";
-      await supabase.from(tableName).update({ full_name: editName }).eq("id", selectedUser.id);
-      const authId = selectedUser.role === 'staff' ? selectedUser.user_id : selectedUser.id;
-      if (authId) await supabase.from("profile_details").update({ full_name: editName }).eq("user_id", authId);
       
-      toast.success(isMs ? "Berjaya disimpan" : "Saved successfully");
-      fetchUsers();
-    } catch (error) {
-      toast.error("Update failed");
-    } finally {
-      setIsProcessing(false);
+      // 1. Update the role-specific table (profiles or staff_profiles)
+      const { error: mainError } = await supabase
+        .from(tableName)
+        .update({ full_name: newName })
+        .eq("id", targetUserId);
+
+      if (mainError) throw mainError;
+
+      // 2. Update the profile_details table
+      const authId = selectedUser.role === 'staff' ? selectedUser.user_id : selectedUser.id;
+      if (authId) {
+        await supabase
+          .from("profile_details")
+          .update({ full_name: newName })
+          .eq("user_id", authId);
+      }
+
+      // 3. CRITICAL: Update local state immediately so the Dashboard reflects the change
+      setUsers((prevUsers) => 
+        prevUsers.map((u) => 
+          u.id === targetUserId ? { ...u, full_name: newName } : u
+        )
+      );
+      
+      toast.success(isMs ? "Nama berjaya dikemas kini" : "Name updated successfully");
       setShowEditDialog(false);
       setSelectedUser(null);
+    } catch (error) {
+      console.error("Edit failed:", error);
+      toast.error(isMs ? "Gagal mengemas kini nama" : "Failed to update name");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -133,7 +159,6 @@ export function AdminDashboard({ onNavigate, onLogout }: AdminDashboardProps) {
 
   const renderContent = () => {
     if (activeTab === "profile") {
-        // ... (Settings and Profile code remains the same as previous)
         if (showSettingsSubScreen) {
             return (
               <div className="h-full w-full transition-colors duration-300 relative z-50 overflow-y-auto" style={{ backgroundColor: theme.background }}>
@@ -193,19 +218,16 @@ export function AdminDashboard({ onNavigate, onLogout }: AdminDashboardProps) {
 
     return (
       <div className="px-6 py-6 space-y-6 pb-24">
-        {/* Header Message */}
         <div className="flex items-start gap-3 p-4 rounded-lg" style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}` }}>
           <Shield className="w-5 h-5 mt-0.5" style={{ color: theme.primary }} strokeWidth={1.5} />
           <p className="text-sm" style={{ color: theme.textSecondary, lineHeight: "1.6" }}>{isMs ? "Menguruskan akaun Pelajar dan Staf." : "Managing Student and Staff accounts."}</p>
         </div>
 
-        {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: theme.textSecondary }} strokeWidth={1.5} />
           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={isMs ? "Cari pengguna..." : "Search users..."} className="w-full h-12 pl-12 pr-4 border rounded-lg outline-none" style={{ borderColor: theme.border, backgroundColor: theme.cardBg, color: theme.text, fontSize: "15px" }} />
         </div>
 
-        {/* --- STATISTICS CARDS (Restored) --- */}
         <div className="grid grid-cols-2 gap-3">
           <div className="border p-4 rounded-lg col-span-2" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
             <p className="text-sm mb-1" style={{ color: theme.textSecondary }}>{isMs ? "Jumlah Pengguna" : "Total Users"}</p>
@@ -221,9 +243,8 @@ export function AdminDashboard({ onNavigate, onLogout }: AdminDashboardProps) {
           </div>
         </div>
 
-        {/* User List Table */}
         <div className="border overflow-hidden rounded-xl shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
-          <div className="px-4 py-3 border-b bg-gray-50/50" style={{ borderColor: theme.border, backgroundColor: theme.background }}>
+          <div className="px-4 py-3 border-b" style={{ borderColor: theme.border, backgroundColor: theme.background }}>
             <h3 style={{ color: theme.text, fontWeight: "600", fontSize: "15px" }}>{isMs ? "Senarai Pengguna" : "User List"} ({filteredUsers.length})</h3>
           </div>
           {loading ? (
@@ -262,21 +283,21 @@ export function AdminDashboard({ onNavigate, onLogout }: AdminDashboardProps) {
       
       {renderContent()}
 
-      {/* Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 border-t flex justify-around items-center px-2 py-3 z-50" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
         <button onClick={() => setActiveTab("home")} className="flex flex-col items-center w-full py-1"><Home size={22} style={{ color: activeTab === "home" ? theme.primary : theme.textSecondary }} /><span className="text-[10px] mt-1" style={{ color: activeTab === "home" ? theme.primary : theme.textSecondary }}>{isMs ? "Utama" : "Home"}</span></button>
         <button onClick={() => setActiveTab("profile")} className="flex flex-col items-center w-full py-1"><User size={22} style={{ color: activeTab === "profile" ? theme.primary : theme.textSecondary }} /><span className="text-[10px] mt-1" style={{ color: activeTab === "profile" ? theme.primary : theme.textSecondary }}>{isMs ? "Profil" : "Profile"}</span></button>
       </div>
 
-      {/* Dialogs */}
       {showEditDialog && selectedUser && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center px-6 z-50">
           <div className="p-6 w-full max-w-sm rounded-2xl border shadow-xl" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
             <h3 className="mb-4 font-bold text-lg" style={{ color: theme.text }}>{isMs ? "Edit Pengguna" : "Edit User"}</h3>
-            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full h-11 px-4 border rounded-lg mb-4" style={{ borderColor: theme.border, backgroundColor: theme.background, color: theme.text }} />
+            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} disabled={isProcessing} className="w-full h-11 px-4 border rounded-lg mb-4" style={{ borderColor: theme.border, backgroundColor: theme.background, color: theme.text }} />
             <div className="flex gap-3">
-              <button onClick={() => setShowEditDialog(false)} className="flex-1 h-11 border rounded-lg" style={{ color: theme.textSecondary }}>{isMs ? "Batal" : "Cancel"}</button>
-              <button onClick={confirmEdit} className="flex-1 h-11 text-white rounded-lg" style={{ backgroundColor: theme.primary }}>Save</button>
+              <button onClick={() => setShowEditDialog(false)} disabled={isProcessing} className="flex-1 h-11 border rounded-lg" style={{ color: theme.textSecondary }}>{isMs ? "Batal" : "Cancel"}</button>
+              <button onClick={confirmEdit} disabled={isProcessing} className="flex-1 h-11 text-white rounded-lg flex items-center justify-center" style={{ backgroundColor: theme.primary }}>
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : (isMs ? "Simpan" : "Save")}
+              </button>
             </div>
           </div>
         </div>
@@ -290,9 +311,7 @@ export function AdminDashboard({ onNavigate, onLogout }: AdminDashboardProps) {
               <h3 className="font-bold text-lg">{isMs ? "Padam Akaun?" : "Delete Account?"}</h3>
             </div>
             <p className="text-sm mb-6" style={{ color: theme.textSecondary, lineHeight: '1.6' }}>
-              {isMs 
-                ? `Tindakan ini akan memadamkan profil ${selectedUser.full_name} secara kekal dari sistem.` 
-                : `This action will permanently delete ${selectedUser.full_name}'s profile from the system.`}
+              {isMs ? `Tindakan ini akan memadamkan profil ${selectedUser.full_name} secara kekal dari sistem.` : `This action will permanently delete ${selectedUser.full_name}'s profile from the system.`}
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteDialog(false)} disabled={isProcessing} className="flex-1 h-11 border rounded-xl font-medium" style={{ borderColor: theme.border, color: theme.textSecondary }}>{isMs ? "Batal" : "Cancel"}</button>
