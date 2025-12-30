@@ -524,7 +524,8 @@ location.pathname.startsWith("/staff/complaints/")
   const hasHeader =
     authed &&
     userRole !== "admin" &&
-    (location.pathname.startsWith("/facility") ||
+    ((location.pathname.startsWith("/facility") &&
+      !location.pathname.startsWith("/facility-complaints")) ||
       location.pathname.startsWith("/book") ||
       (location.pathname === "/home" && userRole === "student") ||
       (location.pathname.startsWith("/discussion") &&
@@ -605,9 +606,10 @@ location.pathname.startsWith("/staff/complaints/")
             {location.pathname === "/home" && userRole === "student" && (
               <HomeScreenHeader studentName={studentName} />
             )}
-            {location.pathname.startsWith("/facility") && (
-              <FacilityDetailsHeader onBack={() => navigate("/book")} />
-            )}
+            {location.pathname.startsWith("/facility") &&
+              !location.pathname.startsWith("/facility-complaints") && (
+                <FacilityDetailsHeader onBack={() => navigate("/book")} />
+              )}
             {location.pathname.startsWith("/book") && <BookListHeader />}
             {location.pathname.startsWith("/discussion") &&
               !location.pathname.includes("/discussion/") && (
