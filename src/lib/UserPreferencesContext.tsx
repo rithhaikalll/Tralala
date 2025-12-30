@@ -127,10 +127,10 @@ export function UserPreferencesProvider({ children }: { children: React.ReactNod
     };
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => handleAuthChange(session));
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => handleAuthChange(session));
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
       handleAuthChange(session);
     });
 

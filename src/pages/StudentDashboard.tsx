@@ -143,11 +143,11 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
       if (act) {
         setStats({
-          validated: act.filter((a) => a.status === "Validated").length,
-          pending: act.filter((a) => a.status === "Pending").length,
+          validated: act.filter((a: any) => a.status === "Validated").length,
+          pending: act.filter((a: any) => a.status === "Pending").length,
           total: act
-            .filter((a) => a.status === "Validated")
-            .reduce((sum, a) => sum + Number(a.duration), 0),
+            .filter((a: any) => a.status === "Validated")
+            .reduce((sum: number, a: any) => sum + Number(a.duration), 0),
         });
       }
 
