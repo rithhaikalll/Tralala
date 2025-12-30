@@ -1,5 +1,4 @@
 import {
-  Clock,
   CheckCircle,
   TrendingUp,
   ArrowLeft,
@@ -35,8 +34,7 @@ interface StudentBadge {
 }
 
 export function BadgeCollectionScreen({ onNavigate }: BadgeCollectionScreenProps) {
-  // --- 1. SINKRONISASI TEMA & BAHASA ---
-  const { theme, t, preferences } = useUserPreferences();
+  const { theme, preferences } = useUserPreferences();
   const isMs = preferences.language_code === 'ms';
   const isDark = preferences.theme_mode === 1;
 

@@ -1,4 +1,4 @@
-import { Plus, Clock, CheckCircle, Edit2, TrendingUp, FileText, XCircle, Award } from "lucide-react";
+import { Plus, Clock, CheckCircle, Edit2, TrendingUp, FileText, XCircle, Award, CalendarDays } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 // Accessing global preferences
@@ -141,7 +141,7 @@ export function ActivityMainScreen({
           </div>
 
           {activity.status?.toLowerCase() === "rejected" && activity.rejection_reason && (
-            <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded text-sm">
+            <div className="mt-2 p-2 bg-red-50 dark:bg-red-200/20 text-red-700 rounded text-sm">
               <span className="font-medium">Reason:</span> {activity.rejection_reason}
             </div>
           )}
@@ -151,16 +151,23 @@ export function ActivityMainScreen({
   };
 
   return (
-    <div className="min-h-screen pb-24 transition-colors" style={{ backgroundColor: theme.background }}>
+    <div className="min-h-screen pb-24 transition-colors" 
+        style={{ 
+          backgroundColor: 
+          preferences.theme_mode === 1
+          ? theme.background
+          : "#f9fafb" 
+        }}
+      >
       {/* Header */}
       <div className="px-6 py-6 border-b" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
         <h2 className="text-[20px] font-semibold" style={{ color: theme.text }}>
-          {userRole === "staff" ? "Activity Validation" : t("nav_activity")}
+          {userRole === "staff" ? "Activity Verification" : "Activity Tracking"}
         </h2>
         <p className="text-sm mt-1" style={{ lineHeight: "1.6", color: theme.textSecondary }}>
           {userRole === "staff"
             ? "Review and validate student submissions"
-            : t("track_desc")}
+            : "Record and track your sports activities"}
         </p>
       </div>
 
@@ -196,7 +203,15 @@ export function ActivityMainScreen({
         </button>
       </div>
 
-      <div className="px-6 pb-4 grid grid-cols-2 gap-2">
+      <div className="px-6 pb-4 grid grid-cols-3 gap-2">
+        <button
+          onClick={() => onNavigate("activity-events")}
+          className="border rounded-lg p-3 text-center transition-colors"
+          style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
+        >
+          <CalendarDays className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+          <p className="text-xs" style={{ color: theme.text }}>{preferences.language_code === 'ms' ? 'Acara' : 'Event'}</p>
+        </button>
         <button
           onClick={() => onNavigate("badges")}
           className="border rounded-lg p-3 text-center transition-colors"
@@ -212,6 +227,21 @@ export function ActivityMainScreen({
         >
           <FileText className="w-5 h-5 mx-auto mb-1" style={{ color: theme.textSecondary }} />
           <p className="text-xs" style={{ color: theme.text }}>{preferences.language_code === 'ms' ? 'Laporan' : 'Report'}</p>
+        </button>
+      </div>
+      </>
+      )}
+
+      {userRole === "staff" && (
+      <>
+      <div className="px-6 pb-4 grid grid-cols-1 gap-2 mt-5">
+        <button
+          onClick={() => onNavigate("activity-events")}
+          className="border rounded-lg p-3 text-center transition-colors"
+          style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
+        >
+          <CalendarDays className="w-5 h-5 text-purple-600 mx-auto mb-1" />
+          <p className="text-xs" style={{ color: theme.text }}>{preferences.language_code === 'ms' ? 'Acara' : 'Event'}</p>
         </button>
       </div>
       </>

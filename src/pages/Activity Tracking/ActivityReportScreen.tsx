@@ -1,4 +1,4 @@
-import { Download, Clock, Activity, ArrowLeft, BarChart3 } from "lucide-react";
+import { Download, Clock, Activity, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { Pie, Bar } from "react-chartjs-2";
@@ -52,7 +52,7 @@ interface ActivityReportData {
 }
 
 export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) {
-  const { theme, t, preferences } = useUserPreferences();
+  const { theme, preferences } = useUserPreferences();
   const isMs = preferences.language_code === 'ms';
   const isDark = preferences.theme_mode === 1;
   
@@ -132,7 +132,14 @@ export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) 
   useEffect(() => { fetchReport(); }, [dateRange, preferences.language_code]);
 
   return (
-    <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: theme.background }}>
+    <div className="min-h-screen transition-colors duration-300" 
+      style={{ 
+          backgroundColor: 
+          preferences.theme_mode === 1
+          ? theme.background
+          : "#f9fafb" 
+        }}
+      >
       {/* Header */}
       <div className="sticky top-0 z-40 px-6 py-6 border-b" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
         <div className="flex items-center gap-3">
@@ -141,12 +148,11 @@ export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) 
           </button>
           <div>
             <h2 className="text-[20px] font-semibold" style={{ color: theme.text }}>{isMs ? "Laporan Aktiviti" : "Activity Report"}</h2>
-            <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>{isMs ? "Jana ringkasan aktiviti" : "Generate activity summary"}</p>
+            <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>{isMs ? "Jana komprehensif ringkasan aktiviti" : "Generate comprehensive activity summary"}</p>
           </div>
         </div>
       </div>
 
-      {/* Content - PEMBETULAN: pb-32 untuk memastikan boleh scroll ke butang terakhir */}
       <div className="p-6 space-y-6 pb-32"> 
         <div className="flex gap-2">
           {["week", "month", "year"].map((range) => (
@@ -154,7 +160,7 @@ export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) 
               style={{ backgroundColor: dateRange === range ? theme.primary : theme.cardBg, borderColor: theme.border, color: dateRange === range ? "#FFF" : theme.textSecondary }}
               onClick={() => setDateRange(range as any)}
             >
-              {range.toUpperCase()}
+              {range.charAt(0).toUpperCase() + range.slice(1)}
             </button>
           ))}
         </div>
@@ -175,23 +181,23 @@ export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) 
             </div>
 
             {reportData.byCategory.length > 0 && (
-              <div className="p-5 border shadow-sm rounded-[16px]" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-                <h3 className="text-sm font-bold mb-4" style={{ color: theme.text }}>{isMs ? "Agihan Kategori" : "Category Distribution"}</h3>
+              <div className="p-5 border shadow-sm rounded-2xl" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+                <h3 className="text-sm font-bold mb-4" style={{ color: theme.text }}>{isMs ? "Agihan Aktiviti berdasarkan Kategori" : "Activity Distribution by Category"}</h3>
                 <Pie data={{ labels: reportData.byCategory.map(c => c.category), datasets: [{ data: reportData.byCategory.map(c => c.count), backgroundColor: COLORS, borderWidth: isDark ? 0 : 1 }] }} 
                   options={{ plugins: { legend: { position: 'bottom', labels: { color: theme.text, boxWidth: 10 } } } }} />
               </div>
             )}
 
             {reportData.byMonth.length > 0 && (
-              <div className="p-5 border shadow-sm rounded-[16px]" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-                <h3 className="text-sm font-bold mb-4" style={{ color: theme.text }}>{isMs ? "Jam Bulanan" : "Monthly Hours"}</h3>
+              <div className="p-5 border shadow-sm rounded-2xl" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+                <h3 className="text-sm font-bold mb-4" style={{ color: theme.text }}>{isMs ? "Jam Aktiviti Bulanan" : "Monthly Activity Hours"}</h3>
                 <Bar data={{ labels: reportData.byMonth.map(m => m.month), datasets: [{ label: "Hours", data: reportData.byMonth.map(m => m.hours), backgroundColor: theme.primary, borderRadius: 6 }] }}
                   options={{ scales: { y: { beginAtZero: true, ticks: { color: theme.textSecondary } }, x: { ticks: { color: theme.textSecondary } } }, plugins: { legend: { display: false } } }} />
               </div>
             )}
 
             <div className="p-4 border rounded-xl shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-              <h3 className="font-bold text-sm mb-3" style={{ color: theme.text }}>{isMs ? "Pecahan Aktiviti" : "Activity Breakdown"}</h3>
+              <h3 className="font-bold text-sm mb-3" style={{ color: theme.text }}>{isMs ? "Pecahan Aktiviti" : "Activity Types"}</h3>
               <div className="space-y-3">
                 {reportData.byCategory.map((cat, idx) => (
                   <div key={idx} className="flex justify-between items-center pb-2 border-b last:border-0" style={{ borderColor: theme.border }}>
@@ -205,7 +211,6 @@ export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) 
               </div>
             </div>
 
-            {/* Butang Muat Turun di paling bawah */}
             <button className="w-full py-4 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all"
               style={{ backgroundColor: theme.primary }} onClick={handleDownload}>
               <div className="flex items-center justify-center gap-2">

@@ -76,6 +76,13 @@ export const translations: Record<Language, Record<string, string>> = {
     status: "Status",
     loading: "Loading activity details...",
     not_found: "Activity not found.",
+    eventDate: "Event Date",
+    open: "Open",
+    closed: "Closed",
+    full: "Full",
+    unregister: "Left",
+    register: "Register",
+    no_participants: "No Participants",
   },
   ms: {
     // Navigation
@@ -152,5 +159,12 @@ export const translations: Record<Language, Record<string, string>> = {
     status: "Status",
     loading: "Memuatkan butiran aktiviti...",
     not_found: "Aktiviti tidak dijumpai.",
+    eventDate: "Tarikh Acara",
+    open: "Terbuka",
+    closed: "Ditutup",
+    full: "Penuh",
+    unregister: "Keluar",
+    register: "Daftar",
+    no_participants: "Tiada Peserta",
   }
 };

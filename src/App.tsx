@@ -38,6 +38,9 @@ import { EditActivityScreen } from "./pages/Activity Tracking/EditActivityScreen
 import DetailActivityScreen from "./pages/Activity Tracking/DetailActivityScreen";
 import { ActivityReportScreen } from "./pages/Activity Tracking/ActivityReportScreen";
 import { BadgeCollectionScreen } from "./pages/Activity Tracking/ActivityBadgeScreen";
+import { ActivityEventsScreen } from "./pages/Activity Tracking/ActivityEventScreen";
+import { CreateEventScreen } from "./pages/Activity Tracking/CreateEventScreen";
+import EventDetailsScreen from "./pages/Activity Tracking/EventDetailsScreen"
 import {
   FacilityListScreen,
   BookListHeader,
@@ -207,6 +210,28 @@ function DetailActivityWrapper() {
     />
   );
 }
+
+function EventDetailWrapper({
+  userId,
+  userRole,
+}: {
+  userId: string;
+  userRole: "student" | "staff";
+}) {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  return (
+    <EventDetailsScreen
+      eventId={id || ""}
+      userId={userId}
+      userRole={userRole}
+      onNavigate={(screen) => {
+        if (screen === "activity-events") navigate("/activity-events");
+      }}
+    />
+  );
+}
+
 
 function StudentComplaintsWrapper() {
   const navigate = useNavigate();
@@ -507,6 +532,9 @@ export default function App() {
     location.pathname.match(/^\/activity\/[^/]+$/) ||
     location.pathname.startsWith("/activity/edit") ||
     location.pathname.startsWith("/badges") ||
+    location.pathname.startsWith("/activity-event") ||
+    location.pathname.startsWith("/create-event") ||
+    location.pathname.startsWith("/event-detail") ||
     location.pathname.startsWith("/settings/") ||
     location.pathname === "/edit-profile" ||
     location.pathname.startsWith("/my-bookings") ||
@@ -817,6 +845,7 @@ location.pathname.startsWith("/staff/complaints/")
                         else if (s === "activity-report")
                           navigate("/activity-report");
                         else if (s === "badges") navigate("/badges");
+                        else if (s === "activity-events") navigate("/activity-events");
                         else if (s === "detailactivity" && d)
                           navigate(`/detailactivity/${d}`);
                         else if (s === "edit-activity" && d)
@@ -898,6 +927,46 @@ location.pathname.startsWith("/staff/complaints/")
                           s === "activity-main" ? "/activity-main" : "/profile"
                         )
                       }
+                    />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/activity-events"
+                element={
+                  <RequireAuth authed={authed}>
+                    <ActivityEventsScreen
+                      onNavigate={(screen, data) => {
+                        if (screen === "activity-main") {
+                          navigate("/activity-main");
+                        } else if (screen === "create-event") {
+                          navigate(`/create-event`);
+                        } else if (screen === "event-detail") {
+                          navigate(`/event-detail/${data?.eventId}`);
+                        }
+                      }}
+                      userRole={userRole as "student" | "staff"}
+                    />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/create-event"
+                element={
+                  <RequireAuth authed={authed}>
+                    <CreateEventScreen
+                      onNavigate={() => navigate("/activity-events")}
+                      staffName={studentName}
+                    />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/event-detail/:id"
+                element={
+                  <RequireAuth authed={authed}>
+                    <EventDetailWrapper userId={userId}
+                      userRole={userRole as "student" | "staff"}
                     />
                   </RequireAuth>
                 }
