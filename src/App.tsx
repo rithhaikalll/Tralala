@@ -40,7 +40,8 @@ import { ActivityReportScreen } from "./pages/Activity Tracking/ActivityReportSc
 import { BadgeCollectionScreen } from "./pages/Activity Tracking/ActivityBadgeScreen";
 import { ActivityEventsScreen } from "./pages/Activity Tracking/ActivityEventScreen";
 import { CreateEventScreen } from "./pages/Activity Tracking/CreateEventScreen";
-import EventDetailsScreen from "./pages/Activity Tracking/EventDetailsScreen"
+import EventDetailsScreen from "./pages/Activity Tracking/EventDetailsScreen";
+import { EventRemindersScreen } from "./pages/Activity Tracking/EventReminderScreen";
 import {
   FacilityListScreen,
   BookListHeader,
@@ -535,6 +536,7 @@ export default function App() {
     location.pathname.startsWith("/activity-event") ||
     location.pathname.startsWith("/create-event") ||
     location.pathname.startsWith("/event-detail") ||
+    location.pathname.startsWith("/event-reminders") ||
     location.pathname.startsWith("/settings/") ||
     location.pathname === "/edit-profile" ||
     location.pathname.startsWith("/my-bookings") ||
@@ -846,6 +848,7 @@ location.pathname.startsWith("/staff/complaints/")
                           navigate("/activity-report");
                         else if (s === "badges") navigate("/badges");
                         else if (s === "activity-events") navigate("/activity-events");
+                        else if (s === "event-reminders") navigate("/event-reminders");
                         else if (s === "detailactivity" && d)
                           navigate(`/detailactivity/${d}`);
                         else if (s === "edit-activity" && d)
@@ -965,8 +968,27 @@ location.pathname.startsWith("/staff/complaints/")
                 path="/event-detail/:id"
                 element={
                   <RequireAuth authed={authed}>
-                    <EventDetailWrapper userId={userId}
+                    <EventDetailWrapper 
+                      userId={userId}
                       userRole={userRole as "student" | "staff"}
+                    />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/event-reminders"
+                element={
+                  <RequireAuth authed={authed}>
+                    <EventRemindersScreen
+                      onNavigate={(screen, data) => {
+                        if (screen === "event-detail" && data?.eventId) {
+                          navigate(`/event-detail/${data.eventId}`);
+                        } else if (screen === "activity-main") {
+                          navigate("/activity-main");
+                        } else if (screen === "activity-events") {
+                          navigate("/activity-events");
+                        }
+                      }}
                     />
                   </RequireAuth>
                 }

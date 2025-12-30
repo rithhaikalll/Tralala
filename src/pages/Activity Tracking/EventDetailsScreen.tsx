@@ -45,8 +45,40 @@ export default function EventDetailScreen({ eventId, userId, userRole, onNavigat
     fetchEvent();
   }, [eventId, userId, userRole]);
 
+  const toggleEventStatus = async () => {
+    if (!event) return;
+
+    const newStatus = event.status?.toLowerCase() === "open" ? "closed" : "open";
+
+    const confirmChange = window.confirm(
+      preferences.language_code === "ms"
+        ? `Tukar status acara kepada ${newStatus.toUpperCase()}?`
+        : `Change event status to ${newStatus.toUpperCase()}?`
+    );
+
+    if (!confirmChange) return;
+
+    const { error } = await supabase
+      .from("activity_events")
+      .update({ status: newStatus })
+      .eq("id", Number(eventId));
+
+    if (!error) {
+      setEvent((prev: any) => ({ ...prev, status: newStatus }));
+    }
+  };
+  
   const handleRegister = async () => {
     if (!userId || !eventId) return;
+
+    if (userRole === "student" && event.status?.toLowerCase() !== "open") {
+      alert(
+        preferences.language_code === "ms"
+          ? "Acara ini tidak dibuka untuk pendaftaran."
+          : "This event is not open for registration."
+      );
+      return;
+    }
 
     if (isRegistered) {
       const confirmLeave = window.confirm(
@@ -234,8 +266,15 @@ export default function EventDetailScreen({ eventId, userId, userRole, onNavigat
             <div className="mt-4 flex justify-center">
               <button
                 onClick={handleRegister}
-                className="px-10 py-3 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95"
-                style={{ backgroundColor: isRegistered ? "#f59e0b" : theme.primary }}
+                disabled={!isRegistered && event.status?.toLowerCase() !== "open"}
+                className={`px-10 py-3 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95 ${
+                  (!isRegistered && event.status?.toLowerCase() !== "open")
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
+                style={{
+                  backgroundColor: isRegistered ? "#f59e0b" : theme.primary
+                }}
               >
                 {isRegistered ? t("unregister") : t("register")}
               </button>
@@ -243,23 +282,49 @@ export default function EventDetailScreen({ eventId, userId, userRole, onNavigat
           )}
 
           {userRole === "staff" && (
-            <div className="mt-6">
-              <h2 className="font-bold mb-2">{preferences.language_code === "ms" ? "Senarai Peserta" : "Registered Students"}</h2>
-              <ul className="list-disc list-inside">
-                {participants.length === 0 ? (
-                  <li>{t("no_participants") || "No articipants"}</li>
-                ) : (
-                  <ol className="list-decimal list-inside">
-                    {participants.map((p, index) => (
-                      <li key={p.user_id}>
-                        {p.full_name}
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </ul>
+          <div className="mt-6 space-y-6">
+            {/* Status toggle button */}
+            <div className="flex justify-center">
+              <button
+                onClick={toggleEventStatus}
+                className="px-6 py-2 rounded-lg text-sm font-bold text-white transition"
+                style={{
+                  backgroundColor:
+                    event.status?.toLowerCase() === "open" ? "#dc2626" : "#16a34a"
+                }}
+              >
+                {event.status?.toLowerCase() === "open"
+                  ? preferences.language_code === "ms"
+                    ? "Tutup Pendaftaran"
+                    : "Close Registration"
+                  : preferences.language_code === "ms"
+                  ? "Buka Pendaftaran"
+                  : "Open Registration"}
+              </button>
             </div>
-          )}
+
+            {/* Participant list */}
+            <div>
+              <h2 className="font-bold mb-2">
+                {preferences.language_code === "ms"
+                  ? "Senarai Peserta"
+                  : "Registered Students"}
+              </h2>
+
+              {participants.length === 0 ? (
+                <p className="text-sm opacity-70">
+                  {t("no_participants") || "No participants"}
+                </p>
+              ) : (
+                <ol className="list-decimal list-inside space-y-1">
+                  {participants.map((p) => (
+                    <li key={p.user_id}>{p.full_name}</li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </div>
+        )}
         </div>
 
         <div className="mt-8 flex justify-center">

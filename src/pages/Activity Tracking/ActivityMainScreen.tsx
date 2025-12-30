@@ -229,6 +229,17 @@ export function ActivityMainScreen({
           <p className="text-xs" style={{ color: theme.text }}>{preferences.language_code === 'ms' ? 'Laporan' : 'Report'}</p>
         </button>
       </div>
+
+      {/* Event Reminders Section - Quick Access */}
+      <div className="px-6 pb-3">
+        <button
+          onClick={() => onNavigate("event-reminders")}
+          className="w-full bg-linear-to-r from-purple-600 to-blue-600 text-white rounded-xl py-3 flex items-center justify-center gap-2 hover:from-purple-700 hover:to-blue-700 transition-all"
+        >
+          <CalendarDays className="w-5 h-5" />
+          <span>View Activity Reminders</span>
+        </button>
+      </div>
       </>
       )}
 
