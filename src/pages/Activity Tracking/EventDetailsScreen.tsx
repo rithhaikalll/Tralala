@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, UserPlus, UserMinus } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
@@ -267,15 +267,16 @@ export default function EventDetailScreen({ eventId, userId, userRole, onNavigat
               <button
                 onClick={handleRegister}
                 disabled={!isRegistered && event.status?.toLowerCase() !== "open"}
-                className={`px-10 py-3 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95 ${
+                className={`px-10 py-3 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95 flex items-center gap-2 ${
                   (!isRegistered && event.status?.toLowerCase() !== "open")
                     ? "opacity-50 cursor-not-allowed"
                     : ""
                 }`}
                 style={{
-                  backgroundColor: isRegistered ? "#f59e0b" : theme.primary
+                  backgroundColor: isRegistered ? "#6b7280" : theme.primary
                 }}
               >
+                {isRegistered ? <UserMinus size={18} /> : <UserPlus size={18} />}
                 {isRegistered ? t("unregister") : t("register")}
               </button>
             </div>
@@ -331,7 +332,7 @@ export default function EventDetailScreen({ eventId, userId, userRole, onNavigat
           <button 
             onClick={() => onNavigate("activity-events")}
             className="px-10 py-3 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95"
-            style={{ backgroundColor: theme.primary }}
+            style={{ backgroundColor: "#3b82f6" }}
           >
             {t("cancel")}
           </button>

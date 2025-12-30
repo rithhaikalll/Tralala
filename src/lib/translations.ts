@@ -80,8 +80,8 @@ export const translations: Record<Language, Record<string, string>> = {
     open: "Open",
     closed: "Closed",
     full: "Full",
-    unregister: "Left",
-    register: "Register",
+    unregister: "Left Event",
+    register: "Register Event",
     no_participants: "No Participants",
   },
   ms: {
@@ -163,8 +163,8 @@ export const translations: Record<Language, Record<string, string>> = {
     open: "Terbuka",
     closed: "Ditutup",
     full: "Penuh",
-    unregister: "Keluar",
-    register: "Daftar",
+    unregister: "Daftar Keluar",
+    register: "Daftar Masuk",
     no_participants: "Tiada Peserta",
   }
 };
