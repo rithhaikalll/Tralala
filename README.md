@@ -20,6 +20,7 @@
 |:------:|:-----------:|---------|:-------:|
 | 1 | Activity Recording Module | Pages <br> <ul><li>[Actvity Main Screen](src/pages/Activity%20Tracking/ActivityMainScreen.tsx)</li> <li>[Detail Activity Screen](src/pages/Activity%20Tracking/DetailActivityScreen.tsx)</li> <li>[Edit Actvity Screen](src/pages/Activity%20Tracking/EditActivityScreen.tsx)</li> <li>[Record Actvity Screen](src/pages/Activity%20Tracking/RecordActivityScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
 | 2 | Activity History Module | Pages <br> <ul><li>[Actvity Report Screen](src/pages/Activity%20Tracking/ActivityReportScreen.tsx)</li> <li>[Badge Collection Screen](src/pages/Activity%20Tracking/ActivityBadgeScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
+| 3 | Activity Reminder Module | Pages <br> <ul><li>[Actvity Event Screen](src/pages/Activity%20Tracking/ActivityEventScreen.tsx)</li> <li>[Create Event Screen](src/pages/Activity%20Tracking/CreateEventScreen.tsx)</li> <li>[Event Detail Screen](src/pages/Activity%20Tracking/EventDetailsScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
 
 # 📱 Community Subsystem
 🧑‍💻Developer: MUHAMMAD AIDIL HAIKAL BIN MAZALAN
