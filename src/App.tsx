@@ -13,7 +13,7 @@ import {
   useParams,
 } from "react-router-dom";
 
-// ... (Keep all your existing imports)
+// ... Import your existing components ...
 import { LoginScreen } from "./pages/Authentication/LoginScreen";
 import { RegisterScreen } from "./pages/Authentication/RegisterScreen";
 import { ResetPasswordRequestScreen } from "./pages/Authentication/ResetPasswordRequestScreen";
@@ -21,9 +21,7 @@ import { ResetPasswordNewScreen } from "./pages/Authentication/ResetPasswordNewS
 import { ResetLinkSentScreen } from "./pages/Authentication/ResetLinkSentScreen";
 import { HomeScreen, HomeScreenHeader } from "./pages/StudentDashboard";
 import { StaffCheckInDashboardScreen } from "./pages/StaffDashboard";
-// Import the Admin Dashboard
 import { AdminDashboard } from "./pages/AdminDashboard";
-
 import { BottomNav } from "./pages/BottomNav";
 import { ProfileScreen } from "./pages/ProfileScreen";
 import { EditProfileScreen } from "./pages/EditProfileScreen";
@@ -50,12 +48,22 @@ import {
   MyBookingsScreen,
   MyBookingsScreenHeader,
 } from "./pages/Facility/MyBookingsScreen";
+
+// --- COMMUNITY IMPORTS ---
+import { CommunityScreen } from "./pages/Community/CommunityScreen";
 import {
   DiscussionScreen,
   DiscussionScreenHeader,
 } from "./pages/Community/DiscussionScreen";
 import { DiscussionDetailScreen } from "./pages/Community/DiscussionDetailScreen";
 import { CreateDiscussionScreen } from "./pages/Community/CreateDiscussionScreen";
+
+// --- NEWS IMPORTS ---
+import { NewsFeedScreen } from "./pages/Community/NewsFeedScreen";
+import { CreateNewsPostScreen } from "./pages/Community/CreateNewsPostScreen";
+import { NewsPostDetailScreen } from "./pages/Community/NewsPostDetailScreen";
+import { EditNewsPostScreen } from "./pages/Community/EditNewsPostScreen";
+
 import {
   FacilityDetailsScreen,
   FacilityDetailsHeader,
@@ -63,10 +71,8 @@ import {
 import { TimeSlotSelectionScreen } from "./pages/Facility/TimeSlotSelectionScreen";
 import { BookingConfirmationScreen } from "./pages/Facility/BookingConfirmationScreen";
 import { SuccessScreen } from "./pages/Facility/SuccessScreen";
-
 import { InterfaceSettingsScreen } from "./pages/InterfaceSettingsScreen";
 import { NavbarSettingsScreen } from "./pages/NavbarSettingsScreen";
-
 import { FacilityComplaintsScreen } from "./pages/Facility/FacilityComplaintsScreen";
 import { ComplaintDetailScreen } from "./pages/Facility/ComplaintDetailScreen";
 import { SubmitComplaintScreen } from "./pages/Facility/SubmitComplaintScreen";
@@ -81,8 +87,8 @@ import {
   updateComplaintAsStaff,
 } from "./lib/complaints";
 
+// --- WRAPPERS ---
 
-// ... (Keep wrapper functions defined here) ...
 function DiscussionDetailWrapper({
   onNavigate,
   studentName,
@@ -96,6 +102,39 @@ function DiscussionDetailWrapper({
       postId={(id as string) || ""}
       onNavigate={onNavigate}
       studentName={studentName}
+    />
+  );
+}
+
+// Wrapper for News Details to extract ID
+function NewsDetailWrapper({
+  userRole,
+  onNavigate,
+}: {
+  userRole?: "student" | "staff";
+  onNavigate: (screen: string, data?: string) => void;
+}) {
+  const { id } = useParams();
+  return (
+    <NewsPostDetailScreen
+      postId={(id as string) || ""}
+      userRole={userRole}
+      onNavigate={onNavigate}
+    />
+  );
+}
+
+// Wrapper for Edit News to extract ID
+function EditNewsWrapper({
+  onNavigate,
+}: {
+  onNavigate: (screen: string, data?: string) => void;
+}) {
+  const { id } = useParams();
+  return (
+    <EditNewsPostScreen
+      postId={(id as string) || ""}
+      onNavigate={onNavigate}
     />
   );
 }
@@ -232,7 +271,6 @@ function EventDetailWrapper({
     />
   );
 }
-
 
 function StudentComplaintsWrapper() {
   const navigate = useNavigate();
@@ -423,10 +461,7 @@ export default function App() {
   const [studentName, setStudentName] = useState<string>("Student");
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
 
-  // UPDATED: Added "admin" to role type
-  const [userRole, setUserRole] = useState<"student" | "staff" | "admin">(
-    "student"
-  );
+  const [userRole, setUserRole] = useState<"student" | "staff" | "admin">("student");
   const [userId, setUserId] = useState<string>("");
   const [studentId, setStudentId] = useState<string>(
     localStorage.getItem("utm-student-id") || ""
@@ -456,7 +491,6 @@ export default function App() {
         .maybeSingle();
       if (data) coreName = data.full_name;
     } else if (role === "admin") {
-      // Fallback for Admin
       coreName = "Admin";
       if (details?.full_name) coreName = details.full_name;
     } else {
@@ -471,9 +505,7 @@ export default function App() {
       }
     }
 
-    // Prioritize edited name, fallback to core name
     setStudentName(details?.full_name || coreName);
-    // Set profile picture globally
     setProfilePicture(details?.profile_picture_url || null);
 
     if (matric) {
@@ -520,15 +552,20 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // UPDATED: Hide bottom nav if role is ADMIN (Admin has its own internal nav)
+  // UPDATED: Logic to hide bottom nav
   const hideBottomNav =
     userRole === "admin" ||
     location.pathname === "/" ||
     location.pathname.startsWith("/register") ||
     location.pathname.startsWith("/facility") ||
     location.pathname.startsWith("/booking") ||
-    location.pathname.startsWith("/discussion/create") ||
-    location.pathname.match(/^\/discussion\/[^/]+$/) ||
+    // Updated discussion paths
+    location.pathname.includes("/community/discussion/create") ||
+    location.pathname.match(/\/community\/discussion\/[^/]+$/) || 
+    // NEWS PATHS: Hide nav on create, edit, or detail view
+    location.pathname.includes("/community/news/create") ||
+    location.pathname.includes("/community/news/edit") ||
+    location.pathname.match(/\/community\/news\/[^/]+$/) ||
     location.pathname.startsWith("/activity-history") ||
     location.pathname.match(/^\/activity\/[^/]+$/) ||
     location.pathname.startsWith("/activity/edit") ||
@@ -542,11 +579,10 @@ export default function App() {
     location.pathname.startsWith("/my-bookings") ||
     location.pathname === "/admin-dashboard" ||
     location.pathname.startsWith("/facility-complaints") ||
-location.pathname.startsWith("/submit-complaint") ||
-location.pathname.startsWith("/complaint/") ||
-location.pathname.startsWith("/staff-complaints") ||
-location.pathname.startsWith("/staff/complaints/")
-
+    location.pathname.startsWith("/submit-complaint") ||
+    location.pathname.startsWith("/complaint/") ||
+    location.pathname.startsWith("/staff-complaints") ||
+    location.pathname.startsWith("/staff/complaints/");
 
   const showBottomNav = authed && !hideBottomNav;
 
@@ -554,19 +590,18 @@ location.pathname.startsWith("/staff/complaints/")
   const hasHeader =
     authed &&
     userRole !== "admin" &&
-    ((location.pathname.startsWith("/facility") &&
-      !location.pathname.startsWith("/facility-complaints")) ||
+    ((location.pathname.startsWith("/facility") && !location.pathname.startsWith("/facility-complaints")) ||
       location.pathname.startsWith("/book") ||
       (location.pathname === "/home" && userRole === "student") ||
-      (location.pathname.startsWith("/discussion") &&
-        !location.pathname.includes("/discussion/")) ||
+      // Show Discussion Header ONLY on list view
+      (location.pathname === "/community/discussion") ||
       location.pathname === "/my-bookings" ||
-      (location.pathname.match(/^\/activity\/[^/]+$/) &&
-        !location.pathname.startsWith("/activity/record")));
+      (location.pathname.match(/^\/activity\/[^/]+$/) && !location.pathname.startsWith("/activity/record")));
+      // NOTE: We do NOT want the global header for News, as news screens have their own.
 
   const activeTab = useMemo(() => {
     const p = location.pathname;
-    if (p.startsWith("/discussion")) return "discussion";
+    if (p.startsWith("/community")) return "community"; 
     if (
       p.startsWith("/book") ||
       p.startsWith("/facilities") ||
@@ -596,7 +631,6 @@ location.pathname.startsWith("/staff/complaints/")
     setUserId(user?.id || id || "");
     setAuthed(true);
 
-    // UPDATED: Redirect Admin to specific dashboard
     if (role === "admin") {
       navigate("/admin-dashboard", { replace: true });
     } else {
@@ -614,7 +648,7 @@ location.pathname.startsWith("/staff/complaints/")
   const onTabChange = (tab: string) => {
     const map: Record<string, string> = {
       home: "/home",
-      discussion: "/discussion",
+      community: "/community", 
       book: "/book",
       activity: "/activity-main",
       profile: "/profile",
@@ -622,7 +656,6 @@ location.pathname.startsWith("/staff/complaints/")
     navigate(map[tab] || "/home");
   };
 
-  // Fixed: Removed unused parameter
   const handleProfileUpdate = () => {
     fetchUserData(userId, userRole);
   };
@@ -641,12 +674,16 @@ location.pathname.startsWith("/staff/complaints/")
                 <FacilityDetailsHeader onBack={() => navigate("/book")} />
               )}
             {location.pathname.startsWith("/book") && <BookListHeader />}
-            {location.pathname.startsWith("/discussion") &&
-              !location.pathname.includes("/discussion/") && (
+            
+            {/* Discussion Header */}
+            {location.pathname === "/community/discussion" && (
                 <DiscussionScreenHeader
-                  onNavigate={() => navigate("/discussion/create")}
+                  onNavigate={(screen) => {
+                    if (screen === "create-discussion") navigate("/community/discussion/create");
+                  }}
                 />
               )}
+            
             {location.pathname === "/my-bookings" && (
               <MyBookingsScreenHeader onBack={() => navigate("/home")} />
             )}
@@ -712,7 +749,6 @@ location.pathname.startsWith("/staff/complaints/")
                 }
               />
 
-              {/* UPDATED: Admin Route */}
               <Route
                 path="/admin-dashboard"
                 element={
@@ -742,7 +778,7 @@ location.pathname.startsWith("/staff/complaints/")
                         studentName={studentName}
                         onNavigate={(s, d) => {
                           if (s === "book") navigate("/book");
-                          if (s === "discussion") navigate("/discussion");
+                          if (s === "discussion") navigate("/community"); 
                           if (s === "facility-details" && d)
                             navigate(`/facility/${d}`);
                           if (s === "activity-record")
@@ -756,40 +792,110 @@ location.pathname.startsWith("/staff/complaints/")
                 }
               />
 
+              {/* --- COMMUNITY ROUTES --- */}
               <Route
-                path="/discussion"
+                path="/community"
+                element={
+                  <RequireAuth authed={authed}>
+                    <CommunityScreen />
+                  </RequireAuth>
+                }
+              />
+
+              {/* Discussion */}
+              <Route
+                path="/community/discussion"
                 element={
                   <RequireAuth authed={authed}>
                     <DiscussionScreen
-                      onNavigate={(s, d) =>
-                        navigate(d ? `/discussion/${d}` : "/discussion/create")
-                      }
+                      onNavigate={(s, d) => {
+                        if (s === "create-discussion") navigate("/community/discussion/create");
+                        if (s === "discussion-detail" && d) navigate(`/community/discussion/${d}`);
+                      }}
                     />
                   </RequireAuth>
                 }
               />
               <Route
-                path="/discussion/create"
+                path="/community/discussion/create"
                 element={
                   <RequireAuth authed={authed}>
                     <CreateDiscussionScreen
                       studentName={studentName}
-                      onNavigate={() => navigate("/discussion")}
+                      onNavigate={(s) => {
+                         navigate("/community/discussion");
+                      }}
                     />
                   </RequireAuth>
                 }
               />
               <Route
-                path="/discussion/:id"
+                path="/community/discussion/:id"
                 element={
                   <RequireAuth authed={authed}>
                     <DiscussionDetailWrapper
                       studentName={studentName}
-                      onNavigate={() => navigate("/discussion")}
+                      onNavigate={(s) => {
+                        navigate("/community/discussion");
+                      }}
                     />
                   </RequireAuth>
                 }
               />
+
+              {/* News */}
+              <Route
+                path="/community/news"
+                element={
+                  <RequireAuth authed={authed}>
+                    <NewsFeedScreen
+                      userRole={userRole as "student" | "staff"}
+                      onNavigate={(s, d) => {
+                        if (s === "create-news-post") navigate("/community/news/create");
+                        if (s === "news-detail" && d) navigate(`/community/news/${d}`);
+                      }}
+                    />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/community/news/create"
+                element={
+                  <RequireAuth authed={authed}>
+                    <CreateNewsPostScreen
+                      onNavigate={(s) => navigate("/community/news")}
+                    />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/community/news/:id"
+                element={
+                  <RequireAuth authed={authed}>
+                    <NewsDetailWrapper
+                      userRole={userRole as "student" | "staff"}
+                      onNavigate={(s, d) => {
+                          if (s === "news-feed") navigate("/community/news");
+                          if (s === "edit-news-post") navigate(`/community/news/edit/${d}`);
+                      }}
+                    />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/community/news/edit/:id"
+                element={
+                  <RequireAuth authed={authed}>
+                    <EditNewsWrapper
+                      onNavigate={(s, d) => {
+                          if (s === "news-detail") navigate(`/community/news/${d}`);
+                      }}
+                    />
+                  </RequireAuth>
+                }
+              />
+              {/* -------------------------------------- */}
+
               <Route
                 path="/book"
                 element={
@@ -819,7 +925,9 @@ location.pathname.startsWith("/staff/complaints/")
                 }
               />
 
-              <Route
+              {/* ... (Keep existing Activity/Event/Settings routes unchanged) ... */}
+              
+               <Route
                 path="/edit-profile"
                 element={
                   <RequireAuth authed={authed}>
@@ -1056,50 +1164,50 @@ location.pathname.startsWith("/staff/complaints/")
                 element={<Navigate to={authed ? "/home" : "/"} replace />}
               />
 
-            <Route
-  path="/facility-complaints"
-  element={
-    <RequireAuth authed={authed}>
-      <StudentComplaintsWrapper />
-    </RequireAuth>
-  }
-/>
+              <Route
+                path="/facility-complaints"
+                element={
+                  <RequireAuth authed={authed}>
+                    <StudentComplaintsWrapper />
+                  </RequireAuth>
+                }
+              />
 
-<Route
-  path="/submit-complaint"
-  element={
-    <RequireAuth authed={authed}>
-      <SubmitComplaintWrapper />
-    </RequireAuth>
-  }
-/>
+              <Route
+                path="/submit-complaint"
+                element={
+                  <RequireAuth authed={authed}>
+                    <SubmitComplaintWrapper />
+                  </RequireAuth>
+                }
+              />
 
-<Route
-  path="/complaint/:id"
-  element={
-    <RequireAuth authed={authed}>
-      <StudentComplaintDetailWrapper />
-    </RequireAuth>
-  }
-/>
+              <Route
+                path="/complaint/:id"
+                element={
+                  <RequireAuth authed={authed}>
+                    <StudentComplaintDetailWrapper />
+                  </RequireAuth>
+                }
+              />
 
-<Route
-  path="/staff-complaints"
-  element={
-    <RequireAuth authed={authed}>
-      <StaffComplaintsWrapper />
-    </RequireAuth>
-  }
-/>
+              <Route
+                path="/staff-complaints"
+                element={
+                  <RequireAuth authed={authed}>
+                    <StaffComplaintsWrapper />
+                  </RequireAuth>
+                }
+              />
 
-<Route
-  path="/staff/complaints/:id"
-  element={
-    <RequireAuth authed={authed}>
-      <StaffComplaintDetailWrapper />
-    </RequireAuth>
-  }
-/>
+              <Route
+                path="/staff/complaints/:id"
+                element={
+                  <RequireAuth authed={authed}>
+                    <StaffComplaintDetailWrapper />
+                  </RequireAuth>
+                }
+              />
             </Routes>
 
           </div>

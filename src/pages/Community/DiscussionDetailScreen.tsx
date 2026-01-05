@@ -1,8 +1,6 @@
-import { ArrowLeft, Heart, MessageCircle, Trash2, Flag, Loader2 } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Trash2, Flag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-// Accessing global preferences
-import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface DiscussionDetailScreenProps {
   postId: string;
@@ -31,10 +29,6 @@ export function DiscussionDetailScreen({
   onNavigate,
   studentName,
 }: DiscussionDetailScreenProps) {
-  // Consume theme and translation tools
-  const { theme, t, preferences } = useUserPreferences();
-  const isMs = preferences.language_code === 'ms';
-
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -61,7 +55,10 @@ export function DiscussionDetailScreen({
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       // ----- POST -----
       const { data: postRow, error: postError } = await supabase
@@ -71,12 +68,14 @@ export function DiscussionDetailScreen({
         .maybeSingle();
 
       if (postError) {
+        console.error("Error loading post", postError);
         setLoading(false);
         return;
       }
 
       if (postRow) {
         let displayName = postRow.author_name as string;
+
         if (postRow.author_id) {
           const { data: profileRow } = await supabase
             .from("profiles")
@@ -96,16 +95,23 @@ export function DiscussionDetailScreen({
         });
       }
 
-      // ----- COMMENTS -----
+      // ----- COMMENTS (latest first) -----
       const { data: commentRows, error: commentsError } = await supabase
         .from("discussion_comments")
         .select("id, author_id, author_name, content, created_at")
         .eq("discussion_id", postId)
         .order("created_at", { ascending: false });
 
-      if (!commentsError) {
-        const rows = (commentRows || []) as (Comment & { author_id?: string })[];
-        const authorIds = Array.from(new Set(rows.map((r) => r.author_id).filter(Boolean)));
+      if (commentsError) {
+        console.error("Error loading comments", commentsError);
+      } else {
+        const rows = (commentRows || []) as (Comment & {
+          author_id?: string;
+        })[];
+
+        const authorIds = Array.from(
+          new Set(rows.map((r) => r.author_id).filter(Boolean))
+        );
         let profilesMap: Record<string, string> = {};
 
         if (authorIds.length > 0) {
@@ -115,7 +121,9 @@ export function DiscussionDetailScreen({
             .in("id", authorIds as string[]);
 
           if (profiles) {
-            profilesMap = Object.fromEntries(profiles.map((p: any) => [p.id, p.full_name]));
+            profilesMap = Object.fromEntries(
+              profiles.map((p: any) => [p.id, p.full_name])
+            );
           }
         }
 
@@ -125,15 +133,19 @@ export function DiscussionDetailScreen({
           content: r.content,
           created_at: r.created_at,
         }));
+
         setComments(normalizedComments);
       }
 
       // ----- LIKES -----
-      const { count } = await supabase
+      const { count, error: likesError } = await supabase
         .from("discussion_likes")
         .select("id", { count: "exact", head: true })
         .eq("discussion_id", postId);
-      
+
+      if (likesError) {
+        console.error("Error loading likes", likesError);
+      }
       setLikeCount(count ?? 0);
 
       if (user) {
@@ -145,27 +157,41 @@ export function DiscussionDetailScreen({
           .maybeSingle();
         setLiked(!!myLike);
 
-        const { data: myReport } = await supabase
+        // ----- REPORTED? -----
+        const { data: myReport, error: reportError } = await supabase
           .from("discussion_reports")
           .select("id")
           .eq("discussion_id", postId)
           .eq("reporter_id", user.id)
           .maybeSingle();
-        setReported(!!myReport);
+
+        if (reportError) {
+          console.error("Error loading report status", reportError);
+        } else {
+          setReported(!!myReport);
+        }
       }
+
       setLoading(false);
     };
 
     if (postId) loadData();
   }, [postId]);
 
+  // ----- ADD COMMENT -----
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
+
     setPosting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        alert(isMs ? "Sila log masuk untuk memberi komen." : "You must be logged in to comment.");
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error(userError);
+        alert("You must be logged in to comment.");
         return;
       }
 
@@ -188,100 +214,186 @@ export function DiscussionDetailScreen({
         .select("id, author_name, content, created_at")
         .single();
 
-      if (error || !data) throw error;
+      if (error || !data) {
+        console.error("Failed to add comment", error);
+        alert(
+          `Failed to add comment: ${error?.message || JSON.stringify(error)}`
+        );
+        return;
+      }
 
-      setComments((prev) => [{
-        id: data.id,
-        author_name: data.author_name,
-        content: data.content,
-        created_at: data.created_at,
-      }, ...prev]);
+      // newest at top
+      setComments((prev) => [
+        {
+          id: data.id,
+          author_name: data.author_name,
+          content: data.content,
+          created_at: data.created_at,
+        },
+        ...prev,
+      ]);
 
       setNewComment("");
     } catch (err: any) {
-      alert(isMs ? "Gagal menambah komen" : "Failed to add comment");
+      console.error("Unexpected error adding comment", err);
+      alert(`Failed to add comment: ${err?.message || JSON.stringify(err)}`);
     } finally {
       setPosting(false);
     }
   };
 
   const handleToggleLike = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
     if (liked) {
-      await supabase.from("discussion_likes").delete().eq("discussion_id", postId).eq("user_id", user.id);
+      const { error } = await supabase
+        .from("discussion_likes")
+        .delete()
+        .eq("discussion_id", postId)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Failed to unlike", error);
+        return;
+      }
       setLiked(false);
-      setLikeCount((c) => Math.max(0, c - 1));
+      setLikeCount((c) => c - 1);
     } else {
-      await supabase.from("discussion_likes").insert({ discussion_id: postId, user_id: user.id });
+      const { error } = await supabase.from("discussion_likes").insert({
+        discussion_id: postId,
+        user_id: user.id,
+      });
+
+      if (error) {
+        console.error("Failed to like", error);
+        return;
+      }
       setLiked(true);
       setLikeCount((c) => c + 1);
     }
   };
 
+  // ----- REPORT TOGGLE -----
   const handleReportButtonClick = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !post) return;
+
     if (reported) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      await supabase.from("discussion_reports").delete().eq("discussion_id", postId).eq("reporter_id", user.id);
+      // unreport
+      const { error } = await supabase
+        .from("discussion_reports")
+        .delete()
+        .eq("discussion_id", post.id)
+        .eq("reporter_id", user.id);
+
+      if (error) {
+        console.error("Failed to unreport", error);
+        alert("Failed to remove report.");
+        return;
+      }
       setReported(false);
+      //alert("Report removed.");
     } else {
+      // open dialog to choose reason
       setShowReportDialog(true);
     }
   };
 
   const handleSubmitReport = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user || !post) return;
-    const { error } = await supabase.from("discussion_reports").insert({
-      discussion_id: post.id,
-      reporter_id: user.id,
-      reason: reportReason,
-    });
-    if (!error) {
+
+    try {
+      const { error } = await supabase.from("discussion_reports").insert({
+        discussion_id: post.id,
+        reporter_id: user.id,
+        reason: reportReason,
+      });
+
+      if (error) {
+        console.error("Failed to report", error);
+        alert("Failed to report this post.");
+        return;
+      }
+
       setReported(true);
       setShowReportDialog(false);
+      //alert("Post reported. Thank you.");
+    } catch (err) {
+      console.error("Failed to report", err);
+      alert("Failed to report this post.");
     }
+  };
+
+  const handleDeleteClick = (type: "post" | "comment", id: string) => {
+    setDeleteTarget({ type, id });
+    setShowDeleteDialog(true);
   };
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    const { data: { user } } = await supabase.auth.getUser();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
     if (deleteTarget.type === "comment") {
-      await supabase.from("discussion_comments").delete().eq("id", deleteTarget.id).eq("author_id", user.id);
+      await supabase
+        .from("discussion_comments")
+        .delete()
+        .eq("id", deleteTarget.id)
+        .eq("author_id", user.id);
+
       setComments((prev) => prev.filter((c) => c.id !== deleteTarget.id));
     } else {
-      await supabase.from("discussions").delete().eq("id", deleteTarget.id).eq("author_id", user.id);
+      await supabase
+        .from("discussions")
+        .delete()
+        .eq("id", deleteTarget.id)
+        .eq("author_id", user.id);
+
       onNavigate("discussion");
     }
+
     setShowDeleteDialog(false);
     setDeleteTarget(null);
   };
 
   if (loading || !post) {
     return (
-      <div className="min-h-screen flex items-center justify-center transition-colors" style={{ backgroundColor: theme.background }}>
-        <p style={{ color: theme.textSecondary }}>{t("view_all")}...</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p style={{ color: "#555" }}>Loading...</p>
       </div>
     );
   }
 
-  const postTimestampLabel = new Date(post.created_at).toLocaleString(preferences.language_code === 'ms' ? 'ms-MY' : 'en-US');
+  const postTimestampLabel = new Date(post.created_at).toLocaleString();
   const isAuthor = post.author_name === studentName;
 
   return (
-    <div className="min-h-screen pb-20 transition-colors" style={{ backgroundColor: theme.background }}>
+    <div className="discussion-detail-page bg-white">
       {/* Header */}
-      <div className="sticky top-0 z-40 px-6 py-6 border-b transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+      <div
+        className="sticky top-0 z-40 px-6 py-6 bg-white border-b"
+        style={{ borderColor: "#E5E5E5" }}
+      >
         <div className="flex items-center gap-3">
-          <button onClick={() => onNavigate("discussion")} style={{ color: theme.primary }}>
+          <button
+            onClick={() => onNavigate("discussion")}
+            style={{ color: "#7A0019" }}
+          >
             <ArrowLeft className="w-6 h-6" strokeWidth={1.5} />
           </button>
-          <h2 style={{ color: theme.text, fontWeight: 600, fontSize: "20px" }}>
-            {isMs ? "Perbincangan" : "Discussion"}
+          <h2 style={{ color: "#000000", fontWeight: 600, fontSize: "20px" }}>
+            Discussion
           </h2>
         </div>
       </div>
@@ -289,75 +401,179 @@ export function DiscussionDetailScreen({
       {/* Content */}
       <div className="px-6 py-6 space-y-6">
         {/* Original Post */}
-        <div className="border p-5 transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border, borderRadius: "14px", boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)" }}>
+        <div
+          className="border bg-white p-5"
+          style={{
+            borderColor: "#E5E5E5",
+            borderRadius: "14px",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+          }}
+        >
+          {/* avatar row now centered */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: theme.background, color: theme.primary, fontWeight: 600, fontSize: "16px", border: `1px solid ${theme.border}` }}>
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+              style={{
+                backgroundColor: "#F5F5F5",
+                color: "#7A0019",
+                fontWeight: 600,
+                fontSize: "16px",
+              }}
+            >
               {post.author_name.charAt(0)}
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
-                <span style={{ color: theme.text, fontWeight: 600, fontSize: "15px" }}>{post.author_name}</span>
-                <span className="text-[10px]" style={{ color: theme.textSecondary }}>{postTimestampLabel}</span>
+                <span
+                  style={{
+                    color: "#000000",
+                    fontWeight: 600,
+                    fontSize: "15px",
+                  }}
+                >
+                  {post.author_name}
+                </span>
+                <span className="text-xs" style={{ color: "#888888" }}>
+                  {postTimestampLabel}
+                </span>
               </div>
             </div>
           </div>
 
-          <h3 className="mb-2" style={{ color: theme.text, fontWeight: 600, fontSize: "17px" }}>{post.title}</h3>
-          <p className="text-sm mb-4" style={{ color: theme.textSecondary, lineHeight: "1.7" }}>{post.content}</p>
+          <h3
+            className="mb-2"
+            style={{ color: "#000000", fontWeight: 600, fontSize: "17px" }}
+          >
+            {post.title}
+          </h3>
+          <p
+            className="text-sm mb-4"
+            style={{ color: "#555555", lineHeight: "1.7" }}
+          >
+            {post.content}
+          </p>
 
-          <div className="flex items-center justify-between gap-4 pt-3 border-t" style={{ borderColor: theme.border }}>
+          {/* Actions row */}
+          <div
+            className="flex items-center justify-between gap-4 pt-3 border-t"
+            style={{ borderColor: "#E5E5E5" }}
+          >
             <div className="flex items-center gap-5">
-              <button className="flex items-center gap-2" onClick={handleToggleLike}>
-                <Heart className="w-5 h-5" strokeWidth={1.5} style={{ color: liked ? "#d4183d" : theme.textSecondary }} fill={liked ? "#d4183d" : "none"} />
-                <span className="text-sm" style={{ color: theme.textSecondary }}>{likeCount}</span>
+              <button
+                className="flex items-center gap-2"
+                onClick={handleToggleLike}
+              >
+                <Heart
+                  className="w-5 h-5"
+                  strokeWidth={1.5}
+                  style={{ color: liked ? "#d4183d" : "#888888" }}
+                  fill={liked ? "#d4183d" : "none"}
+                />
+                <span className="text-sm" style={{ color: "#888888" }}>
+                  {likeCount}
+                </span>
               </button>
               <div className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5" style={{ color: theme.textSecondary }} strokeWidth={1.5} />
-                <span className="text-sm" style={{ color: theme.textSecondary }}>{comments.length}</span>
+                <MessageCircle
+                  className="w-5 h-5"
+                  style={{ color: "#888888" }}
+                  strokeWidth={1.5}
+                />
+                <span className="text-sm" style={{ color: "#888888" }}>
+                  {comments.length}
+                </span>
               </div>
             </div>
 
             <div className="flex items-center gap-3 text-xs">
-              <button onClick={handleReportButtonClick} className="flex items-center gap-1" style={{ color: reported ? "#d4183d" : theme.textSecondary }}>
+              <button
+                onClick={handleReportButtonClick}
+                className="flex items-center gap-1"
+                style={{ color: reported ? "#d4183d" : "#888888" }}
+              >
                 <Flag className="w-3 h-3" />
-                {reported ? (isMs ? "Dilaporkan" : "Reported") : (isMs ? "Lapor" : "Report")}
+                {reported ? "Reported" : "Report"}
               </button>
+
               {isAuthor && (
-                <button onClick={() => setDeleteTarget({type: "post", id: post.id})} className="flex items-center gap-1" style={{ color: "#d4183d" }}>
+                <button
+                  onClick={() => handleDeleteClick("post", post.id)}
+                  className="flex items-center gap-1"
+                  style={{ color: "#d4183d" }}
+                >
                   <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                  {isMs ? "Padam" : "Delete"}
+                  Delete
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Comments Section */}
+        {/* Comments */}
         <div>
-          <h3 className="mb-4" style={{ color: theme.text, fontWeight: 600, fontSize: "16px" }}>{isMs ? "Komen" : "Comments"}</h3>
+          <h3
+            className="mb-4"
+            style={{ color: "#000000", fontWeight: 600, fontSize: "16px" }}
+          >
+            Comments
+          </h3>
           {comments.length === 0 && (
-            <p className="text-sm" style={{ color: theme.textSecondary }}>{isMs ? "Tiada komen lagi. Mulakan perbualan!" : "No comments yet. Start the conversation!"}</p>
+            <p className="text-sm" style={{ color: "#999999" }}>
+              No comments yet. Start the conversation!
+            </p>
           )}
           <div className="space-y-3">
             {comments.map((comment) => (
-              <div key={comment.id} className="border p-4 transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border, borderRadius: "14px" }}>
+              <div
+                key={comment.id}
+                className="border bg-white p-4"
+                style={{ borderColor: "#E5E5E5", borderRadius: "14px" }}
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: theme.background, color: theme.primary, fontWeight: 600, fontSize: "14px", border: `1px solid ${theme.border}` }}>
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                    style={{
+                      backgroundColor: "#F5F5F5",
+                      color: "#7A0019",
+                      fontWeight: 600,
+                      fontSize: "14px",
+                    }}
+                  >
                     {comment.author_name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <span style={{ color: theme.text, fontWeight: 600, fontSize: "14px" }}>{comment.author_name}</span>
+                      <span
+                        style={{
+                          color: "#000000",
+                          fontWeight: 600,
+                          fontSize: "14px",
+                        }}
+                      >
+                        {comment.author_name}
+                      </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px]" style={{ color: theme.textSecondary }}>{new Date(comment.created_at).toLocaleString(isMs ? 'ms-MY' : 'en-US')}</span>
+                        <span className="text-xs" style={{ color: "#888888" }}>
+                          {new Date(comment.created_at).toLocaleString()}
+                        </span>
                         {comment.author_name === studentName && (
-                          <button onClick={() => setDeleteTarget({type: "comment", id: comment.id})} style={{ color: "#d4183d" }}>
+                          <button
+                            onClick={() =>
+                              handleDeleteClick("comment", comment.id)
+                            }
+                            style={{ color: "#d4183d" }}
+                          >
                             <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                           </button>
                         )}
                       </div>
                     </div>
-                    <p className="text-sm" style={{ color: theme.textSecondary, lineHeight: "1.6" }}>{comment.content}</p>
+                    <p
+                      className="text-sm"
+                      style={{ color: "#555555", lineHeight: "1.6" }}
+                    >
+                      {comment.content}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -367,60 +583,177 @@ export function DiscussionDetailScreen({
       </div>
 
       {/* Comment Input Footer */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 border-t transition-colors" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+      <div className="fixed-footer">
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder={isMs ? "Tulis komen..." : "Write a comment..."}
+            placeholder="Write a comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            className="flex-1 h-10 px-4 border outline-none transition-colors"
-            style={{ borderColor: theme.border, backgroundColor: theme.background, borderRadius: "14px", fontSize: "14px", color: theme.text }}
+            className="flex-1 h-10 px-4 border bg-white"
+            style={{
+              borderColor: "#E5E5E5",
+              borderRadius: "14px",
+              fontSize: "14px",
+              color: "#1A1A1A",
+            }}
           />
           <button
             onClick={handleAddComment}
             disabled={!newComment.trim() || posting}
-            className="px-4 flex items-center justify-center disabled:opacity-50 transition-all active:scale-95"
-            style={{ backgroundColor: theme.primary, color: "#FFFFFF", borderRadius: "8px", fontWeight: "600", fontSize: "14px" }}
+            className="h-10 px-4 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: "#7A0019",
+              color: "#FFFFFF",
+              borderRadius: "8px",
+              fontWeight: "500",
+              fontSize: "14px",
+              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+            }}
           >
-            {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : (isMs ? "Hantar" : "Send")}
+            {posting ? "Sending..." : "Send"}
           </button>
         </div>
       </div>
 
-      {/* Dialogs */}
-      {(deleteTarget || showReportDialog) && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center px-6 z-50 animate-in fade-in">
-          <div className="p-6 w-full max-w-sm border shadow-2xl transition-colors" style={{ backgroundColor: theme.cardBg, borderRadius: "14px", borderColor: theme.border }}>
-            {deleteTarget ? (
-              <>
-                <h3 className="mb-2" style={{ color: theme.text, fontWeight: 600, fontSize: "18px" }}>
-                  {isMs ? `Padam ${deleteTarget.type === "post" ? "Perbincangan" : "Komen"}?` : `Delete ${deleteTarget.type === "post" ? "Post" : "Comment"}?`}
-                </h3>
-                <p className="text-sm mb-6" style={{ color: theme.textSecondary }}>{isMs ? "Adakah anda pasti? Tindakan ini tidak boleh diundurkan." : "Are you sure? This action cannot be undone."}</p>
-                <div className="flex gap-3">
-                  <button onClick={() => setDeleteTarget(null)} className="flex-1 h-11 border font-bold" style={{ borderColor: theme.border, borderRadius: "14px", color: theme.textSecondary }}>{t("cancel")}</button>
-                  <button onClick={confirmDelete} className="flex-1 h-11 text-white font-bold" style={{ backgroundColor: "#d4183d", borderRadius: "14px" }}>{isMs ? "Padam" : "Delete"}</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="mb-2" style={{ color: theme.text, fontWeight: 600, fontSize: "18px" }}>{isMs ? "Lapor hantaran" : "Report post"}</h3>
-                <p className="text-sm mb-4" style={{ color: theme.textSecondary }}>{isMs ? "Mengapa anda melaporkan hantaran ini?" : "Why are you reporting this post?"}</p>
-                <div className="space-y-2 mb-6 text-sm" style={{ color: theme.text }}>
-                  {["spam", "harassment", "false_info", "other"].map((r) => (
-                    <label key={r} className="flex items-center gap-2">
-                      <input type="radio" value={r} checked={reportReason === r} onChange={() => setReportReason(r as any)} style={{ accentColor: theme.primary }} />
-                      <span>{r.replace('_', ' ')}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={() => setShowReportDialog(false)} className="flex-1 h-11 border font-bold" style={{ borderColor: theme.border, borderRadius: "14px", color: theme.textSecondary }}>{t("cancel")}</button>
-                  <button onClick={handleSubmitReport} className="flex-1 h-11 text-white font-bold" style={{ backgroundColor: "#d4183d", borderRadius: "14px" }}>{isMs ? "Hantar" : "Submit"}</button>
-                </div>
-              </>
-            )}
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-6 z-50">
+          <div
+            className="bg-white p-6 w-full max-w-sm border"
+            style={{ borderRadius: "14px", borderColor: "#E5E5E5" }}
+          >
+            <h3
+              className="mb-2"
+              style={{ color: "#1A1A1A", fontWeight: 600, fontSize: "18px" }}
+            >
+              Delete {deleteTarget?.type === "post" ? "Post" : "Comment"}?
+            </h3>
+            <p
+              className="text-sm mb-6"
+              style={{ color: "#555555", lineHeight: "1.6" }}
+            >
+              Are you sure you want to delete this {deleteTarget?.type}? This
+              action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteDialog(false)}
+                className="flex-1 h-11 border"
+                style={{
+                  borderColor: "#E5E5E5",
+                  borderRadius: "14px",
+                  color: "#555555",
+                  fontWeight: "500",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 h-11"
+                style={{
+                  backgroundColor: "#d4183d",
+                  color: "#FFFFFF",
+                  borderRadius: "14px",
+                  fontWeight: "500",
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Dialog */}
+      {showReportDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-6 z-50">
+          <div
+            className="bg-white p-6 w-full max-w-sm border"
+            style={{ borderRadius: "14px", borderColor: "#E5E5E5" }}
+          >
+            <h3
+              className="mb-2"
+              style={{ color: "#1A1A1A", fontWeight: 600, fontSize: "18px" }}
+            >
+              Report post
+            </h3>
+            <p
+              className="text-sm mb-4"
+              style={{ color: "#555555", lineHeight: "1.6" }}
+            >
+              Why are you reporting this post?
+            </p>
+
+            <div
+              className="space-y-2 mb-6 text-sm"
+              style={{ color: "#1A1A1A" }}
+            >
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  value="spam"
+                  checked={reportReason === "spam"}
+                  onChange={() => setReportReason("spam")}
+                />
+                <span>Spam or promotion</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  value="harassment"
+                  checked={reportReason === "harassment"}
+                  onChange={() => setReportReason("harassment")}
+                />
+                <span>Harassment or hate</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  value="false_info"
+                  checked={reportReason === "false_info"}
+                  onChange={() => setReportReason("false_info")}
+                />
+                <span>False or misleading information</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  value="other"
+                  checked={reportReason === "other"}
+                  onChange={() => setReportReason("other")}
+                />
+                <span>Other</span>
+              </label>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowReportDialog(false)}
+                className="flex-1 h-11 border"
+                style={{
+                  borderColor: "#E5E5E5",
+                  borderRadius: "14px",
+                  color: "#555555",
+                  fontWeight: "500",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitReport}
+                className="flex-1 h-11"
+                style={{
+                  backgroundColor: "#d4183d",
+                  color: "#FFFFFF",
+                  borderRadius: "14px",
+                  fontWeight: "500",
+                }}
+              >
+                Submit report
+              </button>
+            </div>
           </div>
         </div>
       )}

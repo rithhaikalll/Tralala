@@ -1,7 +1,7 @@
+// src/pages/DiscussionScreen.tsx
 import { useEffect, useState } from "react";
-import { Plus, MessageCircle, Heart, User } from "lucide-react";
+import { Plus, MessageCircle, Heart } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
-import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface Discussion {
   id: string;
@@ -9,7 +9,6 @@ interface Discussion {
   content: string;
   created_at: string;
   author_name?: string | null;
-  author_avatar_url?: string | null;
   commentsCount: number;
   likesCount: number;
 }
@@ -23,36 +22,29 @@ export function DiscussionScreenHeader({
 }: {
   onNavigate: (screen: string) => void;
 }) {
-  const { theme, t, preferences } = useUserPreferences();
-  const isMs = preferences.language_code === 'ms';
-
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-50 px-6 py-6 border-b transition-colors duration-300"
-      style={{ 
-        borderColor: theme.border, 
-        backgroundColor: theme.cardBg,
-        transform: "none" 
-      }}
+      className="fixed top-0 left-0 right-0 z-50 bg-white px-6 py-6 border-b"
+      style={{ borderColor: "#E5E5E5", transform: "none" }}
     >
       <div className="flex items-center justify-between">
         <div>
-          <h2 style={{ color: theme.text, fontWeight: 600, fontSize: "20px" }}>
-            {isMs ? "Perbincangan Komuniti" : "Community Discussion"}
+          <h2 style={{ color: "#000000", fontWeight: 600, fontSize: "20px" }}>
+            Community Discussion
           </h2>
           <p
             className="text-sm mt-1"
-            style={{ color: theme.textSecondary, lineHeight: "1.6" }}
+            style={{ color: "#555555", lineHeight: "1.6" }}
           >
-            {isMs ? "Berhubung dengan peminat sukan lain" : "Connect with fellow sports enthusiasts"}
+            Connect with fellow sports enthusiasts
           </p>
         </div>
         <button
           onClick={() => onNavigate("create-discussion")}
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-95"
+          className="w-10 h-10 rounded-full flex items-center justify-center"
           style={{
-            backgroundColor: theme.primary,
-            boxShadow: `0 2px 8px ${theme.primary}40`,
+            backgroundColor: "#7A0019",
+            boxShadow: "0 2px 8px rgba(122, 0, 25, 0.2)",
           }}
         >
           <Plus
@@ -67,7 +59,6 @@ export function DiscussionScreenHeader({
 }
 
 export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
-  const { theme, t, preferences } = useUserPreferences();
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -77,22 +68,21 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
       setLoading(true);
       setErrorMsg(null);
 
-      // UPDATED: Fetch 'full_name' along with 'profile_picture_url'
+      // assumes FK: discussion_comments.discussion_id -> discussions.id
+      // and     FK: discussion_likes.discussion_id     -> discussions.id
       const { data, error } = await supabase
         .from("discussions")
-        .select(`
+        .select(
+          `
           id,
           title,
           content,
           created_at,
           author_name,
           discussion_comments(count),
-          discussion_likes(count),
-          profile_details:profile_details!author_id (
-            profile_picture_url,
-            full_name
-          )
-        `)
+          discussion_likes(count)
+        `
+        )
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -100,25 +90,18 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
         setErrorMsg(error.message);
         setDiscussions([]);
       } else {
-        const mapped: Discussion[] = (data || []).map((row: any) => {
-          const profile = Array.isArray(row.profile_details) 
-            ? row.profile_details[0] 
-            : row.profile_details;
-
-          return {
-            id: row.id,
-            title: row.title,
-            content: row.content,
-            created_at: row.created_at,
-            // UPDATED: Use the live profile name if available, otherwise use the old snapshot
-            author_name: profile?.full_name || row.author_name || "Anonymous",
-            author_avatar_url: profile?.profile_picture_url || null,
-            commentsCount: row.discussion_comments?.[0]?.count ?? 0,
-            likesCount: row.discussion_likes?.[0]?.count ?? 0,
-          };
-        });
+        const mapped: Discussion[] = (data || []).map((row: any) => ({
+          id: row.id,
+          title: row.title,
+          content: row.content,
+          created_at: row.created_at,
+          author_name: row.author_name,
+          commentsCount: row.discussion_comments?.[0]?.count ?? 0,
+          likesCount: row.discussion_likes?.[0]?.count ?? 0,
+        }));
         setDiscussions(mapped);
       }
+
       setLoading(false);
     };
 
@@ -126,9 +109,11 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
   }, []);
 
   return (
-    <div className="h-full transition-colors duration-300" style={{ backgroundColor: theme.background }}>
+    <div className="h-full bg-white">
+      {/* spacer reserved by app-level header */}
       <div className="h-10" />
 
+      {/* Content */}
       <div
         className="px-6 py-2 space-y-3"
         style={{
@@ -136,20 +121,20 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
         }}
       >
         {loading && (
-          <div className="flex justify-center p-4">
-             <Loader2 className="animate-spin" style={{ color: theme.primary }} />
-          </div>
+          <p className="text-sm" style={{ color: "#888888" }}>
+            Loading discussions…
+          </p>
         )}
 
         {errorMsg && (
           <p className="text-sm text-red-500">
-            {preferences.language_code === 'ms' ? 'Gagal memuatkan perbincangan' : 'Failed to load discussions'}: {errorMsg}
+            Failed to load discussions: {errorMsg}
           </p>
         )}
 
         {!loading && !errorMsg && discussions.length === 0 && (
-          <p className="text-sm" style={{ color: theme.textSecondary }}>
-            {preferences.language_code === 'ms' ? 'Tiada perbincangan lagi. Jadi yang pertama!' : 'No discussions yet. Be the first to start one!'}
+          <p className="text-sm" style={{ color: "#555555" }}>
+            No discussions yet. Be the first to start one!
           </p>
         )}
 
@@ -157,34 +142,24 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
           <button
             key={post.id}
             onClick={() => onNavigate("discussion-detail", post.id)}
-            className="w-full p-4 border text-left transition-all active:scale-[0.98]"
+            className="w-full p-4 border bg-white text-left"
             style={{
-              backgroundColor: theme.cardBg,
-              borderColor: theme.border,
+              borderColor: "#E5E5E5",
               borderRadius: "14px",
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
             }}
           >
             <div className="flex items-start gap-3">
-              {/* Avatar Section */}
+              {/* Avatar */}
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
+                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
                 style={{
-                  backgroundColor: theme.background,
-                  color: theme.primary,
+                  backgroundColor: "#F5F5F5",
+                  color: "#7A0019",
                   fontWeight: 600,
-                  border: `1px solid ${theme.border}`
                 }}
               >
-                {post.author_avatar_url ? (
-                  <img 
-                    src={post.author_avatar_url} 
-                    alt="Avatar" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span>{(post.author_name || "U").charAt(0)}</span>
-                )}
+                {(post.author_name || "U").charAt(0)}
               </div>
 
               {/* Content */}
@@ -192,27 +167,26 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
                 <div className="flex items-center justify-between mb-1">
                   <span
                     style={{
-                      color: theme.text,
+                      color: "#1A1A1A",
                       fontWeight: 600,
                       fontSize: "15px",
                     }}
                   >
-                    {/* This will now display "Rifqi Razali" instead of "Rifqi" */}
-                    {post.author_name}
+                    {post.author_name || "Anonymous"}
                   </span>
-                  <span className="text-[10px]" style={{ color: theme.textSecondary }}>
-                    {new Date(post.created_at).toLocaleString(preferences.language_code === 'ms' ? 'ms-MY' : 'en-US')}
+                  <span className="text-xs" style={{ color: "#888888" }}>
+                    {new Date(post.created_at).toLocaleString()}
                   </span>
                 </div>
                 <p
-                  className="text-sm mb-2 font-bold"
-                  style={{ color: theme.text, lineHeight: "1.6" }}
+                  className="text-sm mb-2"
+                  style={{ color: "#1A1A1A", lineHeight: "1.6" }}
                 >
                   {post.title}
                 </p>
                 <p
                   className="text-sm line-clamp-2"
-                  style={{ color: theme.textSecondary, lineHeight: "1.6" }}
+                  style={{ color: "#555555", lineHeight: "1.6" }}
                 >
                   {post.content}
                 </p>
@@ -221,16 +195,16 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
                 <div className="flex items-center gap-4 mt-3 text-xs">
                   <span
                     className="flex items-center gap-1"
-                    style={{ color: theme.textSecondary }}
+                    style={{ color: "#888888" }}
                   >
                     <MessageCircle className="w-3 h-3" /> {post.commentsCount}{" "}
-                    {preferences.language_code === 'ms' ? 'komen' : 'comments'}
+                    comments
                   </span>
                   <span
                     className="flex items-center gap-1"
-                    style={{ color: theme.textSecondary }}
+                    style={{ color: "#888888" }}
                   >
-                    <Heart className="w-3 h-3" /> {post.likesCount} {preferences.language_code === 'ms' ? 'suka' : 'likes'}
+                    <Heart className="w-3 h-3" /> {post.likesCount} likes
                   </span>
                 </div>
               </div>
@@ -239,26 +213,5 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
         ))}
       </div>
     </div>
-  );
-}
-
-// Helper Loader
-function Loader2({ className, style }: { className?: string; style?: any }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      style={style}
-    >
-      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
   );
 }
