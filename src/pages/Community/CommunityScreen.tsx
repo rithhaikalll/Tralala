@@ -57,6 +57,7 @@ export function CommunityScreen() {
           icon={Newspaper}
           bgClass="bg-[#ECF6FC]" 
           iconClass="text-[#3D8BB3]"
+          // UPDATED: Now navigates to the news route
           onClick={() => navigate('/community/news')}
         />
         <MenuCard 
@@ -65,8 +66,7 @@ export function CommunityScreen() {
           icon={UserPlus}
           bgClass="bg-[#FEF2F4]" 
           iconClass="text-[#BD3E63]"
-          // UPDATED: Link to Buddy Hub
-          onClick={() => navigate('/community/buddy')}
+          onClick={() => console.log("Find Buddy clicked")}
         />
         <MenuCard 
           title="Marketplace" 
@@ -74,7 +74,7 @@ export function CommunityScreen() {
           icon={ShoppingBag}
           bgClass="bg-[#F0FDFA]" 
           iconClass="text-[#4A9D8F]"
-          onClick={() => navigate('/community/marketplace')}
+          onClick={() => console.log("Marketplace clicked")}
         />
          <MenuCard 
           title="Chats" 
