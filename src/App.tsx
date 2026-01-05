@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { supabase } from "./lib/supabaseClient";
 import { UserPreferencesProvider } from "./lib/UserPreferencesContext";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 
 import {
   Routes,
@@ -13,7 +13,7 @@ import {
   useParams,
 } from "react-router-dom";
 
-// ... Import your existing components ...
+// --- IMPORTS ---
 import { LoginScreen } from "./pages/Authentication/LoginScreen";
 import { RegisterScreen } from "./pages/Authentication/RegisterScreen";
 import { ResetPasswordRequestScreen } from "./pages/Authentication/ResetPasswordRequestScreen";
@@ -25,11 +25,9 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { BottomNav } from "./pages/BottomNav";
 import { ProfileScreen } from "./pages/ProfileScreen";
 import { EditProfileScreen } from "./pages/EditProfileScreen";
+
 import { ActivityHistoryScreen } from "./pages/Activity Tracking/ActivityHistoryScreen";
-import {
-  ActivityDetailScreen,
-  ActivityDetailHeader,
-} from "./pages/Activity Tracking/ActivityDetailScreen";
+import { ActivityDetailScreen, ActivityDetailHeader } from "./pages/Activity Tracking/ActivityDetailScreen";
 import { ActivityMainScreen } from "./pages/Activity Tracking/ActivityMainScreen";
 import { RecordActivityScreen } from "./pages/Activity Tracking/RecordActivityScreen";
 import { EditActivityScreen } from "./pages/Activity Tracking/EditActivityScreen";
@@ -40,34 +38,10 @@ import { ActivityEventsScreen } from "./pages/Activity Tracking/ActivityEventScr
 import { CreateEventScreen } from "./pages/Activity Tracking/CreateEventScreen";
 import EventDetailsScreen from "./pages/Activity Tracking/EventDetailsScreen";
 import { EventRemindersScreen } from "./pages/Activity Tracking/EventReminderScreen";
-import {
-  FacilityListScreen,
-  BookListHeader,
-} from "./pages/Facility/FacilityListScreen";
-import {
-  MyBookingsScreen,
-  MyBookingsScreenHeader,
-} from "./pages/Facility/MyBookingsScreen";
 
-// --- COMMUNITY IMPORTS ---
-import { CommunityScreen } from "./pages/Community/CommunityScreen";
-import {
-  DiscussionScreen,
-  DiscussionScreenHeader,
-} from "./pages/Community/DiscussionScreen";
-import { DiscussionDetailScreen } from "./pages/Community/DiscussionDetailScreen";
-import { CreateDiscussionScreen } from "./pages/Community/CreateDiscussionScreen";
-
-// --- NEWS IMPORTS ---
-import { NewsFeedScreen } from "./pages/Community/NewsFeedScreen";
-import { CreateNewsPostScreen } from "./pages/Community/CreateNewsPostScreen";
-import { NewsPostDetailScreen } from "./pages/Community/NewsPostDetailScreen";
-import { EditNewsPostScreen } from "./pages/Community/EditNewsPostScreen";
-
-import {
-  FacilityDetailsScreen,
-  FacilityDetailsHeader,
-} from "./pages/Facility/FacilityDetailsScreen";
+import { FacilityListScreen, BookListHeader } from "./pages/Facility/FacilityListScreen";
+import { MyBookingsScreen, MyBookingsScreenHeader } from "./pages/Facility/MyBookingsScreen";
+import { FacilityDetailsScreen, FacilityDetailsHeader } from "./pages/Facility/FacilityDetailsScreen";
 import { TimeSlotSelectionScreen } from "./pages/Facility/TimeSlotSelectionScreen";
 import { BookingConfirmationScreen } from "./pages/Facility/BookingConfirmationScreen";
 import { SuccessScreen } from "./pages/Facility/SuccessScreen";
@@ -79,526 +53,202 @@ import { SubmitComplaintScreen } from "./pages/Facility/SubmitComplaintScreen";
 import { StaffComplaintsScreen } from "./pages/Facility/StaffComplaintsScreen";
 import { StaffComplaintDetailScreen } from "./pages/Facility/StaffComplaintDetailScreen";
 
-import {
-  listStudentComplaints,
-  listStaffComplaints,
-  getComplaintById,
-  createComplaint,
-  updateComplaintAsStaff,
-} from "./lib/complaints";
+import { CommunityScreen } from "./pages/Community/CommunityScreen";
+import { DiscussionScreen, DiscussionScreenHeader } from "./pages/Community/DiscussionScreen";
+import { DiscussionDetailScreen } from "./pages/Community/DiscussionDetailScreen";
+import { CreateDiscussionScreen } from "./pages/Community/CreateDiscussionScreen";
+
+import { NewsFeedScreen } from "./pages/Community/NewsFeedScreen";
+import { CreateNewsPostScreen } from "./pages/Community/CreateNewsPostScreen";
+import { NewsPostDetailScreen } from "./pages/Community/NewsPostDetailScreen";
+import { EditNewsPostScreen } from "./pages/Community/EditNewsPostScreen";
+
+import { MarketplaceScreen } from "./pages/Community/MarketplaceScreen";
+import { CreateListingScreen } from "./pages/Community/CreateListingScreen";
+import { MarketplaceItemDetailScreen } from "./pages/Community/MarketplaceItemDetailScreen";
+
+import { BuddyHubScreen } from "./pages/Community/BuddyHubScreen";
+import { FindBuddyScreen } from "./pages/Community/FindBuddyScreen";
+import { BuddyRequestsScreen } from "./pages/Community/BuddyRequestsScreen";
+import { MyBuddiesScreen } from "./pages/Community/MyBuddyScreen"; // Ensure correct filename
+
+import { listStudentComplaints, listStaffComplaints, getComplaintById, createComplaint, updateComplaintAsStaff } from "./lib/complaints";
 
 // --- WRAPPERS ---
 
-function DiscussionDetailWrapper({
-  onNavigate,
-  studentName,
-}: {
-  onNavigate: (screen: string) => void;
-  studentName: string;
-}) {
-  const { id } = useParams();
-  return (
-    <DiscussionDetailScreen
-      postId={(id as string) || ""}
-      onNavigate={onNavigate}
-      studentName={studentName}
-    />
-  );
-}
+const useBuddyData = (userId: string) => {
+  const [requests, setRequests] = useState<any[]>([]);
+  const [connectedBuddies, setConnectedBuddies] = useState<any[]>([]);
+  
+  const refresh = async () => {
+    if (!userId) return;
 
-// Wrapper for News Details to extract ID
-function NewsDetailWrapper({
-  userRole,
-  onNavigate,
-}: {
-  userRole?: "student" | "staff";
-  onNavigate: (screen: string, data?: string) => void;
-}) {
-  const { id } = useParams();
-  return (
-    <NewsPostDetailScreen
-      postId={(id as string) || ""}
-      userRole={userRole}
-      onNavigate={onNavigate}
-    />
-  );
-}
+    const { data: reqs } = await supabase
+      .from("buddy_requests")
+      .select(`
+        id,
+        status,
+        created_at,
+        requester_id,
+        recipient_id,
+        requester:profiles!requester_id(id, full_name, matric_id, faculty, year, favorite_sports),
+        recipient:profiles!recipient_id(id, full_name, matric_id, faculty, year, favorite_sports)
+      `)
+      .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`);
 
-// Wrapper for Edit News to extract ID
-function EditNewsWrapper({
-  onNavigate,
-}: {
-  onNavigate: (screen: string, data?: string) => void;
-}) {
-  const { id } = useParams();
-  return (
-    <EditNewsPostScreen
-      postId={(id as string) || ""}
-      onNavigate={onNavigate}
-    />
-  );
-}
+    if (reqs) {
+      const mappedRequests = reqs.map((r: any) => ({
+        id: r.id,
+        requesterId: r.requester_id === userId ? r.recipient?.matric_id : r.requester?.matric_id, 
+        requesterName: r.requester_id === userId ? r.recipient?.full_name : r.requester?.full_name,
+        recipientId: r.recipient_id === userId ? "You" : r.recipient?.matric_id,
+        status: r.status,
+        createdAt: r.created_at,
+        isIncoming: r.recipient_id === userId
+      }));
+      setRequests(mappedRequests);
 
-function ActivityDetailWrapper() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  return (
-    <ActivityDetailScreen
-      activityId={(id as string) || ""}
-      onNavigate={(screen) => {
-        if (screen === "activity-history") navigate("/activity-history");
-      }}
-    />
-  );
-}
-
-function FacilityDetailsWrapper() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  return (
-    <FacilityDetailsScreen
-      facilityId={id || ""}
-      onNavigate={(screen, data) => {
-        if (screen === "time-slot" && data)
-          navigate(`/facility/${data}/time-slot`);
-        if (screen === "book") navigate("/book");
-      }}
-    />
-  );
-}
-
-function TimeSlotWrapper() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  return (
-    <TimeSlotSelectionScreen
-      facilityId={id || ""}
-      onNavigate={(screen, data) => {
-        if (screen === "booking-confirmation")
-          navigate(`/booking/confirmation`, { state: data });
-        if (screen === "facility-details") navigate(`/facility/${id}`);
-      }}
-    />
-  );
-}
-
-function BookingConfirmationWrapper() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const bookingData = (location.state as any) || null;
-  const facilityId = bookingData?.facilityId || "";
-  return (
-    <BookingConfirmationScreen
-      bookingData={bookingData || { facilityName: "", date: "", time: "" }}
-      onNavigate={(screen, data) => {
-        if (screen === "time-slot")
-          navigate(`/facility/${facilityId}/time-slot`);
-        if (screen === "success") navigate("/booking/success", { state: data });
-      }}
-    />
-  );
-}
-
-function BookingSuccessWrapper() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const bookingData =
-    (location.state as any) ||
-    ({ facilityName: "", date: "", time: "" } as any);
-  return (
-    <SuccessScreen
-      bookingData={bookingData}
-      onNavigate={(screen) => {
-        if (screen === "upcoming" || screen === "my-bookings")
-          navigate("/my-bookings");
-        if (screen === "home") navigate("/home");
-      }}
-    />
-  );
-}
-
-function EditActivityWrapper({
-  userId,
-  userRole,
-}: {
-  userId: string;
-  userRole: "student" | "staff";
-}) {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  return (
-    <EditActivityScreen
-      activityId={id || ""}
-      userId={userId}
-      userRole={userRole}
-      onNavigate={(screen) => {
-        if (screen === "activity-main") navigate("/activity-main");
-      }}
-    />
-  );
-}
-
-function DetailActivityWrapper() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  return (
-    <DetailActivityScreen
-      activityId={id || ""}
-      onNavigate={(screen) => {
-        if (screen === "activity-main") navigate("/activity-main");
-      }}
-    />
-  );
-}
-
-function EventDetailWrapper({
-  userId,
-  userRole,
-}: {
-  userId: string;
-  userRole: "student" | "staff";
-}) {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  return (
-    <EventDetailsScreen
-      eventId={id || ""}
-      userId={userId}
-      userRole={userRole}
-      onNavigate={(screen) => {
-        if (screen === "activity-events") navigate("/activity-events");
-      }}
-    />
-  );
-}
-
-function StudentComplaintsWrapper() {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [complaints, setComplaints] = useState<any[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const list = await listStudentComplaints();
-        setComplaints(list);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  if (loading) return <div className="p-6">Loading…</div>;
-
-  return (
-    <FacilityComplaintsScreen
-      complaints={complaints}
-      onUpdateComplaints={(next) => setComplaints(next)}
-      onNavigate={(screen, data) => {
-        if (screen === "profile") navigate("/profile");
-        if (screen === "submit-complaint") navigate("/submit-complaint");
-        if (screen === "complaint-detail") navigate(`/complaint/${data?.complaint?.id}`);
-      }}
-    />
-  );
-}
-
-function StudentComplaintDetailWrapper() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [complaint, setComplaint] = useState<any>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const row = await getComplaintById(id || "");
-        setComplaint(row ? {
-          id: row.id,
-          facilityName: row.facility_name,
-          title: row.title,
-          category: row.category,
-          description: row.description,
-          status: row.status,
-          submittedDate: new Date(row.created_at).toLocaleDateString(),
-          photoEvidence: row.photo_url || undefined,
-          staffRemarks: row.staff_remarks || undefined,
-        } : null);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id]);
-
-  if (loading) return <div className="p-6">Loading…</div>;
-  if (!complaint) return <div className="p-6">Complaint not found</div>;
-
-  return (
-    <ComplaintDetailScreen
-      complaint={complaint}
-      onNavigate={(screen) => {
-        if (screen === "facility-complaints") navigate("/facility-complaints");
-      }}
-    />
-  );
-}
-
-function SubmitComplaintWrapper() {
-  const navigate = useNavigate();
-
-  return (
-    <SubmitComplaintScreen
-      onNavigate={(screen) => {
-        if (screen === "facility-complaints") navigate("/facility-complaints");
-      }}
-      onSubmitComplaint={async (payload) => {
-        await createComplaint(payload);
-      }}
-    />
-  );
-}
-
-function StaffComplaintsWrapper() {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [complaints, setComplaints] = useState<any[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const list = await listStaffComplaints();
-        setComplaints(list);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  if (loading) return <div className="p-6">Loading…</div>;
-
-  return (
-    <StaffComplaintsScreen
-      complaints={complaints}
-      onNavigate={(screen, data) => {
-        if (screen === "staff-checkin-dashboard") navigate("/home");
-        if (screen === "staff-complaint-detail")
-          navigate(`/staff/complaints/${data?.complaint?.id}`);
-      }}
-    />
-  );
-}
-
-function StaffComplaintDetailWrapper() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [complaint, setComplaint] = useState<any>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const row = await getComplaintById(id || "");
-        setComplaint(row ? {
-          id: row.id,
-          studentName: row.student_name || "—",
-          studentId: row.student_matric_id || "—",
-          facilityName: row.facility_name,
-          title: row.title,
-          category: row.category,
-          description: row.description,
-          status: row.status,
-          submittedDate: new Date(row.created_at).toLocaleDateString(),
-          photoEvidence: row.photo_url || undefined,
-          staffRemarks: row.staff_remarks || undefined,
-          priority: row.priority || "Medium",
-          assignedTo: row.assigned_to || "",
-        } : null);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id]);
-
-  if (loading) return <div className="p-6">Loading…</div>;
-  if (!complaint) return <div className="p-6">Complaint not found</div>;
-
-  return (
-    <StaffComplaintDetailScreen
-      complaint={complaint}
-      onNavigate={(screen) => {
-        if (screen === "staff-complaints") navigate("/staff-complaints");
-      }}
-      onUpdateComplaint={async (updated) => {
-        await updateComplaintAsStaff(updated.id, {
-          status: updated.status,
-          staffRemarks: updated.staffRemarks,
-          priority: updated.priority,
-          assignedTo: updated.assignedTo,
+      const connected = reqs
+        .filter((r: any) => r.status === "Accepted")
+        .map((r: any) => {
+          const buddyProfile = r.requester_id === userId ? r.recipient : r.requester;
+          return {
+            id: buddyProfile?.id,
+            userId: buddyProfile?.matric_id,
+            name: buddyProfile?.full_name,
+            faculty: buddyProfile?.faculty || "Unknown Faculty",
+            year: buddyProfile?.year || "Unknown Year",
+            favoriteSports: buddyProfile?.favorite_sports || [],
+            connectedSince: r.created_at
+          };
         });
-      }}
-    />
-  );
+      setConnectedBuddies(connected);
+    }
+  };
+
+  useEffect(() => { refresh(); }, [userId]);
+  return { requests, connectedBuddies, refresh };
+};
+
+function DiscussionDetailWrapper({ onNavigate, studentName }: any) { const { id } = useParams(); return <DiscussionDetailScreen postId={id || ""} onNavigate={onNavigate} studentName={studentName} />; }
+function NewsDetailWrapper({ userRole, onNavigate }: any) { const { id } = useParams(); return <NewsPostDetailScreen postId={id || ""} userRole={userRole} onNavigate={onNavigate} />; }
+function EditNewsWrapper({ onNavigate }: any) { const { id } = useParams(); return <EditNewsPostScreen postId={id || ""} onNavigate={onNavigate} />; }
+function MarketplaceDetailWrapper({ userId, onNavigate }: any) { 
+  const { id } = useParams(); const [item, setItem] = useState<any>(null); const [loading, setLoading] = useState(true);
+  useEffect(() => { const fetchItem = async () => { const { data } = await supabase.from("marketplace_listings").select("*").eq("id", id).single(); setItem(data); setLoading(false); }; if (id) fetchItem(); }, [id]);
+  if (loading) return <div className="p-6">Loading...</div>; if (!item) return <div className="p-6">Item not found</div>;
+  return <MarketplaceItemDetailScreen item={item} onNavigate={onNavigate} isFavourite={false} onToggleFavourite={() => {}} isOwner={item.seller_id === userId} onCreateMarketplaceChat={() => {}} />;
 }
 
-function RequireAuth({
-  authed,
-  children,
-}: {
-  authed: boolean;
-  children: ReactNode;
-}) {
-  return authed ? (
-    <div className="w-full flex-1 flex flex-col bg-[--bg-primary)]">
-      {children as any}
-    </div>
-  ) : (
-    <Navigate to="/" replace />
-  );
-}
+function ActivityDetailWrapper() { const { id } = useParams(); const navigate = useNavigate(); return <ActivityDetailScreen activityId={id || ""} onNavigate={(s) => { if (s === "activity-history") navigate("/activity-history"); }} />; }
+function FacilityDetailsWrapper() { const { id } = useParams(); const navigate = useNavigate(); return <FacilityDetailsScreen facilityId={id || ""} onNavigate={(s, data) => { if (s === "time-slot") navigate(`/facility/${data}/time-slot`); if (s === "book") navigate("/book"); }} />; }
+function TimeSlotWrapper() { const { id } = useParams(); const navigate = useNavigate(); return <TimeSlotSelectionScreen facilityId={id || ""} onNavigate={(s, data) => { if (s === "booking-confirmation") navigate(`/booking/confirmation`, { state: data }); if (s === "facility-details") navigate(`/facility/${id}`); }} />; }
+function BookingConfirmationWrapper() { const location = useLocation(); const navigate = useNavigate(); return <BookingConfirmationScreen bookingData={location.state || null} onNavigate={(s, data) => { if (s === "time-slot") navigate(-1); if (s === "success") navigate("/booking/success", { state: data }); }} />; }
+function BookingSuccessWrapper() { const location = useLocation(); const navigate = useNavigate(); return <SuccessScreen bookingData={location.state || {}} onNavigate={(s) => { if (s === "upcoming" || s === "my-bookings") navigate("/my-bookings"); if (s === "home") navigate("/home"); }} />; }
+function EditActivityWrapper({ userId, userRole }: any) { const { id } = useParams(); const navigate = useNavigate(); return <EditActivityScreen activityId={id || ""} userId={userId} userRole={userRole} onNavigate={() => navigate("/activity-main")} />; }
+function DetailActivityWrapper() { const { id } = useParams(); const navigate = useNavigate(); return <DetailActivityScreen activityId={id || ""} onNavigate={() => navigate("/activity-main")} />; }
+function EventDetailWrapper({ userId, userRole }: any) { const { id } = useParams(); const navigate = useNavigate(); return <EventDetailsScreen eventId={id || ""} userId={userId} userRole={userRole} onNavigate={() => navigate("/activity-events")} />; }
+function StudentComplaintsWrapper() { const navigate = useNavigate(); const [loading, setLoading] = useState(true); const [complaints, setComplaints] = useState([]); useEffect(() => { (async () => { const list = await listStudentComplaints(); setComplaints(list); setLoading(false); })(); }, []); if (loading) return <div>Loading...</div>; return <FacilityComplaintsScreen complaints={complaints} onUpdateComplaints={setComplaints} onNavigate={(s, d) => { if (s === "submit-complaint") navigate("/submit-complaint"); if (s === "complaint-detail") navigate(`/complaint/${d.complaint.id}`); if (s === "profile") navigate("/profile"); }} />; }
+function SubmitComplaintWrapper() { const navigate = useNavigate(); return <SubmitComplaintScreen onNavigate={() => navigate("/facility-complaints")} onSubmitComplaint={createComplaint} />; }
+function StudentComplaintDetailWrapper() { const { id } = useParams(); const navigate = useNavigate(); const [c, setC] = useState<any>(null); useEffect(() => { (async () => { const row = await getComplaintById(id || ""); setC(row); })(); }, [id]); if (!c) return <div>Loading...</div>; return <ComplaintDetailScreen complaint={{ id: c.id, facilityName: c.facility_name, title: c.title, category: c.category, description: c.description, status: c.status, submittedDate: new Date(c.created_at).toLocaleDateString(), photoEvidence: c.photo_url, staffRemarks: c.staff_remarks }} onNavigate={() => navigate("/facility-complaints")} />; }
+function StaffComplaintsWrapper() { const navigate = useNavigate(); const [loading, setLoading] = useState(true); const [complaints, setComplaints] = useState([]); useEffect(() => { (async () => { const list = await listStaffComplaints(); setComplaints(list); setLoading(false); })(); }, []); if (loading) return <div>Loading...</div>; return <StaffComplaintsScreen complaints={complaints} onNavigate={(s, d) => { if (s === "staff-complaint-detail") navigate(`/staff/complaints/${d.complaint.id}`); if (s === "staff-checkin-dashboard") navigate("/home"); }} />; }
+function StaffComplaintDetailWrapper() { const { id } = useParams(); const navigate = useNavigate(); const [c, setC] = useState<any>(null); useEffect(() => { (async () => { const row = await getComplaintById(id || ""); setC(row); })(); }, [id]); if (!c) return <div>Loading...</div>; return <StaffComplaintDetailScreen complaint={{ id: c.id, studentName: c.student_name, studentId: c.student_matric_id, facilityName: c.facility_name, title: c.title, category: c.category, description: c.description, status: c.status, submittedDate: new Date(c.created_at).toLocaleDateString(), photoEvidence: c.photo_url, staffRemarks: c.staff_remarks, priority: c.priority, assignedTo: c.assigned_to }} onNavigate={() => navigate("/staff-complaints")} onUpdateComplaint={async (u) => updateComplaintAsStaff(u.id, { status: u.status, staffRemarks: u.staffRemarks, priority: u.priority, assignedTo: u.assignedTo })} />; }
+
+function RequireAuth({ authed, children }: any) { return authed ? <div className="w-full flex-1 flex flex-col bg-[--bg-primary)]">{children}</div> : <Navigate to="/" replace />; }
 
 export default function App() {
   const [authed, setAuthed] = useState(false);
-  const [studentName, setStudentName] = useState<string>("Student");
+  const [studentName, setStudentName] = useState("Student");
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
-
   const [userRole, setUserRole] = useState<"student" | "staff" | "admin">("student");
-  const [userId, setUserId] = useState<string>("");
-  const [studentId, setStudentId] = useState<string>(
-    localStorage.getItem("utm-student-id") || ""
-  );
+  const [userId, setUserId] = useState("");
+  const [studentId, setStudentId] = useState(localStorage.getItem("utm-student-id") || "");
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Helper to fetch all necessary data centrally
-  const fetchUserData = async (uid: string, role: string) => {
-    // 1. Fetch editable details (profile_details) for Picture and Custom Name
-    const { data: details } = await supabase
-      .from("profile_details")
-      .select("full_name, profile_picture_url")
-      .eq("user_id", uid)
-      .maybeSingle();
+  const { requests, connectedBuddies, refresh: refreshBuddyData } = useBuddyData(userId);
 
-    // 2. Fetch core identity
+  const fetchUserData = async (uid: string, role: string) => {
+    const { data: details } = await supabase.from("profile_details").select("full_name, profile_picture_url").eq("user_id", uid).maybeSingle();
     let coreName = "User";
     let matric = "";
 
     if (role === "staff") {
-      const { data } = await supabase
-        .from("staff_profiles")
-        .select("full_name")
-        .eq("user_id", uid)
-        .maybeSingle();
+      const { data } = await supabase.from("staff_profiles").select("full_name").eq("user_id", uid).maybeSingle();
       if (data) coreName = data.full_name;
     } else if (role === "admin") {
       coreName = "Admin";
       if (details?.full_name) coreName = details.full_name;
     } else {
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, matric_id")
-        .eq("id", uid)
-        .maybeSingle();
-      if (data) {
-        coreName = data.full_name;
-        matric = data.matric_id || "";
-      }
+      const { data } = await supabase.from("profiles").select("full_name, matric_id").eq("id", uid).maybeSingle();
+      if (data) { coreName = data.full_name; matric = data.matric_id || ""; }
     }
-
     setStudentName(details?.full_name || coreName);
     setProfilePicture(details?.profile_picture_url || null);
-
-    if (matric) {
-      setStudentId(matric);
-      localStorage.setItem("utm-student-id", matric);
-    } else if (role === "staff") {
-      setStudentId("Staff");
-    } else if (role === "admin") {
-      setStudentId("Admin");
-    }
+    if (matric) { setStudentId(matric); localStorage.setItem("utm-student-id", matric); }
   };
 
   useEffect(() => {
-    const syncSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    const sync = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const role =
-          (session.user.user_metadata?.role as "student" | "staff" | "admin") ||
-          "student";
-        setUserId(session.user.id);
-        setUserRole(role);
-        setAuthed(true);
-        fetchUserData(session.user.id, role);
+        const role = (session.user.user_metadata?.role as "student" | "staff" | "admin") || "student";
+        setUserId(session.user.id); setUserRole(role); setAuthed(true); fetchUserData(session.user.id, role);
       }
     };
-    syncSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
+    sync();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       if (session?.user) {
-        const role =
-          (session.user.user_metadata?.role as "student" | "staff" | "admin") ||
-          "student";
-        setUserRole(role);
-        setAuthed(true);
-        fetchUserData(session.user.id, role);
+        const role = (session.user.user_metadata?.role as "student" | "staff" | "admin") || "student";
+        setUserRole(role); setAuthed(true); setUserId(session.user.id); fetchUserData(session.user.id, role);
       } else {
-        setAuthed(false);
-        localStorage.removeItem("utm-student-id");
+        setAuthed(false); localStorage.removeItem("utm-student-id");
       }
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
-  // UPDATED: Logic to hide bottom nav
-  const hideBottomNav =
-    userRole === "admin" ||
-    location.pathname === "/" ||
-    location.pathname.startsWith("/register") ||
-    location.pathname.startsWith("/facility") ||
-    location.pathname.startsWith("/booking") ||
-    // Updated discussion paths
-    location.pathname.includes("/community/discussion/create") ||
-    location.pathname.match(/\/community\/discussion\/[^/]+$/) || 
-    // NEWS PATHS: Hide nav on create, edit, or detail view
-    location.pathname.includes("/community/news/create") ||
-    location.pathname.includes("/community/news/edit") ||
-    location.pathname.match(/\/community\/news\/[^/]+$/) ||
-    location.pathname.startsWith("/activity-history") ||
-    location.pathname.match(/^\/activity\/[^/]+$/) ||
-    location.pathname.startsWith("/activity/edit") ||
-    location.pathname.startsWith("/badges") ||
-    location.pathname.startsWith("/activity-event") ||
-    location.pathname.startsWith("/create-event") ||
-    location.pathname.startsWith("/event-detail") ||
-    location.pathname.startsWith("/event-reminders") ||
-    location.pathname.startsWith("/settings/") ||
-    location.pathname === "/edit-profile" ||
-    location.pathname.startsWith("/my-bookings") ||
-    location.pathname === "/admin-dashboard" ||
-    location.pathname.startsWith("/facility-complaints") ||
-    location.pathname.startsWith("/submit-complaint") ||
-    location.pathname.startsWith("/complaint/") ||
-    location.pathname.startsWith("/staff-complaints") ||
-    location.pathname.startsWith("/staff/complaints/");
+  // --- ACTIONS ---
+  const handleLogin = async (name: string, id?: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUserId(user?.id || "");
+    const role = user?.user_metadata?.role || "student";
+    navigate(role === "admin" ? "/admin-dashboard" : "/home", { replace: true });
+  };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setAuthed(false);
+    localStorage.removeItem("utm-student-id");
+    navigate("/", { replace: true });
+  };
+
+  const handleProfileUpdate = () => {
+    fetchUserData(userId, userRole);
+  };
+
+  const handleSendBuddyRequest = async (recipientId: string) => {
+    const { error } = await supabase.from("buddy_requests").insert({ requester_id: userId, recipient_id: recipientId });
+    if (error) toast.error("Request failed"); else { toast.success("Request sent!"); refreshBuddyData(); }
+  };
+
+  const handleUpdateBuddyStatus = async (requestId: string, status: string) => {
+    const { error } = await supabase.from("buddy_requests").update({ status }).eq("id", requestId);
+    if (error) toast.error("Update failed"); else { toast.success("Updated!"); refreshBuddyData(); }
+  };
+
+  const handleRemoveBuddy = async (buddyId: string) => {
+    const { error } = await supabase.from("buddy_requests").delete()
+      .or(`and(requester_id.eq.${userId},recipient_id.eq.${buddyId}),and(requester_id.eq.${buddyId},recipient_id.eq.${userId})`);
+    if (!error) { toast.success("Removed"); refreshBuddyData(); }
+  };
+
+  const hideBottomNav = userRole === "admin" || ["/", "/register"].some(p => location.pathname === p) || location.pathname.startsWith("/facility") || location.pathname.includes("/create") || location.pathname.includes("/edit") || location.pathname.includes("/find-buddy") || location.pathname.includes("/buddy-requests") || location.pathname.includes("/my-buddies");
   const showBottomNav = authed && !hideBottomNav;
+  const hasHeader = authed && userRole !== "admin" && !hideBottomNav && !location.pathname.includes("/news") && !location.pathname.includes("/marketplace");
 
-  // UPDATED: Header Logic
-  const hasHeader =
-    authed &&
-    userRole !== "admin" &&
-    ((location.pathname.startsWith("/facility") && !location.pathname.startsWith("/facility-complaints")) ||
-      location.pathname.startsWith("/book") ||
-      (location.pathname === "/home" && userRole === "student") ||
-      // Show Discussion Header ONLY on list view
-      (location.pathname === "/community/discussion") ||
-      location.pathname === "/my-bookings" ||
-      (location.pathname.match(/^\/activity\/[^/]+$/) && !location.pathname.startsWith("/activity/record")));
-      // NOTE: We do NOT want the global header for News, as news screens have their own.
-
+  // ✅ FIXED: RESTORED activeTab LOGIC
   const activeTab = useMemo(() => {
     const p = location.pathname;
     if (p.startsWith("/community")) return "community"; 
@@ -619,32 +269,6 @@ export default function App() {
     return "home";
   }, [location.pathname]);
 
-  const handleLogin = async (name: string, id?: string) => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const role =
-      (user?.user_metadata?.role as "student" | "staff" | "admin") || "student";
-    fetchUserData(user?.id || "", role);
-    setStudentName(name);
-    setUserRole(role);
-    setUserId(user?.id || id || "");
-    setAuthed(true);
-
-    if (role === "admin") {
-      navigate("/admin-dashboard", { replace: true });
-    } else {
-      navigate("/home", { replace: true });
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setAuthed(false);
-    localStorage.removeItem("utm-student-id");
-    navigate("/", { replace: true });
-  };
-
   const onTabChange = (tab: string) => {
     const map: Record<string, string> = {
       home: "/home",
@@ -656,565 +280,71 @@ export default function App() {
     navigate(map[tab] || "/home");
   };
 
-  const handleProfileUpdate = () => {
-    fetchUserData(userId, userRole);
-  };
-
   return (
     <UserPreferencesProvider>
       <Toaster position="top-center" richColors />
-      <div className="h-full w-full bg-[--bg-primary)] text-[--text-primary)] transition-colors duration-300 flex flex-col overflow-hidden">
+      <div className="h-full w-full bg-[--bg-primary)] flex flex-col">
         {hasHeader && (
           <header className="fixed-header-top">
-            {location.pathname === "/home" && userRole === "student" && (
-              <HomeScreenHeader studentName={studentName} />
-            )}
-            {location.pathname.startsWith("/facility") &&
-              !location.pathname.startsWith("/facility-complaints") && (
-                <FacilityDetailsHeader onBack={() => navigate("/book")} />
-              )}
-            {location.pathname.startsWith("/book") && <BookListHeader />}
-            
-            {/* Discussion Header */}
-            {location.pathname === "/community/discussion" && (
-                <DiscussionScreenHeader
-                  onNavigate={(screen) => {
-                    if (screen === "create-discussion") navigate("/community/discussion/create");
-                  }}
-                />
-              )}
-            
-            {location.pathname === "/my-bookings" && (
-              <MyBookingsScreenHeader onBack={() => navigate("/home")} />
-            )}
-            {location.pathname.match(/^\/activity\/[^/]+$/) &&
-              !location.pathname.startsWith("/activity/record") && (
-                <ActivityDetailHeader
-                  onBack={() => navigate("/activity-history")}
-                />
-              )}
+            {location.pathname === "/home" && <HomeScreenHeader studentName={studentName} />}
+            {location.pathname === "/community/discussion" && <DiscussionScreenHeader onNavigate={(s) => s === "create-discussion" && navigate("/community/discussion/create")} />}
+            {location.pathname === "/my-bookings" && <MyBookingsScreenHeader onBack={() => navigate("/home")} />}
           </header>
         )}
+        <main className={`flex-1 overflow-y-auto ${showBottomNav ? "with-bottom-nav" : ""}`} style={{ paddingTop: hasHeader ? "70px" : "0px" }}>
+          <Routes>
+            <Route path="/" element={<LoginScreen onLogin={handleLogin} onNavigate={(p) => navigate(p === "register" ? "/register" : "/reset-password-request")} />} />
+            <Route path="/register" element={<RegisterScreen onNavigate={(p) => navigate(p === "login" ? "/" : "/register")} />} />
+            <Route path="/reset-password-request" element={<ResetPasswordRequestScreen onNavigate={(p) => navigate(p)} />} />
+            <Route path="/reset-link-sent" element={<ResetLinkSentScreen onNavigate={(p) => navigate(p)} />} />
+            <Route path="/reset-password-new" element={<ResetPasswordNewScreen onNavigate={(p) => navigate(p)} />} />
 
-        <main
-          className={`content flex-1 overflow-y-auto bg-[--bg-primary)] ${
-            showBottomNav ? "with-bottom-nav" : ""
-          }`}
-          style={{ paddingTop: hasHeader ? "70px" : "0px", minHeight: "100%" }}
-        >
-          <div className="flex-1 flex flex-col w-full bg-[--bg-primary)]">
-            <Routes>
-              {/* ... (Auth Routes) ... */}
-              <Route
-                path="/"
-                element={
-                  <LoginScreen
-                    onLogin={handleLogin}
-                    onNavigate={(p) =>
-                      navigate(
-                        p === "register"
-                          ? "/register"
-                          : "/reset-password-request"
-                      )
-                    }
-                  />
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <RegisterScreen
-                    onNavigate={(p) =>
-                      navigate(p === "login" ? "/" : "/register")
-                    }
-                  />
-                }
-              />
-              <Route
-                path="/reset-password-request"
-                element={
-                  <ResetPasswordRequestScreen onNavigate={(p) => navigate(p)} />
-                }
-              />
-              <Route
-                path="/reset-link-sent"
-                element={
-                  <ResetLinkSentScreen onNavigate={(p) => navigate(p)} />
-                }
-              />
-              <Route
-                path="/reset-password-new"
-                element={
-                  <ResetPasswordNewScreen onNavigate={(p) => navigate(p)} />
-                }
-              />
+            <Route path="/home" element={<RequireAuth authed={authed}><HomeScreen studentName={studentName} onNavigate={(s, d) => navigate(s === "book" ? "/book" : s === "discussion" ? "/community" : "/home")} /></RequireAuth>} />
+            <Route path="/admin-dashboard" element={<RequireAuth authed={authed}><AdminDashboard onNavigate={navigate} onLogout={handleLogout} /></RequireAuth>} />
+            
+            {/* COMMUNITY */}
+            <Route path="/community" element={<RequireAuth authed={authed}><CommunityScreen /></RequireAuth>} />
+            <Route path="/community/buddy" element={<RequireAuth authed={authed}><BuddyHubScreen onNavigate={(s: string) => navigate(`/community/${s}`)} buddyRequests={requests} connectedBuddies={connectedBuddies} onSearch={() => navigate("/community/find-buddy")} onAcceptRequest={() => {}} onRejectRequest={() => {}} buddyChats={[]} /></RequireAuth>} />
+            <Route path="/community/find-buddy" element={<RequireAuth authed={authed}><FindBuddyScreen onNavigate={() => navigate("/community/buddy")} studentId={userId} studentName={studentName} connectedBuddies={connectedBuddies.map(b => b.id)} onSendRequest={handleSendBuddyRequest} /></RequireAuth>} />
+            <Route path="/community/buddy-requests" element={<RequireAuth authed={authed}><BuddyRequestsScreen onNavigate={() => navigate("/community/buddy")} studentId={userId} buddyRequests={requests} onAcceptRequest={(id) => handleUpdateBuddyStatus(id, "Accepted")} onRejectRequest={(id) => handleUpdateBuddyStatus(id, "Rejected")} /></RequireAuth>} />
+            <Route path="/community/my-buddies" element={<RequireAuth authed={authed}><MyBuddiesScreen onNavigate={() => navigate("/community/buddy")} studentId={userId} connectedBuddies={connectedBuddies} onRemoveBuddy={handleRemoveBuddy} /></RequireAuth>} />
 
-              <Route
-                path="/admin-dashboard"
-                element={
-                  <RequireAuth authed={authed}>
-                    <AdminDashboard
-                      onNavigate={(screen) => navigate(screen)}
-                      onLogout={handleLogout}
-                    />
-                  </RequireAuth>
-                }
-              />
+            {/* OTHER FEATURES */}
+            <Route path="/community/discussion" element={<RequireAuth authed={authed}><DiscussionScreen onNavigate={(s,d) => navigate(s==="create-discussion" ? "/community/discussion/create" : `/community/discussion/${d}`)} /></RequireAuth>} />
+            <Route path="/community/discussion/create" element={<RequireAuth authed={authed}><CreateDiscussionScreen studentName={studentName} onNavigate={() => navigate("/community/discussion")} /></RequireAuth>} />
+            <Route path="/community/discussion/:id" element={<RequireAuth authed={authed}><DiscussionDetailWrapper studentName={studentName} onNavigate={() => navigate("/community/discussion")} /></RequireAuth>} />
+            
+            <Route path="/community/news" element={<RequireAuth authed={authed}><NewsFeedScreen userRole={userRole} onNavigate={(s,d) => navigate(s==="create-news-post" ? "/community/news/create" : `/community/news/${d}`)} /></RequireAuth>} />
+            <Route path="/community/news/create" element={<RequireAuth authed={authed}><CreateNewsPostScreen onNavigate={() => navigate("/community/news")} /></RequireAuth>} />
+            <Route path="/community/news/:id" element={<RequireAuth authed={authed}><NewsDetailWrapper userRole={userRole} onNavigate={() => navigate("/community/news")} /></RequireAuth>} />
+            <Route path="/community/news/edit/:id" element={<RequireAuth authed={authed}><EditNewsWrapper onNavigate={(s,d) => navigate(`/community/news/${d}`)} /></RequireAuth>} />
 
-              <Route
-                path="/home"
-                element={
-                  <RequireAuth authed={authed}>
-                    {userRole === "staff" ? (
-                      <StaffCheckInDashboardScreen
-                        staffName={studentName}
-                        onNavigate={(p) => navigate(p)}
-                        onLogout={handleLogout}
-                      />
-                    ) : userRole === "admin" ? (
-                      <Navigate to="/admin-dashboard" replace />
-                    ) : (
-                      <HomeScreen
-                        studentName={studentName}
-                        onNavigate={(s, d) => {
-                          if (s === "book") navigate("/book");
-                          if (s === "discussion") navigate("/community"); 
-                          if (s === "facility-details" && d)
-                            navigate(`/facility/${d}`);
-                          if (s === "activity-record")
-                            navigate("/activity/record");
-                          if (s === "activity-main") navigate("/activity-main");
-                          if (s === "my-bookings") navigate("/my-bookings");
-                        }}
-                      />
-                    )}
-                  </RequireAuth>
-                }
-              />
+            <Route path="/community/marketplace" element={<RequireAuth authed={authed}><MarketplaceScreen currentUserId={userId} onNavigate={(s,d) => navigate(s==="create-listing" ? "/community/marketplace/create" : s==="marketplace-item-detail" ? `/community/marketplace/${d.item.id}` : "/community")} listings={[]} favourites={[]} onToggleFavourite={()=>{}} /></RequireAuth>} />
+            <Route path="/community/marketplace/create" element={<RequireAuth authed={authed}><CreateListingScreen studentId={userId} studentName={studentName} onNavigate={() => navigate("/community/marketplace")} onCreateListing={()=>{}} /></RequireAuth>} />
+            <Route path="/community/marketplace/:id" element={<RequireAuth authed={authed}><MarketplaceDetailWrapper userId={userId} onNavigate={() => navigate("/community/marketplace")} /></RequireAuth>} />
 
-              {/* --- COMMUNITY ROUTES --- */}
-              <Route
-                path="/community"
-                element={
-                  <RequireAuth authed={authed}>
-                    <CommunityScreen />
-                  </RequireAuth>
-                }
-              />
+            <Route path="/book" element={<RequireAuth authed={authed}><FacilityListScreen onNavigate={(s, d) => navigate(`/facility/${d}`)} /></RequireAuth>} />
+            <Route path="/facility/:id" element={<RequireAuth authed={authed}><FacilityDetailsWrapper /></RequireAuth>} />
+            <Route path="/facility/:id/time-slot" element={<RequireAuth authed={authed}><TimeSlotWrapper /></RequireAuth>} />
+            <Route path="/booking/confirmation" element={<RequireAuth authed={authed}><BookingConfirmationWrapper /></RequireAuth>} />
+            <Route path="/booking/success" element={<RequireAuth authed={authed}><BookingSuccessWrapper /></RequireAuth>} />
+            <Route path="/my-bookings" element={<RequireAuth authed={authed}><MyBookingsScreen /></RequireAuth>} />
 
-              {/* Discussion */}
-              <Route
-                path="/community/discussion"
-                element={
-                  <RequireAuth authed={authed}>
-                    <DiscussionScreen
-                      onNavigate={(s, d) => {
-                        if (s === "create-discussion") navigate("/community/discussion/create");
-                        if (s === "discussion-detail" && d) navigate(`/community/discussion/${d}`);
-                      }}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/community/discussion/create"
-                element={
-                  <RequireAuth authed={authed}>
-                    <CreateDiscussionScreen
-                      studentName={studentName}
-                      onNavigate={(s) => {
-                         navigate("/community/discussion");
-                      }}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/community/discussion/:id"
-                element={
-                  <RequireAuth authed={authed}>
-                    <DiscussionDetailWrapper
-                      studentName={studentName}
-                      onNavigate={(s) => {
-                        navigate("/community/discussion");
-                      }}
-                    />
-                  </RequireAuth>
-                }
-              />
+            <Route path="/profile" element={<RequireAuth authed={authed}><ProfileScreen studentName={studentName} profilePictureUrl={profilePicture} studentId={studentId} userRole={userRole} onNavigate={(s) => navigate(`/${s}`)} onLogout={handleLogout} /></RequireAuth>} />
+            <Route path="/edit-profile" element={<RequireAuth authed={authed}><EditProfileScreen userId={userId} userRole={userRole} studentId={studentId} onNavigate={() => navigate("/profile")} onSaveProfile={handleProfileUpdate} /></RequireAuth>} />
+            <Route path="/settings/interface" element={<RequireAuth authed={authed}><InterfaceSettingsScreen onBack={() => navigate("/profile")} /></RequireAuth>} />
+            <Route path="/settings/navbar" element={<RequireAuth authed={authed}><NavbarSettingsScreen onBack={() => navigate("/profile")} /></RequireAuth>} />
 
-              {/* News */}
-              <Route
-                path="/community/news"
-                element={
-                  <RequireAuth authed={authed}>
-                    <NewsFeedScreen
-                      userRole={userRole as "student" | "staff"}
-                      onNavigate={(s, d) => {
-                        if (s === "create-news-post") navigate("/community/news/create");
-                        if (s === "news-detail" && d) navigate(`/community/news/${d}`);
-                      }}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/community/news/create"
-                element={
-                  <RequireAuth authed={authed}>
-                    <CreateNewsPostScreen
-                      onNavigate={(s) => navigate("/community/news")}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/community/news/:id"
-                element={
-                  <RequireAuth authed={authed}>
-                    <NewsDetailWrapper
-                      userRole={userRole as "student" | "staff"}
-                      onNavigate={(s, d) => {
-                          if (s === "news-feed") navigate("/community/news");
-                          if (s === "edit-news-post") navigate(`/community/news/edit/${d}`);
-                      }}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/community/news/edit/:id"
-                element={
-                  <RequireAuth authed={authed}>
-                    <EditNewsWrapper
-                      onNavigate={(s, d) => {
-                          if (s === "news-detail") navigate(`/community/news/${d}`);
-                      }}
-                    />
-                  </RequireAuth>
-                }
-              />
-              {/* -------------------------------------- */}
+            <Route path="/facility-complaints" element={<RequireAuth authed={authed}><StudentComplaintsWrapper /></RequireAuth>} />
+            <Route path="/submit-complaint" element={<RequireAuth authed={authed}><SubmitComplaintWrapper /></RequireAuth>} />
+            <Route path="/complaint/:id" element={<RequireAuth authed={authed}><StudentComplaintDetailWrapper /></RequireAuth>} />
+            <Route path="/staff-complaints" element={<RequireAuth authed={authed}><StaffComplaintsWrapper /></RequireAuth>} />
+            <Route path="/staff/complaints/:id" element={<RequireAuth authed={authed}><StaffComplaintDetailWrapper /></RequireAuth>} />
 
-              <Route
-                path="/book"
-                element={
-                  <RequireAuth authed={authed}>
-                    <FacilityListScreen
-                      onNavigate={(s, d) => navigate(`/facility/${d}`)}
-                    />
-                  </RequireAuth>
-                }
-              />
-
-              <Route
-                path="/profile"
-                element={
-                  <RequireAuth authed={authed}>
-                    <ProfileScreen
-                      studentName={studentName}
-                      profilePictureUrl={profilePicture}
-                      studentId={studentId}
-                      userRole={userRole as "student" | "staff"}
-                      onNavigate={(s) =>
-                        navigate(s.startsWith("settings/") ? `/${s}` : `/${s}`)
-                      }
-                      onLogout={handleLogout}
-                    />
-                  </RequireAuth>
-                }
-              />
-
-              {/* ... (Keep existing Activity/Event/Settings routes unchanged) ... */}
-              
-               <Route
-                path="/edit-profile"
-                element={
-                  <RequireAuth authed={authed}>
-                    <EditProfileScreen
-                      userId={userId}
-                      userRole={userRole as "student" | "staff"}
-                      studentId={studentId}
-                      onNavigate={(s) => navigate(`/${s}`)}
-                      onSaveProfile={handleProfileUpdate}
-                    />
-                  </RequireAuth>
-                }
-              />
-
-              <Route
-                path="/activity-main"
-                element={
-                  <RequireAuth authed={authed}>
-                    <ActivityMainScreen
-                      userId={userId}
-                      userRole={userRole as "student" | "staff"}
-                      onNavigate={(s, d) => {
-                        if (s === "activity-record")
-                          navigate("/activity/record");
-                        else if (s === "activity-report")
-                          navigate("/activity-report");
-                        else if (s === "badges") navigate("/badges");
-                        else if (s === "activity-events") navigate("/activity-events");
-                        else if (s === "event-reminders") navigate("/event-reminders");
-                        else if (s === "detailactivity" && d)
-                          navigate(`/detailactivity/${d}`);
-                        else if (s === "edit-activity" && d)
-                          navigate(`/activity/edit/${d}`);
-                        else navigate("/activity-main");
-                      }}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/activity/record"
-                element={
-                  <RequireAuth authed={authed}>
-                    <RecordActivityScreen
-                      studentName={studentName}
-                      userRole={userRole as "student" | "staff"}
-                      onNavigate={() => navigate("/activity-main")}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/activity/edit/:id"
-                element={
-                  <RequireAuth authed={authed}>
-                    <EditActivityWrapper
-                      userId={userId}
-                      userRole={userRole as "student" | "staff"}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/activity-history"
-                element={
-                  <RequireAuth authed={authed}>
-                    <ActivityHistoryScreen
-                      onNavigate={(s, d) =>
-                        navigate(d ? `/activity/${d}` : "/profile")
-                      }
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/activity/:id"
-                element={
-                  <RequireAuth authed={authed}>
-                    <ActivityDetailWrapper />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/detailactivity/:id"
-                element={
-                  <RequireAuth authed={authed}>
-                    <DetailActivityWrapper />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/activity-report"
-                element={
-                  <RequireAuth authed={authed}>
-                    <ActivityReportScreen
-                      onNavigate={() => navigate("/activity-main")}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/badges"
-                element={
-                  <RequireAuth authed={authed}>
-                    <BadgeCollectionScreen
-                      onNavigate={(s) =>
-                        navigate(
-                          s === "activity-main" ? "/activity-main" : "/profile"
-                        )
-                      }
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/activity-events"
-                element={
-                  <RequireAuth authed={authed}>
-                    <ActivityEventsScreen
-                      onNavigate={(screen, data) => {
-                        if (screen === "activity-main") {
-                          navigate("/activity-main");
-                        } else if (screen === "create-event") {
-                          navigate(`/create-event`);
-                        } else if (screen === "event-detail") {
-                          navigate(`/event-detail/${data?.eventId}`);
-                        }
-                      }}
-                      userRole={userRole as "student" | "staff"}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/create-event"
-                element={
-                  <RequireAuth authed={authed}>
-                    <CreateEventScreen
-                      onNavigate={() => navigate("/activity-events")}
-                      staffName={studentName}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/event-detail/:id"
-                element={
-                  <RequireAuth authed={authed}>
-                    <EventDetailWrapper 
-                      userId={userId}
-                      userRole={userRole as "student" | "staff"}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/event-reminders"
-                element={
-                  <RequireAuth authed={authed}>
-                    <EventRemindersScreen
-                      onNavigate={(screen, data) => {
-                        if (screen === "event-detail" && data?.eventId) {
-                          navigate(`/event-detail/${data.eventId}`);
-                        } else if (screen === "activity-main") {
-                          navigate("/activity-main");
-                        } else if (screen === "activity-events") {
-                          navigate("/activity-events");
-                        }
-                      }}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/facility/:id"
-                element={
-                  <RequireAuth authed={authed}>
-                    <FacilityDetailsWrapper />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/facility/:id/time-slot"
-                element={
-                  <RequireAuth authed={authed}>
-                    <TimeSlotWrapper />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/booking/confirmation"
-                element={
-                  <RequireAuth authed={authed}>
-                    <BookingConfirmationWrapper />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/booking/success"
-                element={
-                  <RequireAuth authed={authed}>
-                    <BookingSuccessWrapper />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/my-bookings"
-                element={
-                  <RequireAuth authed={authed}>
-                    <MyBookingsScreen />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/settings/interface"
-                element={
-                  <RequireAuth authed={authed}>
-                    <InterfaceSettingsScreen
-                      onBack={() => navigate("/profile")}
-                    />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/settings/navbar"
-                element={
-                  <RequireAuth authed={authed}>
-                    <NavbarSettingsScreen onBack={() => navigate("/profile")} />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="*"
-                element={<Navigate to={authed ? "/home" : "/"} replace />}
-              />
-
-              <Route
-                path="/facility-complaints"
-                element={
-                  <RequireAuth authed={authed}>
-                    <StudentComplaintsWrapper />
-                  </RequireAuth>
-                }
-              />
-
-              <Route
-                path="/submit-complaint"
-                element={
-                  <RequireAuth authed={authed}>
-                    <SubmitComplaintWrapper />
-                  </RequireAuth>
-                }
-              />
-
-              <Route
-                path="/complaint/:id"
-                element={
-                  <RequireAuth authed={authed}>
-                    <StudentComplaintDetailWrapper />
-                  </RequireAuth>
-                }
-              />
-
-              <Route
-                path="/staff-complaints"
-                element={
-                  <RequireAuth authed={authed}>
-                    <StaffComplaintsWrapper />
-                  </RequireAuth>
-                }
-              />
-
-              <Route
-                path="/staff/complaints/:id"
-                element={
-                  <RequireAuth authed={authed}>
-                    <StaffComplaintDetailWrapper />
-                  </RequireAuth>
-                }
-              />
-            </Routes>
-
-          </div>
+            <Route path="*" element={<Navigate to={authed ? "/home" : "/"} replace />} />
+          </Routes>
         </main>
-        {showBottomNav && (
-          <BottomNav activeTab={activeTab} onTabChange={onTabChange} />
-        )}
+        {showBottomNav && <BottomNav activeTab={activeTab} onTabChange={onTabChange} />}
       </div>
     </UserPreferencesProvider>
   );
