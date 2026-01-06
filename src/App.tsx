@@ -2,7 +2,8 @@ import { useMemo, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { supabase } from "./lib/supabaseClient";
 import { UserPreferencesProvider } from "./lib/UserPreferencesContext";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
+import { getOrCreateChat } from "./lib/chatService"; // <--- MAKE SURE THIS IS IMPORTED
 
 import {
   Routes,
@@ -64,6 +65,20 @@ import { CreateNewsPostScreen } from "./pages/Community/CreateNewsPostScreen";
 import { NewsPostDetailScreen } from "./pages/Community/NewsPostDetailScreen";
 import { EditNewsPostScreen } from "./pages/Community/EditNewsPostScreen";
 
+import { MarketplaceScreen } from "./pages/Community/MarketplaceScreen";
+import { CreateListingScreen } from "./pages/Community/CreateListingScreen";
+import { MarketplaceItemDetailScreen } from "./pages/Community/MarketplaceItemDetailScreen";
+
+// --- BUDDY SYSTEM IMPORTS ---
+import { BuddyHubScreen } from "./pages/Community/BuddyHubScreen";
+import { FindBuddyScreen } from "./pages/Community/FindBuddyScreen";
+import { BuddyRequestsScreen } from "./pages/Community/BuddyRequestsScreen";
+import { MyBuddiesScreen } from "./pages/Community/MyBuddyScreen";
+
+// --- CHAT IMPORTS ---
+import { PrivateChatListScreen } from "./pages/Community/PrivateChatListScreen";
+import { PrivateChatScreen } from "./pages/Community/PrivateChatScreen";
+
 import {
   FacilityDetailsScreen,
   FacilityDetailsHeader,
@@ -87,7 +102,85 @@ import {
   updateComplaintAsStaff,
 } from "./lib/complaints";
 
+const useChatData = (userId: string) => {
+  const [buddyChats, setBuddyChats] = useState<any[]>([]);
+  const [marketplaceChats, setMarketplaceChats] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    // Fetch Buddy Chats (Mock logic - replace with real table query if available)
+    // For now we return empty to ensure UI renders without crashing
+    const fetchChats = async () => {
+      // Example: const { data } = await supabase.from('chats').select('*').eq('user_id', userId);
+      setBuddyChats([]); 
+      setMarketplaceChats([]);
+    };
+
+    fetchChats();
+  }, [userId]);
+
+  return { buddyChats, marketplaceChats };
+};
+
 // --- WRAPPERS ---
+const useBuddyData = (userId: string) => {
+  const [requests, setRequests] = useState<any[]>([]);
+  const [connectedBuddies, setConnectedBuddies] = useState<any[]>([]);
+  
+  const refresh = async () => {
+    if (!userId) return;
+
+    const { data: reqs } = await supabase
+      .from("buddy_requests")
+      .select(`
+        id,
+        status,
+        created_at,
+        requester_id,
+        recipient_id,
+        requester:profiles!requester_id(id, full_name, matric_id, faculty, year, favorite_sports),
+        recipient:profiles!recipient_id(id, full_name, matric_id, faculty, year, favorite_sports)
+      `)
+      .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`);
+
+    if (reqs) {
+      // 1. Map for BuddyRequestsScreen (needs isIncoming flag)
+      const mappedRequests = reqs.map((r: any) => ({
+        id: r.id,
+        requesterId: r.requester_id === userId ? r.recipient?.matric_id : r.requester?.matric_id, 
+        requesterName: r.requester_id === userId ? r.recipient?.full_name : r.requester?.full_name,
+        recipientId: r.recipient_id === userId ? "You" : r.recipient?.matric_id,
+        status: r.status,
+        createdAt: r.created_at,
+        isIncoming: r.recipient_id === userId // Critical for your new screen
+      }));
+      setRequests(mappedRequests);
+
+      // 2. Map for MyBuddiesScreen
+      const connected = reqs
+        .filter((r: any) => r.status === "Accepted")
+        .map((r: any) => {
+          const buddyProfile = r.requester_id === userId ? r.recipient : r.requester;
+          return {
+            id: buddyProfile?.id,
+            userId: buddyProfile?.matric_id,
+            name: buddyProfile?.full_name,
+            faculty: buddyProfile?.faculty || "Unknown Faculty",
+            year: buddyProfile?.year || "Unknown Year",
+            favoriteSports: buddyProfile?.favorite_sports || [],
+            connectedSince: r.created_at
+          };
+        });
+      setConnectedBuddies(connected);
+    }
+  };
+
+  useEffect(() => { refresh(); }, [userId]);
+  return { requests, connectedBuddies, refresh };
+};
+
+
 
 function DiscussionDetailWrapper({
   onNavigate,
@@ -135,6 +228,115 @@ function EditNewsWrapper({
     <EditNewsPostScreen
       postId={(id as string) || ""}
       onNavigate={onNavigate}
+    />
+  );
+}
+
+
+// ------------------------------------------------------------------
+// COPY THIS INTO YOUR App.tsx (Replace the existing MarketplaceDetailWrapper)
+// ------------------------------------------------------------------
+
+// ============================================================================
+// REPLACE THE ENTIRE MarketplaceDetailWrapper FUNCTION IN App.tsx
+// ============================================================================
+
+function MarketplaceDetailWrapper({ userId, onNavigate }: any) { 
+  const { id } = useParams(); 
+  const navigate = useNavigate(); 
+  const [item, setItem] = useState<any>(null); 
+  const [isFavourite, setIsFavourite] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch Item Data
+  useEffect(() => { 
+    const fetchItemAndFav = async () => { 
+      if (!id) return;
+      try {
+        const { data: itemData, error } = await supabase
+          .from("marketplace_listings")
+          .select("*")
+          .eq("id", id)
+          .single(); 
+        
+        if (error) throw error;
+        setItem(itemData); 
+        
+        if (userId) {
+          const { data: favData } = await supabase
+            .from("marketplace_favorites")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("listing_id", id)
+            .maybeSingle();
+          setIsFavourite(!!favData);
+        }
+      } catch (err) {
+        console.error("Error loading item:", err);
+      } finally {
+        setLoading(false); 
+      }
+    }; 
+    fetchItemAndFav(); 
+  }, [id, userId]);
+
+  const handleToggleFav = async () => {
+    if (isFavourite) {
+      setIsFavourite(false);
+      await supabase.from("marketplace_favorites").delete().eq("user_id", userId).eq("listing_id", id);
+    } else {
+      setIsFavourite(true);
+      await supabase.from("marketplace_favorites").insert({ user_id: userId, listing_id: id });
+    }
+  };
+
+  // 👇 THIS IS THE NEW CHAT FUNCTION 👇
+  const handleCreateChat = async () => {
+    if (!item || !userId) return;
+
+    if (item.seller_id === userId) {
+      toast.error("This is your own listing!");
+      return;
+    }
+
+    const toastId = toast.loading("Opening chat...");
+
+    try {
+      // Create chat with "marketplace" type and Item ID metadata
+      const chat = await getOrCreateChat(
+        "marketplace",
+        userId,
+        item.seller_id,
+        item.seller_name,
+        item.id,       // Item ID
+        item.title     // Item Title
+      );
+
+      toast.dismiss(toastId);
+
+      if (chat) {
+        navigate("/private-chat", { state: { chat, chatType: "marketplace" } });
+      } else {
+        toast.error("Could not connect to seller.");
+      }
+    } catch (err) {
+      console.error("Chat error:", err);
+      toast.dismiss(toastId);
+      toast.error("Failed to start chat.");
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center text-gray-400">Loading details...</div>; 
+  if (!item) return <div className="p-10 text-center text-gray-400">Item not found.</div>;
+
+  return (
+    <MarketplaceItemDetailScreen 
+      item={item} 
+      onNavigate={onNavigate} 
+      isFavourite={isFavourite} 
+      onToggleFavourite={handleToggleFav} 
+      isOwner={item.seller_id === userId} 
+      onCreateMarketplaceChat={handleCreateChat} // <--- Pass the function
     />
   );
 }
@@ -456,6 +658,37 @@ function RequireAuth({
   );
 }
 
+function PrivateChatListWrapper({ userId }: any) {
+  const navigate = useNavigate();
+  // We no longer need to pass chats as props, the component fetches them!
+  return (
+    <PrivateChatListScreen 
+      currentUserId={userId}
+      onNavigate={(screen, data) => navigate(`/${screen}`, { state: data })} 
+    />
+  );
+}
+
+function PrivateChatWrapper({ userId }: any) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as any;
+
+  if (!state?.chat || !state?.chatType) {
+    return <Navigate to="/private-chat-list" replace />;
+  }
+
+  return (
+    <PrivateChatScreen
+      chat={state.chat}
+      chatType={state.chatType}
+      currentUserId={userId}
+      onNavigate={(screen) => navigate(`/${screen}`)}
+    />
+  );
+}
+
+
 export default function App() {
   const [authed, setAuthed] = useState(false);
   const [studentName, setStudentName] = useState<string>("Student");
@@ -469,6 +702,63 @@ export default function App() {
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { requests, connectedBuddies, refresh: refreshBuddyData } = useBuddyData(userId);
+
+
+  // --- BUDDY SYSTEM HANDLERS ---
+  const handleSendBuddyRequest = async (targetUserId: string) => {
+    try {
+      // Check if request already exists to prevent duplicates
+      const { data: existing } = await supabase
+        .from("buddy_requests")
+        .select("*")
+        .or(`and(requester_id.eq.${userId},recipient_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},recipient_id.eq.${userId})`)
+        .maybeSingle();
+
+      if (existing) return; // Request already exists
+
+      const { error } = await supabase.from("buddy_requests").insert({
+        requester_id: userId,
+        recipient_id: targetUserId,
+        status: "Pending"
+      });
+
+      if (error) throw error;
+      refreshBuddyData();
+    } catch (err) {
+      console.error("Error sending request:", err);
+    }
+  };
+
+  const handleUpdateBuddyStatus = async (requestId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from("buddy_requests")
+        .update({ status: newStatus })
+        .eq("id", requestId);
+
+      if (error) throw error;
+      refreshBuddyData();
+    } catch (err) {
+      console.error("Error updating status:", err);
+    }
+  };
+
+  const handleRemoveBuddy = async (buddyUserId: string) => {
+    try {
+      // Delete the connection where either user is the requester or recipient
+      const { error } = await supabase
+        .from("buddy_requests")
+        .delete()
+        .or(`and(requester_id.eq.${userId},recipient_id.eq.${buddyUserId}),and(requester_id.eq.${buddyUserId},recipient_id.eq.${userId})`);
+
+      if (error) throw error;
+      refreshBuddyData();
+    } catch (err) {
+      console.error("Error removing buddy:", err);
+    }
+  };
 
   // Helper to fetch all necessary data centrally
   const fetchUserData = async (uid: string, role: string) => {
@@ -559,6 +849,10 @@ export default function App() {
     location.pathname.startsWith("/register") ||
     location.pathname.startsWith("/facility") ||
     location.pathname.startsWith("/booking") ||
+    location.pathname.startsWith("/private-chat") || 
+    location.pathname.startsWith("/private-chat-list") ||
+    location.pathname.includes("/community/marketplace/") ||
+    
     // Updated discussion paths
     location.pathname.includes("/community/discussion/create") ||
     location.pathname.match(/\/community\/discussion\/[^/]+$/) || 
@@ -895,6 +1189,165 @@ export default function App() {
                 }
               />
               {/* -------------------------------------- */}
+                
+              <Route
+  path="/community/marketplace"
+  element={
+    <RequireAuth authed={authed}>
+      <MarketplaceScreen
+        currentUserId={userId}
+        onNavigate={(screen, data) => {
+          if (screen === "create-listing") {
+            navigate("/community/marketplace/create");
+          } else if (screen === "marketplace-item-detail" && data?.item?.id) {
+            navigate(`/community/marketplace/${data.item.id}`);
+          } else {
+            navigate("/community");
+          }
+        }}
+      />
+    </RequireAuth>
+  }
+/>
+             <Route 
+  path="/community/marketplace/:id" 
+  element={
+    <RequireAuth authed={authed}>
+      <MarketplaceDetailWrapper 
+        userId={userId} 
+        onNavigate={(screen: string, data: any) => {
+          // 👇 THIS BLOCK HANDLES THE REDIRECT TO CHAT
+          if (screen === "private-chat") {
+            navigate("/private-chat", { state: data });
+          } else {
+            navigate("/community/marketplace");
+          }
+        }} 
+      />
+    </RequireAuth>
+  } 
+/>
+            <Route path="/community/marketplace/create" element={
+              <RequireAuth authed={authed}>
+                <CreateListingScreen 
+                  studentId={userId} 
+                  studentName={studentName} 
+                  onNavigate={() => navigate("/community/marketplace")} 
+                />
+              </RequireAuth>
+            } />
+            
+            
+              {/* BUDDY SYSTEM ROUTES */}
+
+            <Route path="/community/my-buddies" element={
+  <RequireAuth authed={authed}>
+    <MyBuddiesScreen 
+      onNavigate={() => navigate("/community/buddy")} 
+      studentId={userId} 
+      connectedBuddies={connectedBuddies} 
+      onRemoveBuddy={handleRemoveBuddy}
+      
+      // 👇 DEBUGGING VERSION OF THE CHAT TRIGGER 👇
+      onChat={async (buddyId, buddyName) => {
+        console.log("🟢 1. Button Clicked! Trying to chat with:", buddyName);
+        console.log("   - My ID:", userId);
+        console.log("   - Buddy ID:", buddyId);
+
+        try {
+          const chat = await getOrCreateChat(
+            "buddy",
+            userId,
+            buddyId,
+            buddyName
+          );
+
+          console.log("🟡 2. Database returned chat object:", chat);
+
+          if (chat) {
+            console.log("🟢 3. Success! Navigating to /private-chat...");
+            navigate("/private-chat", { state: { chat, chatType: "buddy" } });
+          } else {
+            console.error("🔴 3. Failed: Chat object is null. Check RLS policies.");
+            alert("Error: Chat could not be created. Open Console (F12) for details.");
+          }
+        } catch (err) {
+          console.error("🔴 CRITICAL ERROR:", err);
+        }
+      }}
+    />
+  </RequireAuth>
+} />
+
+            <Route path="/community/buddy" element={
+              <RequireAuth authed={authed}>
+                <BuddyHubScreen 
+                  onNavigate={(s: string) => navigate(s === "community" ? "/community" : `/community/${s}`)} 
+                  buddyRequests={requests} 
+                  connectedBuddies={connectedBuddies} 
+                  onSearch={() => navigate("/community/find-buddy")} 
+                  onAcceptRequest={async (id) => handleUpdateBuddyStatus(id, "Accepted")} 
+                  onRejectRequest={async (id) => handleUpdateBuddyStatus(id, "Rejected")} 
+                  buddyChats={[]} 
+                />
+              </RequireAuth>
+            } />
+            <Route path="/community/find-buddy" element={
+              <RequireAuth authed={authed}>
+                <FindBuddyScreen 
+                  onNavigate={() => navigate("/community/buddy")} 
+                  studentId={userId} 
+                  connectedBuddies={connectedBuddies.map(b => b.id)} 
+                  onSendRequest={handleSendBuddyRequest} 
+                />
+              </RequireAuth>
+            } />
+            <Route path="/community/buddy-requests" element={
+              <RequireAuth authed={authed}>
+                <BuddyRequestsScreen 
+                  onNavigate={() => navigate("/community/buddy")} 
+                  studentId={userId} 
+                  buddyRequests={requests} 
+                  onAcceptRequest={(id) => handleUpdateBuddyStatus(id, "Accepted")} 
+                  onRejectRequest={(id) => handleUpdateBuddyStatus(id, "Rejected")} 
+                />
+              </RequireAuth>
+            } />
+            <Route path="/community/my-buddies" element={
+  <RequireAuth authed={authed}>
+    <MyBuddiesScreen 
+      onNavigate={() => navigate("/community/buddy")} 
+      studentId={userId} 
+      connectedBuddies={connectedBuddies} 
+      onRemoveBuddy={handleRemoveBuddy}
+
+      // 👇 IF THIS CHUNK IS MISSING, NOTHING WILL HAPPEN 👇
+      onChat={async (buddyId, buddyName) => {
+        console.log("2. App.tsx received request for:", buddyName); // <--- Debug Log
+
+        const chat = await getOrCreateChat("buddy", userId, buddyId, buddyName);
+        
+        console.log("3. Chat created:", chat); // <--- Debug Log
+
+        if (chat) {
+          navigate("/private-chat", { state: { chat, chatType: "buddy" } });
+        }
+      }}
+    />
+  </RequireAuth>
+} />
+
+           {/* PRIVATE CHAT ROUTES */}
+            <Route path="/private-chat-list" element={
+              <RequireAuth authed={authed}>
+                <PrivateChatListWrapper userId={userId} />
+              </RequireAuth>
+            } />
+           <Route path="/private-chat" element={
+  <RequireAuth authed={authed}>
+    <PrivateChatWrapper userId={userId} />
+  </RequireAuth>
+} />
 
               <Route
                 path="/book"

@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 const MenuCard = ({ title, description, icon: Icon, bgClass, iconClass, onClick }: any) => (
   <button 
     onClick={onClick}
-    className="flex flex-col items-start p-5 bg-white border border-gray-200 rounded-[20px] shadow-sm text-left hover:bg-gray-50 transition-colors w-full"
+    className="flex flex-col items-start p-5 bg-white border border-gray-200 rounded-[20px] shadow-sm text-left hover:bg-gray-50 transition-colors w-full active:scale-95 duration-200"
   >
     <div className={`p-3 rounded-[18px] ${bgClass} mb-4`}>
       <Icon className={iconClass} size={24} strokeWidth={2} />
@@ -57,7 +57,6 @@ export function CommunityScreen() {
           icon={Newspaper}
           bgClass="bg-[#ECF6FC]" 
           iconClass="text-[#3D8BB3]"
-          // UPDATED: Now navigates to the news route
           onClick={() => navigate('/community/news')}
         />
         <MenuCard 
@@ -66,7 +65,7 @@ export function CommunityScreen() {
           icon={UserPlus}
           bgClass="bg-[#FEF2F4]" 
           iconClass="text-[#BD3E63]"
-          onClick={() => console.log("Find Buddy clicked")}
+          onClick={() => navigate('/community/buddy')}
         />
         <MenuCard 
           title="Marketplace" 
@@ -74,15 +73,16 @@ export function CommunityScreen() {
           icon={ShoppingBag}
           bgClass="bg-[#F0FDFA]" 
           iconClass="text-[#4A9D8F]"
-          onClick={() => console.log("Marketplace clicked")}
+          onClick={() => navigate('/community/marketplace')}
         />
+        {/* 👇 FIXED CHATS BUTTON 👇 */}
          <MenuCard 
           title="Chats" 
           description="Message buddies and sellers"
           icon={MessageSquare}
           bgClass="bg-[#FEF2F4]" 
           iconClass="text-[#BD3E63]"
-          onClick={() => console.log("Chats clicked")}
+          onClick={() => navigate('/private-chat-list')} 
         />
       </div>
 
