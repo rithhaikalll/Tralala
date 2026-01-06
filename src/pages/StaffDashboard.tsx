@@ -322,6 +322,14 @@ export function StaffCheckInDashboardScreen({
         s.matricId.toLowerCase().includes(q) ||
         s.facility.toLowerCase().includes(q)
       );
+    })
+    .sort((a, b) => {
+      const getScore = (status: SessionStatus) => {
+        if (status === "Approved") return 0;
+        if (status === "Checked-In") return 1;
+        return 2; // Completed, Cancelled, etc.
+      };
+      return getScore(a.status) - getScore(b.status);
     });
 
   const getStatusStyle = (status: string) => {

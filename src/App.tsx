@@ -497,7 +497,7 @@ function StudentComplaintsWrapper() {
       complaints={complaints}
       onUpdateComplaints={(next) => setComplaints(next)}
       onNavigate={(screen, data) => {
-        if (screen === "profile") navigate("/profile");
+        if (screen === "profile") navigate("/profile", { replace: true });
         if (screen === "submit-complaint") navigate("/submit-complaint");
         if (screen === "complaint-detail") navigate(`/complaint/${data?.complaint?.id}`);
       }}
@@ -582,7 +582,7 @@ function StaffComplaintsWrapper() {
     <StaffComplaintsScreen
       complaints={complaints}
       onNavigate={(screen, data) => {
-        if (screen === "staff-checkin-dashboard") navigate("/home");
+        if (screen === "staff-checkin-dashboard") navigate("/profile", { replace: true });
         if (screen === "staff-complaint-detail")
           navigate(`/staff/complaints/${data?.complaint?.id}`);
       }}
@@ -885,7 +885,7 @@ export default function App() {
     authed &&
     userRole !== "admin" &&
     ((location.pathname.startsWith("/facility") && !location.pathname.startsWith("/facility-complaints")) ||
-      location.pathname.startsWith("/book") ||
+      (location.pathname.startsWith("/book") && !location.pathname.startsWith("/booking")) ||
       (location.pathname === "/home" && userRole === "student") ||
       // Show Discussion Header ONLY on list view
       (location.pathname === "/community/discussion") ||

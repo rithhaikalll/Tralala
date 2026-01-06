@@ -166,7 +166,10 @@ export function MyBookingsScreen() {
         // ✅ SHOW ALL (not just upcoming)
         // Optional: if you want hide cancelled only:
         const visible = mapped
-          .filter((b) => (b.status ?? "").toLowerCase() !== "cancelled")
+          .filter((b) => {
+            const s = (b.status ?? "").toLowerCase();
+            return s !== "cancelled" && s !== "completed";
+          })
           .sort(
             (a, b) =>
               parseBookingStartMs(a.date_label, a.time_label) -
