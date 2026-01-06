@@ -12,7 +12,7 @@
 | Sprint | Module Name | FrontEnd | Backend |
 |:--------:|:-------------:|-------|:-------:|
 | 1 | Register and Sign In Module |Pages <br> <ul><li> [Login Screen](src/pages/Authentication/LoginScreen.tsx)</li> <li>[Register Screen](src/pages/Authentication/RegisterScreen.tsx)</li> <li>[Reset Password Request Screen](src/pages/Authentication/ResetPasswordRequestScreen.tsx)</li> <li>[Reset Link Sent Screen](src/pages/Authentication/ResetLinkSentScreen.tsx)</li> <li>[Reset Password New Screen](src/pages/Authentication/ResetPasswordNewScreen.tsx)</li></ul>| Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
-| 2 | Dashboard Personalizzation Module |Pages <br> <ul><li> Update All Pages to Apply Dark Mode and Language</li> <li> [Interface Setting Screen](src/pages/InterfaceSettingsScreen.tsx)</li> <li> [Navbar Setting Screen](src/pages/NavbarSettingsScreen.tsx)</li>| Translation Library <br>[translation.ts](src/lib/translation.ts) <br> Preference Context <br>[UserPreferencesContext.tsx](src/lib/UserPreferencesContext.tsx)</li></ul> |
+| 2 | Dashboard Personalizzation Module |Pages <br> <ul><li> Update All Pages to Apply Dark Mode and Language</li> <li> [Interface Setting Screen](src/pages/InterfaceSettingsScreen.tsx)</li> <li> [Navbar Setting Screen](src/pages/NavbarSettingsScreen.tsx)</li>| Translation Library <br>[translation.ts](src/lib/translation.ts) <br> Preference Context <br><br> [UserPreferencesContext.tsx](src/lib/UserPreferencesContext.tsx) |
 | 3 | User Management Module |Pages <br> <ul><li> [Edit Profile Screen](src/pages/EditProfileScreen.tsx)</li><li> [Admin Dashboard](src/pages/AdminDashboard.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
 
 # 📊 Activity Tracking Subsystem
