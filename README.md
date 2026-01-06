@@ -10,7 +10,7 @@
 # 👤 Authentication Subsystem
 🧑‍💻Developer: MUHAMMAD RIFQI BIN RAZALI
 | Sprint | Module Name | FrontEnd | Backend |
-|:--------:|:-------------:|-------|:-------:|
+|:--------:|:-------------:|-------|-------|
 | 1 | Register and Sign In Module |Pages <br> <ul><li> [Login Screen](src/pages/Authentication/LoginScreen.tsx)</li> <li>[Register Screen](src/pages/Authentication/RegisterScreen.tsx)</li> <li>[Reset Password Request Screen](src/pages/Authentication/ResetPasswordRequestScreen.tsx)</li> <li>[Reset Link Sent Screen](src/pages/Authentication/ResetLinkSentScreen.tsx)</li> <li>[Reset Password New Screen](src/pages/Authentication/ResetPasswordNewScreen.tsx)</li></ul>| Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
 | 2 | Dashboard Personalizzation Module |Pages <br> <ul><li> Update All Pages to Apply Dark Mode and Language</li></ul>| <ul><li>Translation Library <br> [translation.ts](src/lib/translation.ts)</ul> </li> <li> Preference Context [UserPreferencesContext.tsx](src/lib/UserPreferencesContext.tsx)</li> |
 
