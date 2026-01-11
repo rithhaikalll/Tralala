@@ -29,7 +29,9 @@
 
 | Sprint | Module Name | FrontEnd | Backend |
 |:------:|:-----------:|--------|:-------:|
-| 1 | Facilities Booking Module | Pages <br> <ul><li>[Create Discussion Screen](src/pages/Community/CreateDiscussionScreen.tsx)</li> <li>[Discussion Details Screen](src/pages/Community/DiscussionDetailsScreen.tsx)</li> <li>[Discussion Screen](src/pages/Community/DiscussionScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
+| 1 | Discussion Module | Pages <br> <ul><li>[Create Discussion Screen](src/pages/Community/CreateDiscussionScreen.tsx)</li> <li>[Discussion Details Screen](src/pages/Community/DiscussionDetailsScreen.tsx)</li> <li>[Discussion Screen](src/pages/Community/DiscussionScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
+| 2 | News Module | Pages <br> <ul><li>[Create News Post Screen](src/pages/Community/CreateNewsPostScreen.tsx)</li> <li>[Edit News Post Screen](src/pages/Community/EditNewsPostScreen.tsx)</li> <li>[News Feed Screen](src/pages/Community/NewsFeedScreen.tsx)</li> <li>[News Post Detail Screen](src/pages/Community/NewsPostDetailScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
+| 3 | Community Interaction Module | Pages <br> <ul><li>[Create Discussion Screen](src/pages/Community/CreateDiscussionScreen.tsx)</li> <li>[Discussion Details Screen](src/pages/Community/DiscussionDetailsScreen.tsx)</li> <li>[Discussion Screen](src/pages/Community/DiscussionScreen.tsx)</li></ul> | Supabase Connection <br> [Supabase Client](src/lib/supabaseClient.ts) |
 
 # 🏢 Facility Subsystem
 🧑‍💻Developer: MUHAMMAD HARITH HAIKAL BIN MOHD SAID
