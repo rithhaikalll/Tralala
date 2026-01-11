@@ -16,22 +16,22 @@ const MenuCard = ({ title, description, icon: Icon, colorScheme, onClick, theme 
   // Dynamic color logic based on scheme
   const getColors = () => {
     switch (colorScheme) {
-      case 'orange':
+      case "orange":
         return {
           bg: isDark ? "#3A1E14" : "#FEF3EC",
           icon: isDark ? "#FF8A65" : "#D96C47"
         };
-      case 'blue':
+      case "blue":
         return {
           bg: isDark ? "#14283A" : "#ECF6FC",
           icon: isDark ? "#64B5F6" : "#3D8BB3"
         };
-      case 'pink':
+      case "pink":
         return {
           bg: isDark ? "#3A1420" : "#FEF2F4",
           icon: isDark ? "#F48FB1" : "#BD3E63"
         };
-      case 'teal':
+      case "teal":
         return {
           bg: isDark ? "#102E29" : "#F0FDFA",
           icon: isDark ? "#4DB6AC" : "#4A9D8F"
@@ -77,66 +77,82 @@ export function CommunityScreen() {
   const { theme, t } = useUserPreferences();
 
   return (
-    <div className="min-h-screen p-6 pb-32 transition-colors" style={{ backgroundColor: theme.background }}>
-      {/* Header */}
-      <div className="mb-6 pt-2">
-        <h1 className="text-2xl font-bold" style={{ color: theme.text }}>{t('community_title')}</h1>
-        <p className="mt-1" style={{ color: theme.textSecondary }}>{t('community_subtitle')}</p>
+    <div className="min-h-screen transition-colors" style={{ backgroundColor: theme.background }}>
+      {/* Header (MATCH BookListHeader format) */}
+      <div
+        className="fixed top-0 left-0 right-0 z-50 px-6 py-6 border-b transition-colors duration-300"
+        style={{ backgroundColor: theme.cardBg, borderColor: theme.border, transform: "none" }}
+      >
+        <h2 style={{ color: theme.text, fontWeight: 600, fontSize: "20px" }}>
+          {t("community_title")}
+        </h2>
+        <p
+          className="text-sm mt-1"
+          style={{ color: theme.textSecondary, lineHeight: "1.6" }}
+        >
+          {t("community_subtitle")}
+        </p>
       </div>
 
-      {/* Grid Menu */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <MenuCard
-          title={t('comm_discussion')}
-          description={t('comm_discussion_desc')}
-          icon={MessageCircle}
-          colorScheme="orange"
-          onClick={() => navigate('/community/discussion')}
-          theme={theme}
-        />
-        <MenuCard
-          title={t('comm_news')}
-          description={t('comm_news_desc')}
-          icon={Newspaper}
-          colorScheme="blue"
-          onClick={() => navigate('/community/news')}
-          theme={theme}
-        />
-        <MenuCard
-          title={t('comm_find_buddy')}
-          description={t('comm_find_buddy_desc')}
-          icon={UserPlus}
-          colorScheme="pink"
-          onClick={() => navigate('/community/buddy')}
-          theme={theme}
-        />
-        <MenuCard
-          title={t('comm_marketplace')}
-          description={t('comm_marketplace_desc')}
-          icon={ShoppingBag}
-          colorScheme="teal"
-          onClick={() => navigate('/community/marketplace')}
-          theme={theme}
-        />
-        <MenuCard
-          title={t('comm_chats')}
-          description={t('comm_chats_desc')}
-          icon={MessageSquare}
-          colorScheme="pink"
-          onClick={() => navigate('/private-chat-list')}
-          theme={theme}
-        />
-      </div>
+      {/* Spacer so content starts below fixed header */}
+      <div className="h-24" />
 
-      {/* Community Activity Footer */}
-      <div className="p-5 rounded-[20px] border" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-        <h3 className="text-lg font-bold mb-4" style={{ color: theme.text }}>{t('comm_activity_title')}</h3>
-        <div className="flex justify-around items-center">
-          <ActivityStat count={4} label={t('comm_stat_posts')} theme={theme} />
-          <div className="h-8 w-[1px]" style={{ backgroundColor: theme.border }}></div>
-          <ActivityStat count={1} label={t('comm_stat_buddies')} theme={theme} />
-          <div className="h-8 w-[1px]" style={{ backgroundColor: theme.border }}></div>
-          <ActivityStat count={6} label={t('comm_stat_items')} theme={theme} />
+      {/* Content (unchanged) */}
+      <div className="p-6 pb-32">
+        {/* Grid Menu */}
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <MenuCard
+            title={t("comm_discussion")}
+            description={t("comm_discussion_desc")}
+            icon={MessageCircle}
+            colorScheme="orange"
+            onClick={() => navigate("/community/discussion")}
+            theme={theme}
+          />
+          <MenuCard
+            title={t("comm_news")}
+            description={t("comm_news_desc")}
+            icon={Newspaper}
+            colorScheme="blue"
+            onClick={() => navigate("/community/news")}
+            theme={theme}
+          />
+          <MenuCard
+            title={t("comm_find_buddy")}
+            description={t("comm_find_buddy_desc")}
+            icon={UserPlus}
+            colorScheme="pink"
+            onClick={() => navigate("/community/buddy")}
+            theme={theme}
+          />
+          <MenuCard
+            title={t("comm_marketplace")}
+            description={t("comm_marketplace_desc")}
+            icon={ShoppingBag}
+            colorScheme="teal"
+            onClick={() => navigate("/community/marketplace")}
+            theme={theme}
+          />
+          <MenuCard
+            title={t("comm_chats")}
+            description={t("comm_chats_desc")}
+            icon={MessageSquare}
+            colorScheme="pink"
+            onClick={() => navigate("/private-chat-list")}
+            theme={theme}
+          />
+        </div>
+
+        {/* Community Activity Footer */}
+        <div className="p-5 rounded-[20px] border" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+          <h3 className="text-lg font-bold mb-4" style={{ color: theme.text }}>{t("comm_activity_title")}</h3>
+          <div className="flex justify-around items-center">
+            <ActivityStat count={4} label={t("comm_stat_posts")} theme={theme} />
+            <div className="h-8 w-[1px]" style={{ backgroundColor: theme.border }}></div>
+            <ActivityStat count={1} label={t("comm_stat_buddies")} theme={theme} />
+            <div className="h-8 w-[1px]" style={{ backgroundColor: theme.border }}></div>
+            <ActivityStat count={6} label={t("comm_stat_items")} theme={theme} />
+          </div>
         </div>
       </div>
     </div>

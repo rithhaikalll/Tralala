@@ -172,7 +172,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Community Screen
     community_title: "Community",
-    community_subtitle: "Connect, share, and engage with UTM sports community",
+    community_subtitle: "Connect and engage with UTM sports community",
     comm_discussion: "Discussion",
     comm_discussion_desc: "Join community conversations",
     comm_news: "News Feed",
@@ -512,7 +512,7 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Community Screen
     community_title: "Komuniti",
-    community_subtitle: "Berhubung, berkongsi, dan berinteraksi dengan komuniti sukan UTM",
+    community_subtitle: "Berhubung dan berinteraksi dengan komuniti sukan UTM",
     comm_discussion: "Perbincangan",
     comm_discussion_desc: "Sertai perbualan komuniti",
     comm_news: "Berita",
