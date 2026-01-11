@@ -6,6 +6,7 @@ import {
   User,
 } from "lucide-react";
 import { useState } from "react";
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface Complaint {
   id: string;
@@ -34,6 +35,7 @@ export function StaffComplaintDetailScreen({
   onNavigate,
   onUpdateComplaint,
 }: StaffComplaintDetailScreenProps) {
+  const { theme, t } = useUserPreferences();
   const [status, setStatus] = useState(complaint.status);
   const [staffRemarks, setStaffRemarks] = useState(
     complaint.staffRemarks || ""
@@ -72,16 +74,26 @@ export function StaffComplaintDetailScreen({
     }
   };
 
+  const getStatusTranslation = (status: string) => {
+    switch (status) {
+      case "Submitted": return t('status_submitted');
+      case "In Progress": return t('status_in_progress');
+      case "Resolved": return t('status_resolved');
+      case "Rejected": return t('status_rejected');
+      default: return status;
+    }
+  };
+
   const handleUpdateComplaint = () => {
     // Validate that rejected complaints have remarks
     if (status === "Rejected" && !staffRemarks.trim()) {
-      alert("Please provide remarks when rejecting a complaint");
+      alert(t('alert_reject_remarks'));
       return;
     }
 
     // Validate that resolved complaints have remarks
     if (status === "Resolved" && !staffRemarks.trim()) {
-      alert("Please provide remarks explaining the resolution");
+      alert(t('alert_resolve_remarks'));
       return;
     }
 
@@ -114,21 +126,24 @@ export function StaffComplaintDetailScreen({
   const daysOld = getDaysOld(complaint.submittedDate);
 
   return (
-    <div className="min-h-screen pb-20 bg-white">
+    <div className="min-h-screen pb-20" style={{ backgroundColor: theme.background }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-40 bg-white px-6 py-6 border-b"
-        style={{ borderColor: "#E5E5E5" }}
+        className="sticky top-0 z-40 px-6 py-6 border-b"
+        style={{
+          backgroundColor: theme.background,
+          borderColor: theme.border
+        }}
       >
         <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate("staff-complaints")}
-            style={{ color: "#7A0019" }}
+            style={{ color: theme.primary }}
           >
             <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
           </button>
-          <h2 style={{ color: "#1A1A1A", fontWeight: "600", fontSize: "20px" }}>
-            Manage Complaint
+          <h2 style={{ color: theme.text, fontWeight: "600", fontSize: "20px" }}>
+            {t('manage_complaint')}
           </h2>
         </div>
       </div>
@@ -160,11 +175,10 @@ export function StaffComplaintDetailScreen({
                     marginBottom: "2px",
                   }}
                 >
-                  Overdue Complaint
+                  {t('overdue_complaint')}
                 </p>
                 <p className="text-sm" style={{ color: "#991B1B" }}>
-                  This complaint has been pending for {daysOld} days. Please
-                  prioritize resolution.
+                  {t('overdue_desc').replace('{days}', daysOld.toString())}
                 </p>
               </div>
             </div>
@@ -172,112 +186,114 @@ export function StaffComplaintDetailScreen({
 
         {/* Student Information */}
         <div
-          className="border bg-white p-5"
+          className="border p-5"
           style={{
-            borderColor: "#E5E5E5",
+            borderColor: theme.border,
             borderRadius: "14px",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+            backgroundColor: theme.cardBg
           }}
         >
           <h3
             className="text-sm mb-3"
-            style={{ color: "#888888", fontWeight: "500" }}
+            style={{ color: theme.textSecondary, fontWeight: "500" }}
           >
-            Student Details
+            {t('student_details')}
           </h3>
           <div className="space-y-2">
             <p
-              style={{ color: "#1A1A1A", fontSize: "15px", fontWeight: "600" }}
+              style={{ color: theme.text, fontSize: "15px", fontWeight: "600" }}
             >
               {complaint.studentName}
             </p>
-            <p className="text-sm" style={{ color: "#555555" }}>
-              Student ID: {complaint.studentId}
+            <p className="text-sm" style={{ color: theme.textSecondary }}>
+              {t('student_id')}: {complaint.studentId}
             </p>
           </div>
         </div>
 
         {/* Complaint Information */}
         <div
-          className="border bg-white p-5 space-y-4"
+          className="border p-5 space-y-4"
           style={{
-            borderColor: "#E5E5E5",
+            borderColor: theme.border,
             borderRadius: "14px",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+            backgroundColor: theme.cardBg
           }}
         >
           <div>
             <h3
               className="text-sm mb-1"
-              style={{ color: "#888888", fontWeight: "500" }}
+              style={{ color: theme.textSecondary, fontWeight: "500" }}
             >
-              Facility
+              {t('facility')}
             </h3>
             <p
-              style={{ color: "#1A1A1A", fontSize: "15px", fontWeight: "500" }}
+              style={{ color: theme.text, fontSize: "15px", fontWeight: "500" }}
             >
               {complaint.facilityName}
             </p>
           </div>
 
-          <div className="border-t pt-4" style={{ borderColor: "#F5F5F5" }}>
+          <div className="border-t pt-4" style={{ borderColor: theme.border }}>
             <h3
               className="text-sm mb-1"
-              style={{ color: "#888888", fontWeight: "500" }}
+              style={{ color: theme.textSecondary, fontWeight: "500" }}
             >
-              Category
+              {t('category')}
             </h3>
             <p
-              style={{ color: "#1A1A1A", fontSize: "15px", fontWeight: "500" }}
+              style={{ color: theme.text, fontSize: "15px", fontWeight: "500" }}
             >
               {complaint.category}
             </p>
           </div>
 
-          <div className="border-t pt-4" style={{ borderColor: "#F5F5F5" }}>
+          <div className="border-t pt-4" style={{ borderColor: theme.border }}>
             <h3
               className="text-sm mb-1"
-              style={{ color: "#888888", fontWeight: "500" }}
+              style={{ color: theme.textSecondary, fontWeight: "500" }}
             >
-              Submitted Date
+              {t('submitted_date')}
             </h3>
             <p
-              style={{ color: "#1A1A1A", fontSize: "15px", fontWeight: "500" }}
+              style={{ color: theme.text, fontSize: "15px", fontWeight: "500" }}
             >
               {complaint.submittedDate}
-              <span className="text-xs ml-2" style={{ color: "#888888" }}>
+              <span className="text-xs ml-2" style={{ color: theme.textSecondary }}>
                 (
                 {daysOld === 0
-                  ? "Today"
-                  : `${daysOld} day${daysOld > 1 ? "s" : ""} ago`}
+                  ? t('today')
+                  : t('days_ago').replace('{days}', daysOld.toString())}
                 )
               </span>
             </p>
           </div>
 
-          <div className="border-t pt-4" style={{ borderColor: "#F5F5F5" }}>
+          <div className="border-t pt-4" style={{ borderColor: theme.border }}>
             <h3
               className="text-sm mb-2"
-              style={{ color: "#888888", fontWeight: "500" }}
+              style={{ color: theme.textSecondary, fontWeight: "500" }}
             >
-              Complaint Title
+              {t('complaint_title')}
             </h3>
             <p
-              style={{ color: "#1A1A1A", fontSize: "15px", fontWeight: "600" }}
+              style={{ color: theme.text, fontSize: "15px", fontWeight: "600" }}
             >
               {complaint.title}
             </p>
           </div>
 
-          <div className="border-t pt-4" style={{ borderColor: "#F5F5F5" }}>
+          <div className="border-t pt-4" style={{ borderColor: theme.border }}>
             <h3
               className="text-sm mb-2"
-              style={{ color: "#888888", fontWeight: "500" }}
+              style={{ color: theme.textSecondary, fontWeight: "500" }}
             >
-              Description
+              {t('description')}
             </h3>
             <p
-              style={{ color: "#1A1A1A", fontSize: "15px", lineHeight: "1.6" }}
+              style={{ color: theme.text, fontSize: "15px", lineHeight: "1.6" }}
             >
               {complaint.description}
             </p>
@@ -285,18 +301,18 @@ export function StaffComplaintDetailScreen({
 
           {/* Photo Evidence */}
           {complaint.photoEvidence && (
-            <div className="border-t pt-4" style={{ borderColor: "#F5F5F5" }}>
+            <div className="border-t pt-4" style={{ borderColor: theme.border }}>
               <h3
                 className="text-sm mb-3"
-                style={{ color: "#888888", fontWeight: "500" }}
+                style={{ color: theme.textSecondary, fontWeight: "500" }}
               >
-                Photo Evidence
+                {t('photo_evidence')}
               </h3>
               <img
                 src={complaint.photoEvidence}
                 alt="Evidence"
                 className="w-full rounded-lg border"
-                style={{ borderColor: "#E5E5E5" }}
+                style={{ borderColor: theme.border }}
               />
             </div>
           )}
@@ -304,42 +320,44 @@ export function StaffComplaintDetailScreen({
 
         {/* Management Actions */}
         <div
-          className="border bg-white p-5 space-y-4"
+          className="border p-5 space-y-4"
           style={{
-            borderColor: "#E5E5E5",
+            borderColor: theme.border,
             borderRadius: "14px",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+            backgroundColor: theme.cardBg
           }}
         >
-          <h3 style={{ color: "#1A1A1A", fontSize: "16px", fontWeight: "600" }}>
-            Complaint Management
+          <h3 style={{ color: theme.text, fontSize: "16px", fontWeight: "600" }}>
+            {t('complaint_management')}
           </h3>
 
           {/* Priority Level */}
           <div>
             <label
               className="block mb-2 text-sm"
-              style={{ color: "#1A1A1A", fontWeight: "500" }}
+              style={{ color: theme.text, fontWeight: "500" }}
             >
-              Priority Level
+              {t('priority_level')}
             </label>
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as any)}
-              className="w-full h-11 px-3 border bg-white"
+              className="w-full h-11 px-3 border"
               style={{
-                borderColor: "#E5E5E5",
+                borderColor: theme.border,
                 borderRadius: "8px",
-                color: "#1A1A1A",
+                color: theme.text,
+                backgroundColor: theme.cardBg
               }}
             >
-              <option value="Low">Low Priority</option>
-              <option value="Medium">Medium Priority</option>
-              <option value="High">High Priority</option>
-              <option value="Urgent">Urgent</option>
+              <option value="Low">{t('priority_low')}</option>
+              <option value="Medium">{t('priority_medium')}</option>
+              <option value="High">{t('priority_high')}</option>
+              <option value="Urgent">{t('priority_urgent')}</option>
             </select>
-            <p className="mt-1 text-xs" style={{ color: "#888888" }}>
-              Set priority based on severity and impact
+            <p className="mt-1 text-xs" style={{ color: theme.textSecondary }}>
+              {t('priority_desc')}
             </p>
           </div>
 
@@ -347,31 +365,32 @@ export function StaffComplaintDetailScreen({
           <div>
             <label
               className="block mb-2 text-sm"
-              style={{ color: "#1A1A1A", fontWeight: "500" }}
+              style={{ color: theme.text, fontWeight: "500" }}
             >
-              Assign To
+              {t('assign_to')}
             </label>
             <div className="relative">
               <User
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                style={{ color: "#888888" }}
+                style={{ color: theme.textSecondary }}
                 strokeWidth={1.5}
               />
               <input
                 type="text"
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value)}
-                placeholder="Enter staff name or leave empty"
-                className="w-full h-11 pl-10 pr-3 border bg-white"
+                placeholder={t('assign_placeholder')}
+                className="w-full h-11 pl-10 pr-3 border"
                 style={{
-                  borderColor: "#E5E5E5",
+                  borderColor: theme.border,
                   borderRadius: "8px",
-                  color: "#1A1A1A",
+                  color: theme.text,
+                  backgroundColor: theme.cardBg
                 }}
               />
             </div>
-            <p className="mt-1 text-xs" style={{ color: "#888888" }}>
-              Assign this complaint to a specific staff member
+            <p className="mt-1 text-xs" style={{ color: theme.textSecondary }}>
+              {t('assign_desc')}
             </p>
           </div>
 
@@ -379,24 +398,25 @@ export function StaffComplaintDetailScreen({
           <div>
             <label
               className="block mb-2 text-sm"
-              style={{ color: "#1A1A1A", fontWeight: "500" }}
+              style={{ color: theme.text, fontWeight: "500" }}
             >
-              Update Status
+              {t('update_status')}
             </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as any)}
-              className="w-full h-11 px-3 border bg-white"
+              className="w-full h-11 px-3 border"
               style={{
-                borderColor: "#E5E5E5",
+                borderColor: theme.border,
                 borderRadius: "8px",
-                color: "#1A1A1A",
+                color: theme.text,
+                backgroundColor: theme.cardBg
               }}
             >
-              <option value="Submitted">Submitted (New)</option>
-              <option value="In Progress">In Progress (Being Addressed)</option>
-              <option value="Resolved">Resolved (Completed)</option>
-              <option value="Rejected">Rejected (Cannot Address)</option>
+              <option value="Submitted">{t('status_submitted_desc')}</option>
+              <option value="In Progress">{t('status_progress_desc')}</option>
+              <option value="Resolved">{t('status_resolved_desc')}</option>
+              <option value="Rejected">{t('status_rejected_desc')}</option>
             </select>
           </div>
 
@@ -404,9 +424,9 @@ export function StaffComplaintDetailScreen({
           <div>
             <label
               className="block mb-2 text-sm"
-              style={{ color: "#1A1A1A", fontWeight: "500" }}
+              style={{ color: theme.text, fontWeight: "500" }}
             >
-              Staff Remarks{" "}
+              {t('staff_remarks')}{" "}
               {(status === "Rejected" || status === "Resolved") && (
                 <span style={{ color: "#DC2626" }}>*</span>
               )}
@@ -414,28 +434,29 @@ export function StaffComplaintDetailScreen({
             <textarea
               value={staffRemarks}
               onChange={(e) => setStaffRemarks(e.target.value)}
-              placeholder="Add detailed remarks about actions taken, resolution, or reasons for rejection..."
+              placeholder={t('staff_remarks_placeholder')}
               rows={5}
-              className="w-full px-3 py-3 border bg-white resize-none"
+              className="w-full px-3 py-3 border resize-none"
               style={{
-                borderColor: "#E5E5E5",
+                borderColor: theme.border,
                 borderRadius: "8px",
-                color: "#1A1A1A",
+                color: theme.text,
+                backgroundColor: theme.cardBg
               }}
             />
             {status === "Rejected" && (
               <p className="mt-1 text-xs" style={{ color: "#DC2626" }}>
-                Required: Explain why this complaint cannot be addressed
+                {t('remarks_required_rejected')}
               </p>
             )}
             {status === "Resolved" && (
               <p className="mt-1 text-xs" style={{ color: "#16A34A" }}>
-                Required: Describe how the complaint was resolved
+                {t('remarks_required_resolved')}
               </p>
             )}
             {status === "In Progress" && (
-              <p className="mt-1 text-xs" style={{ color: "#888888" }}>
-                Optional: Add notes about current progress or expected timeline
+              <p className="mt-1 text-xs" style={{ color: theme.textSecondary }}>
+                {t('remarks_optional')}
               </p>
             )}
           </div>
@@ -447,27 +468,27 @@ export function StaffComplaintDetailScreen({
             onClick={() => setShowConfirmDialog(true)}
             className="w-full h-12"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary,
               color: "#FFFFFF",
               borderRadius: "14px",
               fontWeight: "500",
               fontSize: "15px",
             }}
           >
-            Update Complaint
+            {t('update_complaint')}
           </button>
           <button
             onClick={() => onNavigate("staff-complaints")}
             className="w-full h-12 border"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
               borderRadius: "14px",
-              color: "#555555",
+              color: theme.textSecondary,
               fontWeight: "500",
               fontSize: "15px",
             }}
           >
-            Cancel
+            {t('cancel')}
           </button>
         </div>
       </div>
@@ -476,8 +497,12 @@ export function StaffComplaintDetailScreen({
       {showConfirmDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-6 z-50">
           <div
-            className="bg-white p-6 w-full max-w-sm border"
-            style={{ borderRadius: "14px", borderColor: "#E5E5E5" }}
+            className="p-6 w-full max-w-sm border"
+            style={{
+              backgroundColor: theme.cardBg,
+              borderRadius: "14px",
+              borderColor: theme.border
+            }}
           >
             <div className="flex justify-center mb-4">
               {status === "Resolved" ? (
@@ -506,57 +531,57 @@ export function StaffComplaintDetailScreen({
             </div>
             <h3
               className="mb-2 text-center"
-              style={{ color: "#1A1A1A", fontWeight: "600", fontSize: "18px" }}
+              style={{ color: theme.text, fontWeight: "600", fontSize: "18px" }}
             >
-              Update Complaint?
+              {t('update_complaint_dialog')}
             </h3>
             <p
               className="text-sm mb-2 text-center"
-              style={{ color: "#555555", lineHeight: "1.6" }}
+              style={{ color: theme.textSecondary, lineHeight: "1.6" }}
             >
-              Status: <span style={{ fontWeight: "600" }}>{status}</span>
+              {t('complaint_status')}: <span style={{ fontWeight: "600", color: theme.text }}>{getStatusTranslation(status)}</span>
               <br />
-              Priority: <span style={{ fontWeight: "600" }}>{priority}</span>
+              {t('priority_level')}: <span style={{ fontWeight: "600", color: theme.text }}>{priority}</span>
               {assignedTo && (
                 <>
                   <br />
-                  Assigned to:{" "}
-                  <span style={{ fontWeight: "600" }}>{assignedTo}</span>
+                  {t('assign_to')}:{" "}
+                  <span style={{ fontWeight: "600", color: theme.text }}>{assignedTo}</span>
                 </>
               )}
             </p>
             <p
               className="text-xs mb-6 text-center"
-              style={{ color: "#888888" }}
+              style={{ color: theme.textSecondary }}
             >
               {status === "Resolved" || status === "Rejected"
-                ? "This complaint will be closed."
-                : "Student will be notified of the update."}
+                ? t('update_close_warning')
+                : t('update_notify_info')}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowConfirmDialog(false)}
                 className="flex-1 h-11 border"
                 style={{
-                  borderColor: "#E5E5E5",
+                  borderColor: theme.border,
                   borderRadius: "14px",
-                  color: "#555555",
+                  color: theme.textSecondary,
                   fontWeight: "500",
                 }}
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleUpdateComplaint}
                 className="flex-1 h-11"
                 style={{
-                  backgroundColor: "#7A0019",
+                  backgroundColor: theme.primary,
                   color: "#FFFFFF",
                   borderRadius: "14px",
                   fontWeight: "500",
                 }}
               >
-                Confirm
+                {t('confirm')}
               </button>
             </div>
           </div>

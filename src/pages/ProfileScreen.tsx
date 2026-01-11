@@ -18,6 +18,7 @@ import {
   MessageSquareWarning,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { supabase } from "../lib/supabaseClient";
 import { useUserPreferences } from "../lib/UserPreferencesContext";
 
@@ -117,8 +118,8 @@ export function ProfileScreen({
             ? "Pilihan aplikasi"
             : "App preferences"
           : isMs
-          ? "Tema & Bahasa"
-          : "Theme & Language",
+            ? "Tema & Bahasa"
+            : "Theme & Language",
       action: "settings",
       show: true,
     },
@@ -131,16 +132,16 @@ export function ProfileScreen({
             ? "Pengurusan Aduan Fasiliti"
             : "Facility Complaint Management"
           : isMs
-          ? "Aduan Fasiliti"
-          : "Facility Complaint",
+            ? "Aduan Fasiliti"
+            : "Facility Complaint",
       subtitle:
         userRole === "staff"
           ? isMs
             ? "Semak dan selesaikan isu fasiliti"
             : "Review and resolve reported facility issues"
           : isMs
-          ? "Laporkan isu fasiliti & semak status"
-          : "Report facility issues & track status",
+            ? "Laporkan isu fasiliti & semak status"
+            : "Report facility issues & track status",
       action: "facility-complaint-entry",
       show: true,
       badge: userRole === "staff" ? complaintBadge : 0,
@@ -189,7 +190,7 @@ export function ProfileScreen({
       await onLogout();
     } catch (error: any) {
       console.error("Delete failed", error);
-      alert(
+      toast.error(
         isMs
           ? `Gagal memadam akaun: ${error.message}`
           : `Failed to delete account: ${error.message}`
@@ -478,7 +479,7 @@ export function ProfileScreen({
               style={{ borderColor: theme.border }}
             >
               <div className="flex items-center gap-3">
-                  <item.icon
+                <item.icon
                   className="w-5 h-5"
                   style={{ color: theme.primary }}
                 />

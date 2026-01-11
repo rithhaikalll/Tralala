@@ -101,33 +101,13 @@ import {
   createComplaint,
   updateComplaintAsStaff,
 } from "./lib/complaints";
-
-const useChatData = (userId: string) => {
-  const [buddyChats, setBuddyChats] = useState<any[]>([]);
-  const [marketplaceChats, setMarketplaceChats] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!userId) return;
-
-    // Fetch Buddy Chats (Mock logic - replace with real table query if available)
-    // For now we return empty to ensure UI renders without crashing
-    const fetchChats = async () => {
-      // Example: const { data } = await supabase.from('chats').select('*').eq('user_id', userId);
-      setBuddyChats([]); 
-      setMarketplaceChats([]);
-    };
-
-    fetchChats();
-  }, [userId]);
-
-  return { buddyChats, marketplaceChats };
-};
+import { useUserPreferences } from "./lib/UserPreferencesContext";
 
 // --- WRAPPERS ---
 const useBuddyData = (userId: string) => {
   const [requests, setRequests] = useState<any[]>([]);
   const [connectedBuddies, setConnectedBuddies] = useState<any[]>([]);
-  
+
   const refresh = async () => {
     if (!userId) return;
 
@@ -148,7 +128,7 @@ const useBuddyData = (userId: string) => {
       // 1. Map for BuddyRequestsScreen (needs isIncoming flag)
       const mappedRequests = reqs.map((r: any) => ({
         id: r.id,
-        requesterId: r.requester_id === userId ? r.recipient?.matric_id : r.requester?.matric_id, 
+        requesterId: r.requester_id === userId ? r.recipient?.matric_id : r.requester?.matric_id,
         requesterName: r.requester_id === userId ? r.recipient?.full_name : r.requester?.full_name,
         recipientId: r.recipient_id === userId ? "You" : r.recipient?.matric_id,
         status: r.status,
@@ -241,27 +221,27 @@ function EditNewsWrapper({
 // REPLACE THE ENTIRE MarketplaceDetailWrapper FUNCTION IN App.tsx
 // ============================================================================
 
-function MarketplaceDetailWrapper({ userId, onNavigate }: any) { 
-  const { id } = useParams(); 
-  const navigate = useNavigate(); 
-  const [item, setItem] = useState<any>(null); 
+function MarketplaceDetailWrapper({ userId, onNavigate }: any) {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [item, setItem] = useState<any>(null);
   const [isFavourite, setIsFavourite] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Fetch Item Data
-  useEffect(() => { 
-    const fetchItemAndFav = async () => { 
+  useEffect(() => {
+    const fetchItemAndFav = async () => {
       if (!id) return;
       try {
         const { data: itemData, error } = await supabase
           .from("marketplace_listings")
           .select("*")
           .eq("id", id)
-          .single(); 
-        
+          .single();
+
         if (error) throw error;
-        setItem(itemData); 
-        
+        setItem(itemData);
+
         if (userId) {
           const { data: favData } = await supabase
             .from("marketplace_favorites")
@@ -274,10 +254,10 @@ function MarketplaceDetailWrapper({ userId, onNavigate }: any) {
       } catch (err) {
         console.error("Error loading item:", err);
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
-    }; 
-    fetchItemAndFav(); 
+    };
+    fetchItemAndFav();
   }, [id, userId]);
 
   const handleToggleFav = async () => {
@@ -326,16 +306,16 @@ function MarketplaceDetailWrapper({ userId, onNavigate }: any) {
     }
   };
 
-  if (loading) return <div className="p-10 text-center text-gray-400">Loading details...</div>; 
+  if (loading) return <div className="p-10 text-center text-gray-400">Loading details...</div>;
   if (!item) return <div className="p-10 text-center text-gray-400">Item not found.</div>;
 
   return (
-    <MarketplaceItemDetailScreen 
-      item={item} 
-      onNavigate={onNavigate} 
-      isFavourite={isFavourite} 
-      onToggleFavourite={handleToggleFav} 
-      isOwner={item.seller_id === userId} 
+    <MarketplaceItemDetailScreen
+      item={item}
+      onNavigate={onNavigate}
+      isFavourite={isFavourite}
+      onToggleFavourite={handleToggleFav}
+      isOwner={item.seller_id === userId}
       onCreateMarketplaceChat={handleCreateChat} // <--- Pass the function
     />
   );
@@ -479,6 +459,8 @@ function StudentComplaintsWrapper() {
   const [loading, setLoading] = useState(true);
   const [complaints, setComplaints] = useState<any[]>([]);
 
+  const { theme } = useUserPreferences();
+
   useEffect(() => {
     (async () => {
       try {
@@ -490,7 +472,7 @@ function StudentComplaintsWrapper() {
     })();
   }, []);
 
-  if (loading) return <div className="p-6">Loading…</div>;
+  if (loading) return <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ backgroundColor: theme.background, color: theme.text }}>Loading…</div>;
 
   return (
     <FacilityComplaintsScreen
@@ -510,6 +492,8 @@ function StudentComplaintDetailWrapper() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [complaint, setComplaint] = useState<any>(null);
+
+  const { theme } = useUserPreferences();
 
   useEffect(() => {
     (async () => {
@@ -532,7 +516,7 @@ function StudentComplaintDetailWrapper() {
     })();
   }, [id]);
 
-  if (loading) return <div className="p-6">Loading…</div>;
+  if (loading) return <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ backgroundColor: theme.background, color: theme.text }}>Loading…</div>;
   if (!complaint) return <div className="p-6">Complaint not found</div>;
 
   return (
@@ -565,6 +549,8 @@ function StaffComplaintsWrapper() {
   const [loading, setLoading] = useState(true);
   const [complaints, setComplaints] = useState<any[]>([]);
 
+  const { theme } = useUserPreferences();
+
   useEffect(() => {
     (async () => {
       try {
@@ -576,7 +562,7 @@ function StaffComplaintsWrapper() {
     })();
   }, []);
 
-  if (loading) return <div className="p-6">Loading…</div>;
+  if (loading) return <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ backgroundColor: theme.background, color: theme.text }}>Loading…</div>;
 
   return (
     <StaffComplaintsScreen
@@ -595,6 +581,8 @@ function StaffComplaintDetailWrapper() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [complaint, setComplaint] = useState<any>(null);
+
+  const { theme } = useUserPreferences();
 
   useEffect(() => {
     (async () => {
@@ -621,7 +609,7 @@ function StaffComplaintDetailWrapper() {
     })();
   }, [id]);
 
-  if (loading) return <div className="p-6">Loading…</div>;
+  if (loading) return <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ backgroundColor: theme.background, color: theme.text }}>Loading…</div>;
   if (!complaint) return <div className="p-6">Complaint not found</div>;
 
   return (
@@ -662,9 +650,9 @@ function PrivateChatListWrapper({ userId }: any) {
   const navigate = useNavigate();
   // We no longer need to pass chats as props, the component fetches them!
   return (
-    <PrivateChatListScreen 
+    <PrivateChatListScreen
       currentUserId={userId}
-      onNavigate={(screen, data) => navigate(`/${screen}`, { state: data })} 
+      onNavigate={(screen, data) => navigate(`/${screen}`, { state: data })}
     />
   );
 }
@@ -849,13 +837,13 @@ export default function App() {
     location.pathname.startsWith("/register") ||
     location.pathname.startsWith("/facility") ||
     location.pathname.startsWith("/booking") ||
-    location.pathname.startsWith("/private-chat") || 
+    location.pathname.startsWith("/private-chat") ||
     location.pathname.startsWith("/private-chat-list") ||
     location.pathname.includes("/community/marketplace/") ||
-    
+
     // Updated discussion paths
     location.pathname.includes("/community/discussion/create") ||
-    location.pathname.match(/\/community\/discussion\/[^/]+$/) || 
+    location.pathname.match(/\/community\/discussion\/[^/]+$/) ||
     // NEWS PATHS: Hide nav on create, edit, or detail view
     location.pathname.includes("/community/news/create") ||
     location.pathname.includes("/community/news/edit") ||
@@ -891,11 +879,11 @@ export default function App() {
       (location.pathname === "/community/discussion") ||
       location.pathname === "/my-bookings" ||
       (location.pathname.match(/^\/activity\/[^/]+$/) && !location.pathname.startsWith("/activity/record")));
-      // NOTE: We do NOT want the global header for News, as news screens have their own.
+  // NOTE: We do NOT want the global header for News, as news screens have their own.
 
   const activeTab = useMemo(() => {
     const p = location.pathname;
-    if (p.startsWith("/community")) return "community"; 
+    if (p.startsWith("/community")) return "community";
     if (
       p.startsWith("/book") ||
       p.startsWith("/facilities") ||
@@ -942,7 +930,7 @@ export default function App() {
   const onTabChange = (tab: string) => {
     const map: Record<string, string> = {
       home: "/home",
-      community: "/community", 
+      community: "/community",
       book: "/book",
       activity: "/activity-main",
       profile: "/profile",
@@ -968,16 +956,16 @@ export default function App() {
                 <FacilityDetailsHeader onBack={() => navigate("/book")} />
               )}
             {location.pathname.startsWith("/book") && <BookListHeader />}
-            
+
             {/* Discussion Header */}
             {location.pathname === "/community/discussion" && (
-                <DiscussionScreenHeader
-                  onNavigate={(screen) => {
-                    if (screen === "create-discussion") navigate("/community/discussion/create");
-                  }}
-                />
-              )}
-            
+              <DiscussionScreenHeader
+                onNavigate={(screen) => {
+                  if (screen === "create-discussion") navigate("/community/discussion/create");
+                }}
+              />
+            )}
+
             {location.pathname === "/my-bookings" && (
               <MyBookingsScreenHeader onBack={() => navigate("/home")} />
             )}
@@ -991,9 +979,8 @@ export default function App() {
         )}
 
         <main
-          className={`content flex-1 overflow-y-auto bg-[--bg-primary)] ${
-            showBottomNav ? "with-bottom-nav" : ""
-          }`}
+          className={`content flex-1 overflow-y-auto bg-[--bg-primary)] ${showBottomNav ? "with-bottom-nav" : ""
+            }`}
           style={{ paddingTop: hasHeader ? "70px" : "0px", minHeight: "100%" }}
         >
           <div className="flex-1 flex flex-col w-full bg-[--bg-primary)]">
@@ -1072,7 +1059,7 @@ export default function App() {
                         studentName={studentName}
                         onNavigate={(s, d) => {
                           if (s === "book") navigate("/book");
-                          if (s === "discussion") navigate("/community"); 
+                          if (s === "discussion") navigate("/community");
                           if (s === "facility-details" && d)
                             navigate(`/facility/${d}`);
                           if (s === "activity-record")
@@ -1102,9 +1089,9 @@ export default function App() {
                 element={
                   <RequireAuth authed={authed}>
                     <DiscussionScreen
-                      onNavigate={(s, d) => {
-                        if (s === "create-discussion") navigate("/community/discussion/create");
-                        if (s === "discussion-detail" && d) navigate(`/community/discussion/${d}`);
+                      onNavigate={(_s, d) => {
+                        if (_s === "create-discussion") navigate("/community/discussion/create");
+                        if (_s === "discussion-detail" && d) navigate(`/community/discussion/${d}`);
                       }}
                     />
                   </RequireAuth>
@@ -1116,8 +1103,8 @@ export default function App() {
                   <RequireAuth authed={authed}>
                     <CreateDiscussionScreen
                       studentName={studentName}
-                      onNavigate={(s) => {
-                         navigate("/community/discussion");
+                      onNavigate={(_s) => {
+                        navigate("/community/discussion");
                       }}
                     />
                   </RequireAuth>
@@ -1129,7 +1116,7 @@ export default function App() {
                   <RequireAuth authed={authed}>
                     <DiscussionDetailWrapper
                       studentName={studentName}
-                      onNavigate={(s) => {
+                      onNavigate={(_s) => {
                         navigate("/community/discussion");
                       }}
                     />
@@ -1157,7 +1144,7 @@ export default function App() {
                 element={
                   <RequireAuth authed={authed}>
                     <CreateNewsPostScreen
-                      onNavigate={(s) => navigate("/community/news")}
+                      onNavigate={(_s) => navigate("/community/news")}
                     />
                   </RequireAuth>
                 }
@@ -1169,8 +1156,8 @@ export default function App() {
                     <NewsDetailWrapper
                       userRole={userRole as "student" | "staff"}
                       onNavigate={(s, d) => {
-                          if (s === "news-feed") navigate("/community/news");
-                          if (s === "edit-news-post") navigate(`/community/news/edit/${d}`);
+                        if (s === "news-feed") navigate("/community/news");
+                        if (s === "edit-news-post") navigate(`/community/news/edit/${d}`);
                       }}
                     />
                   </RequireAuth>
@@ -1182,179 +1169,179 @@ export default function App() {
                   <RequireAuth authed={authed}>
                     <EditNewsWrapper
                       onNavigate={(s, d) => {
-                          if (s === "news-detail") navigate(`/community/news/${d}`);
+                        if (s === "news-detail") navigate(`/community/news/${d}`);
                       }}
                     />
                   </RequireAuth>
                 }
               />
               {/* -------------------------------------- */}
-                
+
               <Route
-  path="/community/marketplace"
-  element={
-    <RequireAuth authed={authed}>
-      <MarketplaceScreen
-        currentUserId={userId}
-        onNavigate={(screen, data) => {
-          if (screen === "create-listing") {
-            navigate("/community/marketplace/create");
-          } else if (screen === "marketplace-item-detail" && data?.item?.id) {
-            navigate(`/community/marketplace/${data.item.id}`);
-          } else {
-            navigate("/community");
-          }
-        }}
-      />
-    </RequireAuth>
-  }
-/>
-             <Route 
-  path="/community/marketplace/:id" 
-  element={
-    <RequireAuth authed={authed}>
-      <MarketplaceDetailWrapper 
-        userId={userId} 
-        onNavigate={(screen: string, data: any) => {
-          // 👇 THIS BLOCK HANDLES THE REDIRECT TO CHAT
-          if (screen === "private-chat") {
-            navigate("/private-chat", { state: data });
-          } else {
-            navigate("/community/marketplace");
-          }
-        }} 
-      />
-    </RequireAuth>
-  } 
-/>
-            <Route path="/community/marketplace/create" element={
-              <RequireAuth authed={authed}>
-                <CreateListingScreen 
-                  studentId={userId} 
-                  studentName={studentName} 
-                  onNavigate={() => navigate("/community/marketplace")} 
-                />
-              </RequireAuth>
-            } />
-            
-            
+                path="/community/marketplace"
+                element={
+                  <RequireAuth authed={authed}>
+                    <MarketplaceScreen
+                      currentUserId={userId}
+                      onNavigate={(screen, data) => {
+                        if (screen === "create-listing") {
+                          navigate("/community/marketplace/create");
+                        } else if (screen === "marketplace-item-detail" && data?.item?.id) {
+                          navigate(`/community/marketplace/${data.item.id}`);
+                        } else {
+                          navigate("/community");
+                        }
+                      }}
+                    />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/community/marketplace/:id"
+                element={
+                  <RequireAuth authed={authed}>
+                    <MarketplaceDetailWrapper
+                      userId={userId}
+                      onNavigate={(screen: string, data: any) => {
+                        // 👇 THIS BLOCK HANDLES THE REDIRECT TO CHAT
+                        if (screen === "private-chat") {
+                          navigate("/private-chat", { state: data });
+                        } else {
+                          navigate("/community/marketplace");
+                        }
+                      }}
+                    />
+                  </RequireAuth>
+                }
+              />
+              <Route path="/community/marketplace/create" element={
+                <RequireAuth authed={authed}>
+                  <CreateListingScreen
+                    studentId={userId}
+                    studentName={studentName}
+                    onNavigate={() => navigate("/community/marketplace")}
+                  />
+                </RequireAuth>
+              } />
+
+
               {/* BUDDY SYSTEM ROUTES */}
 
-            <Route path="/community/my-buddies" element={
-  <RequireAuth authed={authed}>
-    <MyBuddiesScreen 
-      onNavigate={() => navigate("/community/buddy")} 
-      studentId={userId} 
-      connectedBuddies={connectedBuddies} 
-      onRemoveBuddy={handleRemoveBuddy}
-      
-      // 👇 DEBUGGING VERSION OF THE CHAT TRIGGER 👇
-      onChat={async (buddyId, buddyName) => {
-        console.log("🟢 1. Button Clicked! Trying to chat with:", buddyName);
-        console.log("   - My ID:", userId);
-        console.log("   - Buddy ID:", buddyId);
+              <Route path="/community/my-buddies" element={
+                <RequireAuth authed={authed}>
+                  <MyBuddiesScreen
+                    onNavigate={() => navigate("/community/buddy")}
+                    studentId={userId}
+                    connectedBuddies={connectedBuddies}
+                    onRemoveBuddy={handleRemoveBuddy}
 
-        try {
-          const chat = await getOrCreateChat(
-            "buddy",
-            userId,
-            buddyId,
-            buddyName
-          );
+                    // 👇 DEBUGGING VERSION OF THE CHAT TRIGGER 👇
+                    onChat={async (buddyId, buddyName) => {
+                      console.log("🟢 1. Button Clicked! Trying to chat with:", buddyName);
+                      console.log("   - My ID:", userId);
+                      console.log("   - Buddy ID:", buddyId);
 
-          console.log("🟡 2. Database returned chat object:", chat);
+                      try {
+                        const chat = await getOrCreateChat(
+                          "buddy",
+                          userId,
+                          buddyId,
+                          buddyName
+                        );
 
-          if (chat) {
-            console.log("🟢 3. Success! Navigating to /private-chat...");
-            navigate("/private-chat", { state: { chat, chatType: "buddy" } });
-          } else {
-            console.error("🔴 3. Failed: Chat object is null. Check RLS policies.");
-            alert("Error: Chat could not be created. Open Console (F12) for details.");
-          }
-        } catch (err) {
-          console.error("🔴 CRITICAL ERROR:", err);
-        }
-      }}
-    />
-  </RequireAuth>
-} />
+                        console.log("🟡 2. Database returned chat object:", chat);
 
-            <Route path="/community/buddy" element={
-              <RequireAuth authed={authed}>
-                <BuddyHubScreen 
-                  onNavigate={(s: string) => navigate(s === "community" ? "/community" : `/community/${s}`)} 
-                  buddyRequests={requests} 
-                  connectedBuddies={connectedBuddies} 
-                  onSearch={() => navigate("/community/find-buddy")} 
-                  onAcceptRequest={async (id) => handleUpdateBuddyStatus(id, "Accepted")} 
-                  onRejectRequest={async (id) => handleUpdateBuddyStatus(id, "Rejected")} 
-                  buddyChats={[]} 
-                />
-              </RequireAuth>
-            } />
-            <Route path="/community/find-buddy" element={
-              <RequireAuth authed={authed}>
-                <FindBuddyScreen 
-                  onNavigate={() => navigate("/community/buddy")} 
-                  studentId={userId} 
-                  connectedBuddies={connectedBuddies.map(b => b.id)} 
-                  onSendRequest={handleSendBuddyRequest} 
-                />
-              </RequireAuth>
-            } />
-            <Route path="/community/buddy-requests" element={
-              <RequireAuth authed={authed}>
-                <BuddyRequestsScreen 
-                  onNavigate={() => navigate("/community/buddy")} 
-                  studentId={userId} 
-                  buddyRequests={requests} 
-                  onAcceptRequest={(id) => handleUpdateBuddyStatus(id, "Accepted")} 
-                  onRejectRequest={(id) => handleUpdateBuddyStatus(id, "Rejected")} 
-                />
-              </RequireAuth>
-            } />
-            <Route path="/community/my-buddies" element={
-  <RequireAuth authed={authed}>
-    <MyBuddiesScreen 
-      onNavigate={() => navigate("/community/buddy")} 
-      studentId={userId} 
-      connectedBuddies={connectedBuddies} 
-      onRemoveBuddy={handleRemoveBuddy}
+                        if (chat) {
+                          console.log("🟢 3. Success! Navigating to /private-chat...");
+                          navigate("/private-chat", { state: { chat, chatType: "buddy" } });
+                        } else {
+                          console.error("🔴 3. Failed: Chat object is null. Check RLS policies.");
+                          alert("Error: Chat could not be created. Open Console (F12) for details.");
+                        }
+                      } catch (err) {
+                        console.error("🔴 CRITICAL ERROR:", err);
+                      }
+                    }}
+                  />
+                </RequireAuth>
+              } />
 
-      // 👇 IF THIS CHUNK IS MISSING, NOTHING WILL HAPPEN 👇
-      onChat={async (buddyId, buddyName) => {
-        console.log("2. App.tsx received request for:", buddyName); // <--- Debug Log
+              <Route path="/community/buddy" element={
+                <RequireAuth authed={authed}>
+                  <BuddyHubScreen
+                    onNavigate={(s: string) => navigate(s === "community" ? "/community" : `/community/${s}`)}
+                    buddyRequests={requests}
+                    connectedBuddies={connectedBuddies}
+                    onSearch={() => navigate("/community/find-buddy")}
+                    onAcceptRequest={async (id) => handleUpdateBuddyStatus(id, "Accepted")}
+                    onRejectRequest={async (id) => handleUpdateBuddyStatus(id, "Rejected")}
+                    buddyChats={[]}
+                  />
+                </RequireAuth>
+              } />
+              <Route path="/community/find-buddy" element={
+                <RequireAuth authed={authed}>
+                  <FindBuddyScreen
+                    onNavigate={() => navigate("/community/buddy")}
+                    studentId={userId}
+                    connectedBuddies={connectedBuddies.map(b => b.id)}
+                    onSendRequest={handleSendBuddyRequest}
+                  />
+                </RequireAuth>
+              } />
+              <Route path="/community/buddy-requests" element={
+                <RequireAuth authed={authed}>
+                  <BuddyRequestsScreen
+                    onNavigate={() => navigate("/community/buddy")}
+                    studentId={userId}
+                    buddyRequests={requests}
+                    onAcceptRequest={(id) => handleUpdateBuddyStatus(id, "Accepted")}
+                    onRejectRequest={(id) => handleUpdateBuddyStatus(id, "Rejected")}
+                  />
+                </RequireAuth>
+              } />
+              <Route path="/community/my-buddies" element={
+                <RequireAuth authed={authed}>
+                  <MyBuddiesScreen
+                    onNavigate={() => navigate("/community/buddy")}
+                    studentId={userId}
+                    connectedBuddies={connectedBuddies}
+                    onRemoveBuddy={handleRemoveBuddy}
 
-        const chat = await getOrCreateChat("buddy", userId, buddyId, buddyName);
-        
-        console.log("3. Chat created:", chat); // <--- Debug Log
+                    // 👇 IF THIS CHUNK IS MISSING, NOTHING WILL HAPPEN 👇
+                    onChat={async (buddyId, buddyName) => {
+                      console.log("2. App.tsx received request for:", buddyName); // <--- Debug Log
 
-        if (chat) {
-          navigate("/private-chat", { state: { chat, chatType: "buddy" } });
-        }
-      }}
-    />
-  </RequireAuth>
-} />
+                      const chat = await getOrCreateChat("buddy", userId, buddyId, buddyName);
 
-           {/* PRIVATE CHAT ROUTES */}
-            <Route path="/private-chat-list" element={
-              <RequireAuth authed={authed}>
-                <PrivateChatListWrapper userId={userId} />
-              </RequireAuth>
-            } />
-           <Route path="/private-chat" element={
-  <RequireAuth authed={authed}>
-    <PrivateChatWrapper userId={userId} />
-  </RequireAuth>
-} />
+                      console.log("3. Chat created:", chat); // <--- Debug Log
+
+                      if (chat) {
+                        navigate("/private-chat", { state: { chat, chatType: "buddy" } });
+                      }
+                    }}
+                  />
+                </RequireAuth>
+              } />
+
+              {/* PRIVATE CHAT ROUTES */}
+              <Route path="/private-chat-list" element={
+                <RequireAuth authed={authed}>
+                  <PrivateChatListWrapper userId={userId} />
+                </RequireAuth>
+              } />
+              <Route path="/private-chat" element={
+                <RequireAuth authed={authed}>
+                  <PrivateChatWrapper userId={userId} />
+                </RequireAuth>
+              } />
 
               <Route
                 path="/book"
                 element={
                   <RequireAuth authed={authed}>
                     <FacilityListScreen
-                      onNavigate={(s, d) => navigate(`/facility/${d}`)}
+                      onNavigate={(_s, d) => navigate(`/facility/${d}`)}
                     />
                   </RequireAuth>
                 }
@@ -1379,8 +1366,8 @@ export default function App() {
               />
 
               {/* ... (Keep existing Activity/Event/Settings routes unchanged) ... */}
-              
-               <Route
+
+              <Route
                 path="/edit-profile"
                 element={
                   <RequireAuth authed={authed}>
@@ -1448,7 +1435,7 @@ export default function App() {
                 element={
                   <RequireAuth authed={authed}>
                     <ActivityHistoryScreen
-                      onNavigate={(s, d) =>
+                      onNavigate={(_s, d) =>
                         navigate(d ? `/activity/${d}` : "/profile")
                       }
                     />
@@ -1529,7 +1516,7 @@ export default function App() {
                 path="/event-detail/:id"
                 element={
                   <RequireAuth authed={authed}>
-                    <EventDetailWrapper 
+                    <EventDetailWrapper
                       userId={userId}
                       userRole={userRole as "student" | "staff"}
                     />

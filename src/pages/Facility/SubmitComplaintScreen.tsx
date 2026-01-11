@@ -1,5 +1,6 @@
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { useState } from "react";
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface SubmitComplaintScreenProps {
   onNavigate: (screen: string) => void;
@@ -16,6 +17,7 @@ export function SubmitComplaintScreen({
   onNavigate,
   onSubmitComplaint,
 }: SubmitComplaintScreenProps) {
+  const { theme, t } = useUserPreferences();
   const [facilityName, setFacilityName] = useState("");
   const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
@@ -53,11 +55,11 @@ export function SubmitComplaintScreen({
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!facilityName) newErrors.facilityName = "Please select a facility";
-    if (!category) newErrors.category = "Please select a category";
-    if (!title.trim()) newErrors.title = "Please enter a complaint title";
+    if (!facilityName) newErrors.facilityName = t('err_select_facility');
+    if (!category) newErrors.category = t('err_select_category');
+    if (!title.trim()) newErrors.title = t('err_enter_title');
     if (!description.trim())
-      newErrors.description = "Please enter a description";
+      newErrors.description = t('err_enter_desc');
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -77,21 +79,24 @@ export function SubmitComplaintScreen({
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-white">
+    <div className="min-h-screen pb-20" style={{ backgroundColor: theme.background }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-40 bg-white px-6 py-6 border-b"
-        style={{ borderColor: "#E5E5E5" }}
+        className="sticky top-0 z-40 px-6 py-6 border-b"
+        style={{
+          backgroundColor: theme.background,
+          borderColor: theme.border
+        }}
       >
         <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate("facility-complaints")}
-            style={{ color: "#7A0019" }}
+            style={{ color: theme.primary }}
           >
             <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
           </button>
-          <h2 style={{ color: "#1A1A1A", fontWeight: "600", fontSize: "20px" }}>
-            Submit Facility Complaint
+          <h2 style={{ color: theme.text, fontWeight: "600", fontSize: "20px" }}>
+            {t('submit_facility_complaint')}
           </h2>
         </div>
       </div>
@@ -102,21 +107,22 @@ export function SubmitComplaintScreen({
         <div>
           <label
             className="block mb-2 text-sm"
-            style={{ color: "#1A1A1A", fontWeight: "500" }}
+            style={{ color: theme.text, fontWeight: "500" }}
           >
-            Select Facility <span style={{ color: "#DC2626" }}>*</span>
+            {t('select_facility')} <span style={{ color: "#DC2626" }}>*</span>
           </label>
           <select
             value={facilityName}
             onChange={(e) => setFacilityName(e.target.value)}
-            className="w-full h-11 px-3 border bg-white"
+            className="w-full h-11 px-3 border"
             style={{
-              borderColor: errors.facilityName ? "#DC2626" : "#E5E5E5",
+              borderColor: errors.facilityName ? "#DC2626" : theme.border,
               borderRadius: "8px",
-              color: "#1A1A1A",
+              color: theme.text,
+              backgroundColor: theme.cardBg
             }}
           >
-            <option value="">Choose facility</option>
+            <option value="">{t('choose_facility')}</option>
             {facilities.map((facility) => (
               <option key={facility} value={facility}>
                 {facility}
@@ -134,21 +140,22 @@ export function SubmitComplaintScreen({
         <div>
           <label
             className="block mb-2 text-sm"
-            style={{ color: "#1A1A1A", fontWeight: "500" }}
+            style={{ color: theme.text, fontWeight: "500" }}
           >
-            Complaint Category <span style={{ color: "#DC2626" }}>*</span>
+            {t('complaint_category')} <span style={{ color: "#DC2626" }}>*</span>
           </label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full h-11 px-3 border bg-white"
+            className="w-full h-11 px-3 border"
             style={{
-              borderColor: errors.category ? "#DC2626" : "#E5E5E5",
+              borderColor: errors.category ? "#DC2626" : theme.border,
               borderRadius: "8px",
-              color: "#1A1A1A",
+              color: theme.text,
+              backgroundColor: theme.cardBg
             }}
           >
-            <option value="">Choose category</option>
+            <option value="">{t('choose_category')}</option>
             {categories.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
@@ -166,20 +173,21 @@ export function SubmitComplaintScreen({
         <div>
           <label
             className="block mb-2 text-sm"
-            style={{ color: "#1A1A1A", fontWeight: "500" }}
+            style={{ color: theme.text, fontWeight: "500" }}
           >
-            Complaint Title <span style={{ color: "#DC2626" }}>*</span>
+            {t('complaint_title_label')} <span style={{ color: "#DC2626" }}>*</span>
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Brief summary of the issue"
-            className="w-full h-11 px-3 border bg-white"
+            placeholder={t('complaint_title_placeholder')}
+            className="w-full h-11 px-3 border"
             style={{
-              borderColor: errors.title ? "#DC2626" : "#E5E5E5",
+              borderColor: errors.title ? "#DC2626" : theme.border,
               borderRadius: "8px",
-              color: "#1A1A1A",
+              color: theme.text,
+              backgroundColor: theme.cardBg
             }}
           />
           {errors.title && (
@@ -193,20 +201,21 @@ export function SubmitComplaintScreen({
         <div>
           <label
             className="block mb-2 text-sm"
-            style={{ color: "#1A1A1A", fontWeight: "500" }}
+            style={{ color: theme.text, fontWeight: "500" }}
           >
-            Complaint Description <span style={{ color: "#DC2626" }}>*</span>
+            {t('complaint_desc_label')} <span style={{ color: "#DC2626" }}>*</span>
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe the issue in detail..."
+            placeholder={t('complaint_desc_placeholder')}
             rows={5}
-            className="w-full px-3 py-3 border bg-white resize-none"
+            className="w-full px-3 py-3 border resize-none"
             style={{
-              borderColor: errors.description ? "#DC2626" : "#E5E5E5",
+              borderColor: errors.description ? "#DC2626" : theme.border,
               borderRadius: "8px",
-              color: "#1A1A1A",
+              color: theme.text,
+              backgroundColor: theme.cardBg
             }}
           />
           {errors.description && (
@@ -220,30 +229,30 @@ export function SubmitComplaintScreen({
         <div>
           <label
             className="block mb-2 text-sm"
-            style={{ color: "#1A1A1A", fontWeight: "500" }}
+            style={{ color: theme.text, fontWeight: "500" }}
           >
-            Photo Evidence (Optional)
+            {t('photo_evidence_optional')}
           </label>
 
           {!photoEvidence ? (
             <label
               className="w-full h-32 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer"
               style={{
-                borderColor: "#E5E5E5",
+                borderColor: theme.border,
                 borderRadius: "8px",
-                backgroundColor: "#FAFAFA",
+                backgroundColor: theme.mode === 1 ? "#1E1E1E" : "#FAFAFA",
               }}
             >
               <Upload
                 className="w-8 h-8 mb-2"
-                style={{ color: "#888888" }}
+                style={{ color: theme.textSecondary }}
                 strokeWidth={1.5}
               />
-              <span className="text-sm" style={{ color: "#555555" }}>
-                Tap to upload photo
+              <span className="text-sm" style={{ color: theme.textSecondary }}>
+                {t('tap_to_upload')}
               </span>
-              <span className="text-xs mt-1" style={{ color: "#888888" }}>
-                JPG, PNG up to 5MB
+              <span className="text-xs mt-1" style={{ color: theme.textSecondary }}>
+                {t('upload_format_hint')}
               </span>
               <input
                 type="file"
@@ -258,7 +267,10 @@ export function SubmitComplaintScreen({
                 src={photoEvidence}
                 alt="Evidence"
                 className="w-full h-48 object-cover border"
-                style={{ borderColor: "#E5E5E5", borderRadius: "8px" }}
+                style={{
+                  borderColor: theme.border,
+                  borderRadius: "8px"
+                }}
               />
               <button
                 onClick={() => setPhotoEvidence(null)}
@@ -281,27 +293,27 @@ export function SubmitComplaintScreen({
             onClick={handleSubmit}
             className="w-full h-12"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary,
               color: "#FFFFFF",
               borderRadius: "14px",
               fontWeight: "500",
               fontSize: "15px",
             }}
           >
-            Submit Complaint
+            {t('submit_complaint_btn')}
           </button>
           <button
             onClick={() => onNavigate("facility-complaints")}
             className="w-full h-12 border"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
               borderRadius: "14px",
-              color: "#555555",
+              color: theme.textSecondary,
               fontWeight: "500",
               fontSize: "15px",
             }}
           >
-            Cancel
+            {t('cancel')}
           </button>
         </div>
       </div>

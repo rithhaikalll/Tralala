@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface CreateDiscussionScreenProps {
   onNavigate: (screen: string) => void;
@@ -11,6 +12,7 @@ export function CreateDiscussionScreen({
   onNavigate,
   studentName,
 }: CreateDiscussionScreenProps) {
+  const { theme, t } = useUserPreferences();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false); // ✅ has setter now
@@ -70,32 +72,32 @@ export function CreateDiscussionScreen({
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-white">
+    <div className="min-h-screen pb-20 transition-colors" style={{ backgroundColor: theme.background }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-40 px-6 py-6 bg-white border-b"
-        style={{ borderColor: "#E5E5E5" }}
+        className="sticky top-0 z-40 px-6 py-6 border-b transition-colors"
+        style={{ backgroundColor: theme.background, borderColor: theme.border }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => onNavigate("discussion")}
-              style={{ color: "#7A0019" }}
+              style={{ color: theme.primary }}
             >
               <ArrowLeft className="w-6 h-6" strokeWidth={1.5} />
             </button>
             <h2
-              style={{ color: "#000000", fontWeight: "600", fontSize: "20px" }}
+              style={{ color: theme.text, fontWeight: "600", fontSize: "20px" }}
             >
-              New Discussion
+              {t('disc_create_title')}
             </h2>
           </div>
           <button
             onClick={handlePost}
             disabled={!title.trim() || !content.trim() || loading}
-            className="px-5 h-9 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 h-9 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary,
               color: "#FFFFFF",
               borderRadius: "8px",
               fontWeight: "500",
@@ -103,7 +105,7 @@ export function CreateDiscussionScreen({
               boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
             }}
           >
-            {loading ? "Posting..." : "Post"}
+            {loading ? t('disc_posting') : t('disc_post_btn')}
           </button>
         </div>
       </div>
@@ -115,8 +117,8 @@ export function CreateDiscussionScreen({
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center"
             style={{
-              backgroundColor: "#F5F5F5",
-              color: "#7A0019",
+              backgroundColor: theme.mode === 1 ? "#333333" : "#F5F5F5",
+              color: theme.primary,
               fontWeight: "600",
               fontSize: "16px",
             }}
@@ -125,11 +127,11 @@ export function CreateDiscussionScreen({
           </div>
           <div>
             <div
-              style={{ color: "#1A1A1A", fontWeight: "600", fontSize: "15px" }}
+              style={{ color: theme.text, fontWeight: "600", fontSize: "15px" }}
             >
               {studentName}
             </div>
-            <div className="text-xs" style={{ color: "#888888" }}>
+            <div className="text-xs" style={{ color: theme.textSecondary }}>
               Posting as yourself
             </div>
           </div>
@@ -140,22 +142,23 @@ export function CreateDiscussionScreen({
           <label
             htmlFor="title"
             className="block mb-2 text-sm"
-            style={{ color: "#1A1A1A", fontWeight: "500" }}
+            style={{ color: theme.text, fontWeight: "500" }}
           >
-            Title
+            {t('disc_input_title')}
           </label>
           <input
             id="title"
             type="text"
-            placeholder="What would you like to discuss?"
+            placeholder={t('disc_input_title_ph')}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full h-12 px-4 border bg-white"
+            className="w-full h-12 px-4 border transition-colors"
             style={{
-              borderColor: "#E5E5E5",
+              backgroundColor: theme.cardBg,
+              borderColor: theme.border,
               borderRadius: "14px",
               fontSize: "15px",
-              color: "#1A1A1A",
+              color: theme.text,
             }}
           />
         </div>
@@ -165,22 +168,23 @@ export function CreateDiscussionScreen({
           <label
             htmlFor="content"
             className="block mb-2 text-sm"
-            style={{ color: "#1A1A1A", fontWeight: "500" }}
+            style={{ color: theme.text, fontWeight: "500" }}
           >
-            Content
+            {t('disc_input_content')}
           </label>
           <textarea
             id="content"
-            placeholder="Share your thoughts with the community..."
+            placeholder={t('disc_input_content_ph')}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={8}
-            className="w-full px-4 py-3 border bg-white resize-none"
+            className="w-full px-4 py-3 border resize-none transition-colors"
             style={{
-              borderColor: "#E5E5E5",
+              backgroundColor: theme.cardBg,
+              borderColor: theme.border,
               borderRadius: "14px",
               fontSize: "15px",
-              color: "#1A1A1A",
+              color: theme.text,
               lineHeight: "1.6",
             }}
           />
@@ -188,34 +192,38 @@ export function CreateDiscussionScreen({
 
         {/* Guidelines Card */}
         <div
-          className="border bg-white p-4"
-          style={{ borderColor: "#E5E5E5", borderRadius: "14px" }}
+          className="border p-4 transition-colors"
+          style={{
+            backgroundColor: theme.cardBg,
+            borderColor: theme.border,
+            borderRadius: "14px"
+          }}
         >
           <h4
             className="mb-2"
-            style={{ color: "#1A1A1A", fontWeight: "500", fontSize: "14px" }}
+            style={{ color: theme.text, fontWeight: "500", fontSize: "14px" }}
           >
-            Community Guidelines
+            {t('disc_guidelines_title')}
           </h4>
           <ul
             className="space-y-1.5 text-xs"
-            style={{ color: "#555555", lineHeight: "1.6" }}
+            style={{ color: theme.textSecondary, lineHeight: "1.6" }}
           >
             <li className="flex gap-2">
               <span className="shrink-0">•</span>
-              <span>Be respectful and courteous to others</span>
+              <span>{t('disc_guideline_1')}</span>
             </li>
             <li className="flex gap-2">
               <span className="shrink-0">•</span>
-              <span>Keep discussions relevant to sports and facilities</span>
+              <span>{t('disc_guideline_2')}</span>
             </li>
             <li className="flex gap-2">
               <span className="shrink-0">•</span>
-              <span>No spam, harassment, or inappropriate content</span>
+              <span>{t('disc_guideline_3')}</span>
             </li>
             <li className="flex gap-2">
               <span className="shrink-0">•</span>
-              <span>Report any violations to administrators</span>
+              <span>{t('disc_guideline_4')}</span>
             </li>
           </ul>
         </div>

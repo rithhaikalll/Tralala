@@ -6,6 +6,7 @@ import {
   Clock,
 } from "lucide-react";
 import { useState } from "react";
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface Complaint {
   id: string;
@@ -32,6 +33,7 @@ export function StaffComplaintsScreen({
   onNavigate,
   complaints,
 }: StaffComplaintsScreenProps) {
+  const { theme, t } = useUserPreferences();
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [facilityFilter, setFacilityFilter] = useState<string>("All");
   const [priorityFilter, setPriorityFilter] = useState<string>("All");
@@ -67,6 +69,26 @@ export function StaffComplaintsScreen({
     }
   };
 
+  const getStatusTranslation = (status: string) => {
+    switch (status) {
+      case "Submitted": return t('status_submitted');
+      case "In Progress": return t('status_in_progress');
+      case "Resolved": return t('status_resolved');
+      case "Rejected": return t('status_rejected');
+      default: return status;
+    }
+  };
+
+  const getPriorityTranslation = (priority?: string) => {
+    switch (priority) {
+      case "Urgent": return t('priority_urgent');
+      case "High": return t('priority_high');
+      case "Medium": return t('priority_medium');
+      case "Low": return t('priority_low');
+      default: return t('priority_medium');
+    }
+  };
+
   const facilities = Array.from(new Set(complaints.map((c) => c.facilityName)));
 
   const filteredComplaints = complaints.filter((c) => {
@@ -83,8 +105,6 @@ export function StaffComplaintsScreen({
     return matchesStatus && matchesFacility && matchesPriority && matchesSearch;
   });
 
-
-
   // Calculate urgency (days since submission)
   const getDaysOld = (dateStr: string) => {
     const submitted = new Date(dateStr);
@@ -96,21 +116,24 @@ export function StaffComplaintsScreen({
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-white">
+    <div className="min-h-screen pb-20" style={{ backgroundColor: theme.background }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-40 bg-white px-6 py-6 border-b"
-        style={{ borderColor: "#E5E5E5" }}
+        className="sticky top-0 z-40 px-6 py-6 border-b"
+        style={{
+          backgroundColor: theme.background,
+          borderColor: theme.border
+        }}
       >
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => onNavigate("staff-checkin-dashboard")}
-            style={{ color: "#7A0019" }}
+            style={{ color: theme.primary }}
           >
             <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
           </button>
-          <h2 style={{ color: "#1A1A1A", fontWeight: "600", fontSize: "20px" }}>
-            Complaint Management
+          <h2 style={{ color: theme.text, fontWeight: "600", fontSize: "20px" }}>
+            {t('complaint_management')}
           </h2>
         </div>
 
@@ -118,19 +141,20 @@ export function StaffComplaintsScreen({
         <div className="relative mb-3">
           <Search
             className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-            style={{ color: "#888888" }}
+            style={{ color: theme.textSecondary }}
             strokeWidth={1.5}
           />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by title, student name or ID..."
-            className="w-full h-10 pl-10 pr-3 border bg-white text-sm"
+            placeholder={t('search_placeholder')}
+            className="w-full h-10 pl-10 pr-3 border text-sm"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
               borderRadius: "8px",
-              color: "#1A1A1A",
+              color: theme.text,
+              backgroundColor: theme.cardBg
             }}
           />
         </div>
@@ -140,48 +164,51 @@ export function StaffComplaintsScreen({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 px-2 border bg-white text-xs"
+            className="h-9 px-2 border text-xs"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
               borderRadius: "8px",
-              color: "#1A1A1A",
+              color: theme.text,
+              backgroundColor: theme.cardBg
             }}
           >
-            <option value="All">All Status</option>
-            <option value="Submitted">Submitted</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Resolved">Resolved</option>
-            <option value="Rejected">Rejected</option>
+            <option value="All">{t('filter_all_status')}</option>
+            <option value="Submitted">{t('status_submitted')}</option>
+            <option value="In Progress">{t('status_in_progress')}</option>
+            <option value="Resolved">{t('status_resolved')}</option>
+            <option value="Rejected">{t('status_rejected')}</option>
           </select>
 
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="h-9 px-2 border bg-white text-xs"
+            className="h-9 px-2 border text-xs"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
               borderRadius: "8px",
-              color: "#1A1A1A",
+              color: theme.text,
+              backgroundColor: theme.cardBg
             }}
           >
-            <option value="All">All Priority</option>
-            <option value="Urgent">Urgent</option>
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
+            <option value="All">{t('filter_all_priority')}</option>
+            <option value="Urgent">{t('priority_urgent')}</option>
+            <option value="High">{t('priority_high')}</option>
+            <option value="Medium">{t('priority_medium')}</option>
+            <option value="Low">{t('priority_low')}</option>
           </select>
 
           <select
             value={facilityFilter}
             onChange={(e) => setFacilityFilter(e.target.value)}
-            className="h-9 px-2 border bg-white text-xs"
+            className="h-9 px-2 border text-xs"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
               borderRadius: "8px",
-              color: "#1A1A1A",
+              color: theme.text,
+              backgroundColor: theme.cardBg
             }}
           >
-            <option value="All">All Facilities</option>
+            <option value="All">{t('filter_all_facilities')}</option>
             {facilities.map((facility) => (
               <option key={facility} value={facility}>
                 {facility}
@@ -189,8 +216,6 @@ export function StaffComplaintsScreen({
             ))}
           </select>
         </div>
-
-
       </div>
 
       {/* Content */}
@@ -200,7 +225,7 @@ export function StaffComplaintsScreen({
           <div
             className="border p-4"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: "#FCD34D",
               borderRadius: "14px",
               backgroundColor: "#FFF4E6",
             }}
@@ -219,14 +244,14 @@ export function StaffComplaintsScreen({
               className="text-xs"
               style={{ color: "#92400E", fontWeight: "500" }}
             >
-              Pending
+              {t('pending_stat')}
             </div>
           </div>
 
           <div
             className="border p-4"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: "#FCA5A5",
               borderRadius: "14px",
               backgroundColor: "#FEF2F2",
             }}
@@ -249,12 +274,10 @@ export function StaffComplaintsScreen({
               className="text-xs"
               style={{ color: "#991B1B", fontWeight: "500" }}
             >
-              Overdue (7+ days)
+              {t('overdue_stat')}
             </div>
           </div>
         </div>
-
-
 
         {/* Complaints List */}
         {filteredComplaints.length === 0 ? (
@@ -262,19 +285,19 @@ export function StaffComplaintsScreen({
             <div className="flex justify-center mb-4">
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: "#F5F5F5" }}
+                style={{ backgroundColor: theme.mode === 1 ? "#333" : "#F5F5F5" }}
               >
                 <AlertCircle
                   className="w-8 h-8"
-                  style={{ color: "#888888" }}
+                  style={{ color: theme.textSecondary }}
                   strokeWidth={1.5}
                 />
               </div>
             </div>
             <p
-              style={{ color: "#555555", fontSize: "15px", lineHeight: "1.6" }}
+              style={{ color: theme.textSecondary, fontSize: "15px", lineHeight: "1.6" }}
             >
-              No complaints match your filters
+              {t('no_complaints_match')}
             </p>
           </div>
         ) : (
@@ -293,11 +316,12 @@ export function StaffComplaintsScreen({
               return (
                 <div
                   key={complaint.id}
-                  className="border bg-white p-4"
+                  className="border p-4"
                   style={{
-                    borderColor: "#E5E5E5",
+                    borderColor: theme.border,
                     borderRadius: "14px",
                     boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+                    backgroundColor: theme.cardBg
                   }}
                 >
                   <div className="flex items-start gap-3">
@@ -313,7 +337,7 @@ export function StaffComplaintsScreen({
                           <div className="flex items-center gap-2 mb-1">
                             <h3
                               style={{
-                                color: "#1A1A1A",
+                                color: theme.text,
                                 fontWeight: "600",
                                 fontSize: "15px",
                               }}
@@ -331,17 +355,17 @@ export function StaffComplaintsScreen({
                                 }}
                               >
                                 <Clock className="w-3 h-3" strokeWidth={2} />
-                                Overdue
+                                {t('overdue_tag')}
                               </span>
                             )}
                           </div>
                           <p
                             className="text-sm mb-1"
-                            style={{ color: "#555555" }}
+                            style={{ color: theme.textSecondary }}
                           >
                             {complaint.facilityName}
                           </p>
-                          <p className="text-xs" style={{ color: "#888888" }}>
+                          <p className="text-xs" style={{ color: theme.textSecondary }}>
                             {complaint.studentName} • {complaint.studentId}
                           </p>
                         </div>
@@ -359,7 +383,7 @@ export function StaffComplaintsScreen({
                             fontWeight: "500",
                           }}
                         >
-                          {complaint.status}
+                          {getStatusTranslation(complaint.status)}
                         </span>
                         <span
                           className="px-2 py-1 text-xs"
@@ -370,18 +394,18 @@ export function StaffComplaintsScreen({
                             fontWeight: "500",
                           }}
                         >
-                          {complaint.priority || "Medium"}
+                          {getPriorityTranslation(complaint.priority)}
                         </span>
-                        <span className="text-xs" style={{ color: "#888888" }}>
+                        <span className="text-xs" style={{ color: theme.textSecondary }}>
                           {complaint.category}
                         </span>
-                        <span className="text-xs" style={{ color: "#888888" }}>
+                        <span className="text-xs" style={{ color: theme.textSecondary }}>
                           •
                         </span>
-                        <span className="text-xs" style={{ color: "#888888" }}>
+                        <span className="text-xs" style={{ color: theme.textSecondary }}>
                           {daysOld === 0
-                            ? "Today"
-                            : `${daysOld} day${daysOld > 1 ? "s" : ""} ago`}
+                            ? t('today')
+                            : t('days_ago').replace('{days}', daysOld.toString())}
                         </span>
                       </div>
                     </button>

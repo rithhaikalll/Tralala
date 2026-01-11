@@ -2,6 +2,7 @@
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface Props {
   postId: string;
@@ -14,6 +15,7 @@ export function NewsPostDetailScreen({
   userRole,
   onNavigate,
 }: Props) {
+  const { theme, t } = useUserPreferences();
   const [post, setPost] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,36 +56,36 @@ export function NewsPostDetailScreen({
   };
 
   if (loading) {
-    return <p className="p-6 text-sm text-gray-500">Loading…</p>;
+    return <p className="p-6 text-sm" style={{ color: theme.textSecondary }}>{t('loading')}</p>;
   }
 
   if (!post) {
     return (
-      <div className="p-6">
+      <div className="p-6 transition-colors" style={{ backgroundColor: theme.background }}>
         <button onClick={() => onNavigate("news-feed")}>
-          <ArrowLeft />
+          <ArrowLeft style={{ color: theme.text }} />
         </button>
-        <p>Post not found.</p>
+        <p style={{ color: theme.text }}>{t('news_post_not_found')}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="px-6 py-6 border-b flex justify-between items-center">
+    <div className="min-h-screen transition-colors" style={{ backgroundColor: theme.background }}>
+      <div className="px-6 py-6 border-b flex justify-between items-center" style={{ borderColor: theme.border }}>
         <button
           onClick={() => onNavigate("news-feed")}
-          className="text-[#7A0019]"
+          style={{ color: theme.primary }}
         >
           <ArrowLeft />
         </button>
 
         {userRole === "staff" && (
           <div className="flex gap-3">
-            <button onClick={() => onNavigate("edit-news-post", postId)}>
+            <button onClick={() => onNavigate("edit-news-post", postId)} style={{ color: theme.text }}>
               <Edit />
             </button>
-            <button onClick={handleDelete}>
+            <button onClick={handleDelete} style={{ color: theme.text }}>
               <Trash2 />
             </button>
           </div>
@@ -98,9 +100,10 @@ export function NewsPostDetailScreen({
       )}
 
       <div className="px-6 py-6 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-semibold">{post.title}</h1>
-        <p className="mt-4 text-gray-700">{post.content}</p>
+        <h1 className="text-2xl font-semibold" style={{ color: theme.text }}>{post.title}</h1>
+        <p className="mt-4" style={{ color: theme.textSecondary, lineHeight: "1.6" }}>{post.content}</p>
       </div>
     </div>
   );
 }
+

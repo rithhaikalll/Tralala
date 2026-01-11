@@ -1,4 +1,5 @@
 import { ArrowLeft, Image as ImageIcon } from "lucide-react";
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface Complaint {
   id: string;
@@ -18,6 +19,8 @@ interface ComplaintDetailScreenProps {
 }
 
 export function ComplaintDetailScreen({ complaint, onNavigate }: ComplaintDetailScreenProps) {
+  const { theme, t } = useUserPreferences();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Submitted":
@@ -33,21 +36,37 @@ export function ComplaintDetailScreen({ complaint, onNavigate }: ComplaintDetail
     }
   };
 
+  const getStatusTranslation = (status: string) => {
+    switch (status) {
+      case "Submitted": return t('status_submitted');
+      case "In Progress": return t('status_in_progress');
+      case "Resolved": return t('status_resolved');
+      case "Rejected": return t('status_rejected');
+      default: return status;
+    }
+  };
+
   const statusColors = getStatusColor(complaint.status);
 
   return (
-    <div className="min-h-screen pb-20 bg-white">
+    <div className="min-h-screen pb-20" style={{ backgroundColor: theme.background }}>
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white px-6 py-6 border-b" style={{ borderColor: "#E5E5E5" }}>
+      <div
+        className="sticky top-0 z-40 px-6 py-6 border-b"
+        style={{
+          backgroundColor: theme.background,
+          borderColor: theme.border
+        }}
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate("facility-complaints")}
-            style={{ color: "#7A0019" }}
+            style={{ color: theme.primary }}
           >
             <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
           </button>
-          <h2 style={{ color: "#1A1A1A", fontWeight: "600", fontSize: "20px" }}>
-            Complaint Details
+          <h2 style={{ color: theme.text, fontWeight: "600", fontSize: "20px" }}>
+            {t('complaint_details')}
           </h2>
         </div>
       </div>
@@ -55,7 +74,7 @@ export function ComplaintDetailScreen({ complaint, onNavigate }: ComplaintDetail
       {/* Content */}
       <div className="px-6 py-6 space-y-4">
         {/* Status Card */}
-        <div 
+        <div
           className="border p-4"
           style={{
             borderColor: statusColors.border,
@@ -65,7 +84,7 @@ export function ComplaintDetailScreen({ complaint, onNavigate }: ComplaintDetail
         >
           <div className="flex items-center justify-between">
             <span className="text-sm" style={{ color: "#555555", fontWeight: "500" }}>
-              Status
+              {t('complaint_status')}
             </span>
             <span
               className="px-3 py-1 text-sm border"
@@ -77,76 +96,77 @@ export function ComplaintDetailScreen({ complaint, onNavigate }: ComplaintDetail
                 fontWeight: "600"
               }}
             >
-              {complaint.status}
+              {getStatusTranslation(complaint.status)}
             </span>
           </div>
         </div>
 
         {/* Complaint Information */}
-        <div 
-          className="border bg-white p-5 space-y-4"
+        <div
+          className="border p-5 space-y-4"
           style={{
-            borderColor: "#E5E5E5",
+            borderColor: theme.border,
             borderRadius: "14px",
-            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)"
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+            backgroundColor: theme.cardBg
           }}
         >
           <div>
-            <h3 className="text-sm mb-1" style={{ color: "#888888", fontWeight: "500" }}>
-              Facility
+            <h3 className="text-sm mb-1" style={{ color: theme.textSecondary, fontWeight: "500" }}>
+              {t('facility')}
             </h3>
-            <p style={{ color: "#1A1A1A", fontSize: "15px", fontWeight: "500" }}>
+            <p style={{ color: theme.text, fontSize: "15px", fontWeight: "500" }}>
               {complaint.facilityName}
             </p>
           </div>
 
-          <div className="border-t pt-4" style={{ borderColor: "#F5F5F5" }}>
-            <h3 className="text-sm mb-1" style={{ color: "#888888", fontWeight: "500" }}>
-              Category
+          <div className="border-t pt-4" style={{ borderColor: theme.border }}>
+            <h3 className="text-sm mb-1" style={{ color: theme.textSecondary, fontWeight: "500" }}>
+              {t('category')}
             </h3>
-            <p style={{ color: "#1A1A1A", fontSize: "15px", fontWeight: "500" }}>
+            <p style={{ color: theme.text, fontSize: "15px", fontWeight: "500" }}>
               {complaint.category}
             </p>
           </div>
 
-          <div className="border-t pt-4" style={{ borderColor: "#F5F5F5" }}>
-            <h3 className="text-sm mb-1" style={{ color: "#888888", fontWeight: "500" }}>
-              Submitted Date
+          <div className="border-t pt-4" style={{ borderColor: theme.border }}>
+            <h3 className="text-sm mb-1" style={{ color: theme.textSecondary, fontWeight: "500" }}>
+              {t('submitted_date')}
             </h3>
-            <p style={{ color: "#1A1A1A", fontSize: "15px", fontWeight: "500" }}>
+            <p style={{ color: theme.text, fontSize: "15px", fontWeight: "500" }}>
               {complaint.submittedDate}
             </p>
           </div>
 
-          <div className="border-t pt-4" style={{ borderColor: "#F5F5F5" }}>
-            <h3 className="text-sm mb-2" style={{ color: "#888888", fontWeight: "500" }}>
-              Complaint Title
+          <div className="border-t pt-4" style={{ borderColor: theme.border }}>
+            <h3 className="text-sm mb-2" style={{ color: theme.textSecondary, fontWeight: "500" }}>
+              {t('complaint_title')}
             </h3>
-            <p style={{ color: "#1A1A1A", fontSize: "15px", fontWeight: "600" }}>
+            <p style={{ color: theme.text, fontSize: "15px", fontWeight: "600" }}>
               {complaint.title}
             </p>
           </div>
 
-          <div className="border-t pt-4" style={{ borderColor: "#F5F5F5" }}>
-            <h3 className="text-sm mb-2" style={{ color: "#888888", fontWeight: "500" }}>
-              Description
+          <div className="border-t pt-4" style={{ borderColor: theme.border }}>
+            <h3 className="text-sm mb-2" style={{ color: theme.textSecondary, fontWeight: "500" }}>
+              {t('description')}
             </h3>
-            <p style={{ color: "#1A1A1A", fontSize: "15px", lineHeight: "1.6" }}>
+            <p style={{ color: theme.text, fontSize: "15px", lineHeight: "1.6" }}>
               {complaint.description}
             </p>
           </div>
 
           {/* Photo Evidence */}
           {complaint.photoEvidence && (
-            <div className="border-t pt-4" style={{ borderColor: "#F5F5F5" }}>
-              <h3 className="text-sm mb-3" style={{ color: "#888888", fontWeight: "500" }}>
-                Photo Evidence
+            <div className="border-t pt-4" style={{ borderColor: theme.border }}>
+              <h3 className="text-sm mb-3" style={{ color: theme.textSecondary, fontWeight: "500" }}>
+                {t('photo_evidence')}
               </h3>
               <img
                 src={complaint.photoEvidence}
                 alt="Evidence"
                 className="w-full rounded-lg border"
-                style={{ borderColor: "#E5E5E5" }}
+                style={{ borderColor: theme.border }}
               />
             </div>
           )}
@@ -154,18 +174,19 @@ export function ComplaintDetailScreen({ complaint, onNavigate }: ComplaintDetail
 
         {/* Staff Remarks */}
         {complaint.staffRemarks && (
-          <div 
-            className="border bg-white p-5"
+          <div
+            className="border p-5"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
               borderRadius: "14px",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)"
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+              backgroundColor: theme.cardBg
             }}
           >
-            <h3 className="text-sm mb-2" style={{ color: "#888888", fontWeight: "500" }}>
-              Staff Remarks
+            <h3 className="text-sm mb-2" style={{ color: theme.textSecondary, fontWeight: "500" }}>
+              {t('staff_remarks')}
             </h3>
-            <p style={{ color: "#1A1A1A", fontSize: "15px", lineHeight: "1.6" }}>
+            <p style={{ color: theme.text, fontSize: "15px", lineHeight: "1.6" }}>
               {complaint.staffRemarks}
             </p>
           </div>
@@ -177,14 +198,14 @@ export function ComplaintDetailScreen({ complaint, onNavigate }: ComplaintDetail
             onClick={() => onNavigate("facility-complaints")}
             className="w-full h-12 border"
             style={{
-              borderColor: "#E5E5E5",
+              borderColor: theme.border,
               borderRadius: "14px",
-              color: "#555555",
+              color: theme.textSecondary,
               fontWeight: "500",
               fontSize: "15px"
             }}
           >
-            Back to Complaints
+            {t('back_to_complaints')}
           </button>
         </div>
       </div>

@@ -26,6 +26,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useUserPreferences } from "../lib/UserPreferencesContext";
+import { toast } from "sonner";
 
 function SortableItem({ id, label, theme }: any) {
   const {
@@ -67,7 +68,7 @@ function SortableItem({ id, label, theme }: any) {
 }
 
 export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
-  const { theme, preferences, updateInterface, resetInterface } =
+  const { theme, preferences, updateInterface, resetInterface, t } =
     useUserPreferences();
   const isMs = preferences.language_code === "ms";
 
@@ -76,6 +77,7 @@ export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
   );
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   // Sync state apabila preferences berubah (termasuk selepas reset)
   useEffect(() => {
@@ -109,7 +111,7 @@ export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
         const newOrder = arrayMove(prev, oldIndex, newIndex);
         setHasChanges(
           JSON.stringify(newOrder) !==
-            JSON.stringify(preferences.dashboard_order)
+          JSON.stringify(preferences.dashboard_order)
         );
         return newOrder;
       });
@@ -121,32 +123,31 @@ export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
       setIsSaving(true);
       await updateInterface("dashboard", items);
       setHasChanges(false);
-      alert(
+      toast.success(
         isMs
           ? "Susunan Dashboard berjaya disimpan!"
           : "Dashboard arrangement saved!"
       );
     } catch (error) {
-      alert(isMs ? "Ralat semasa menyimpan." : "Error saving.");
+      toast.error(isMs ? "Ralat semasa menyimpan." : "Error saving.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleReset = async () => {
-    if (
-      window.confirm(
-        isMs ? "Set semula susunan dashboard?" : "Reset dashboard arrangement?"
-      )
-    ) {
-      await resetInterface("dashboard");
-      // UI akan sync melalui useEffect
-    }
+    setShowResetDialog(true);
+  };
+
+  const confirmReset = async () => {
+    await resetInterface("dashboard");
+    setShowResetDialog(false);
+    toast.success(isMs ? "Dashboard telah ditetapkan semula." : "Dashboard reset to default.");
   };
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col relative"
       style={{ backgroundColor: theme.background }}
     >
       <div
@@ -227,6 +228,47 @@ export function InterfaceSettingsScreen({ onBack }: { onBack: () => void }) {
           {isMs ? "Simpan Susunan" : "Save Arrangement"}
         </button>
       </div>
+
+      {/* Confirmation Modal */}
+      {showResetDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div
+            className="w-full max-w-sm rounded-[2rem] p-6 shadow-2xl scale-100 animate-in zoom-in-95 duration-200"
+            style={{ backgroundColor: theme.cardBg }}
+          >
+            <div className="flex items-center justify-center w-16 h-16 rounded-full mx-auto mb-4" style={{ backgroundColor: theme.primary + '15' }}>
+              <RotateCcw size={32} style={{ color: theme.primary }} />
+            </div>
+
+            <h3 className="text-xl font-bold text-center mb-2" style={{ color: theme.text }}>
+              {isMs ? "Tetapkan Semula?" : "Reset Layout?"}
+            </h3>
+
+            <p className="text-center mb-8" style={{ color: theme.textSecondary }}>
+              {isMs
+                ? "Adakah anda pasti mahu menetapkan semula susunan dashboard kepada asal?"
+                : "Are you sure you want to reset the dashboard arrangement to default?"}
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowResetDialog(false)}
+                className="flex-1 h-12 rounded-xl font-bold transition-transform active:scale-95"
+                style={{ backgroundColor: theme.border, color: theme.text }}
+              >
+                {t('cancel')}
+              </button>
+              <button
+                onClick={confirmReset}
+                className="flex-1 h-12 rounded-xl font-bold text-white transition-transform active:scale-95 shadow-lg shadow-orange-500/20"
+                style={{ backgroundColor: theme.primary }}
+              >
+                {isMs ? "Ya, Tetapkan" : "Yes, Reset"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { ArrowLeft, Heart, MessageCircle, Trash2, Flag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
 interface DiscussionDetailScreenProps {
   postId: string;
@@ -29,6 +30,7 @@ export function DiscussionDetailScreen({
   onNavigate,
   studentName,
 }: DiscussionDetailScreenProps) {
+  const { theme, t } = useUserPreferences();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -297,7 +299,6 @@ export function DiscussionDetailScreen({
         return;
       }
       setReported(false);
-      //alert("Report removed.");
     } else {
       // open dialog to choose reason
       setShowReportDialog(true);
@@ -325,7 +326,6 @@ export function DiscussionDetailScreen({
 
       setReported(true);
       setShowReportDialog(false);
-      //alert("Post reported. Thank you.");
     } catch (err) {
       console.error("Failed to report", err);
       alert("Failed to report this post.");
@@ -369,8 +369,8 @@ export function DiscussionDetailScreen({
 
   if (loading || !post) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <p style={{ color: "#555" }}>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center transition-colors" style={{ backgroundColor: theme.background }}>
+        <p style={{ color: theme.textSecondary }}>{t('loading')}...</p>
       </div>
     );
   }
@@ -379,21 +379,21 @@ export function DiscussionDetailScreen({
   const isAuthor = post.author_name === studentName;
 
   return (
-    <div className="discussion-detail-page bg-white">
+    <div className="min-h-screen pb-24 discussion-detail-page transition-colors" style={{ backgroundColor: theme.background }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-40 px-6 py-6 bg-white border-b"
-        style={{ borderColor: "#E5E5E5" }}
+        className="sticky top-0 z-40 px-6 py-6 border-b transition-colors"
+        style={{ backgroundColor: theme.background, borderColor: theme.border }}
       >
         <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate("discussion")}
-            style={{ color: "#7A0019" }}
+            style={{ color: theme.primary }}
           >
             <ArrowLeft className="w-6 h-6" strokeWidth={1.5} />
           </button>
-          <h2 style={{ color: "#000000", fontWeight: 600, fontSize: "20px" }}>
-            Discussion
+          <h2 style={{ color: theme.text, fontWeight: 600, fontSize: "20px" }}>
+            {t('disc_detail_title')}
           </h2>
         </div>
       </div>
@@ -402,9 +402,10 @@ export function DiscussionDetailScreen({
       <div className="px-6 py-6 space-y-6">
         {/* Original Post */}
         <div
-          className="border bg-white p-5"
+          className="border p-5 transition-colors"
           style={{
-            borderColor: "#E5E5E5",
+            backgroundColor: theme.cardBg,
+            borderColor: theme.border,
             borderRadius: "14px",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
           }}
@@ -414,8 +415,8 @@ export function DiscussionDetailScreen({
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
               style={{
-                backgroundColor: "#F5F5F5",
-                color: "#7A0019",
+                backgroundColor: theme.mode === 1 ? "#333333" : "#F5F5F5",
+                color: theme.primary,
                 fontWeight: 600,
                 fontSize: "16px",
               }}
@@ -426,14 +427,14 @@ export function DiscussionDetailScreen({
               <div className="flex items-center justify-between mb-1">
                 <span
                   style={{
-                    color: "#000000",
+                    color: theme.text,
                     fontWeight: 600,
                     fontSize: "15px",
                   }}
                 >
                   {post.author_name}
                 </span>
-                <span className="text-xs" style={{ color: "#888888" }}>
+                <span className="text-xs" style={{ color: theme.textSecondary }}>
                   {postTimestampLabel}
                 </span>
               </div>
@@ -442,13 +443,13 @@ export function DiscussionDetailScreen({
 
           <h3
             className="mb-2"
-            style={{ color: "#000000", fontWeight: 600, fontSize: "17px" }}
+            style={{ color: theme.text, fontWeight: 600, fontSize: "17px" }}
           >
             {post.title}
           </h3>
           <p
             className="text-sm mb-4"
-            style={{ color: "#555555", lineHeight: "1.7" }}
+            style={{ color: theme.textSecondary, lineHeight: "1.7" }}
           >
             {post.content}
           </p>
@@ -456,7 +457,7 @@ export function DiscussionDetailScreen({
           {/* Actions row */}
           <div
             className="flex items-center justify-between gap-4 pt-3 border-t"
-            style={{ borderColor: "#E5E5E5" }}
+            style={{ borderColor: theme.border }}
           >
             <div className="flex items-center gap-5">
               <button
@@ -466,20 +467,20 @@ export function DiscussionDetailScreen({
                 <Heart
                   className="w-5 h-5"
                   strokeWidth={1.5}
-                  style={{ color: liked ? "#d4183d" : "#888888" }}
+                  style={{ color: liked ? "#d4183d" : theme.textSecondary }}
                   fill={liked ? "#d4183d" : "none"}
                 />
-                <span className="text-sm" style={{ color: "#888888" }}>
+                <span className="text-sm" style={{ color: theme.textSecondary }}>
                   {likeCount}
                 </span>
               </button>
               <div className="flex items-center gap-2">
                 <MessageCircle
                   className="w-5 h-5"
-                  style={{ color: "#888888" }}
+                  style={{ color: theme.textSecondary }}
                   strokeWidth={1.5}
                 />
-                <span className="text-sm" style={{ color: "#888888" }}>
+                <span className="text-sm" style={{ color: theme.textSecondary }}>
                   {comments.length}
                 </span>
               </div>
@@ -489,10 +490,10 @@ export function DiscussionDetailScreen({
               <button
                 onClick={handleReportButtonClick}
                 className="flex items-center gap-1"
-                style={{ color: reported ? "#d4183d" : "#888888" }}
+                style={{ color: reported ? "#d4183d" : theme.textSecondary }}
               >
                 <Flag className="w-3 h-3" />
-                {reported ? "Reported" : "Report"}
+                {reported ? t('disc_reported') : t('disc_report')}
               </button>
 
               {isAuthor && (
@@ -502,7 +503,7 @@ export function DiscussionDetailScreen({
                   style={{ color: "#d4183d" }}
                 >
                   <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                  Delete
+                  {t('disc_delete')}
                 </button>
               )}
             </div>
@@ -513,28 +514,32 @@ export function DiscussionDetailScreen({
         <div>
           <h3
             className="mb-4"
-            style={{ color: "#000000", fontWeight: 600, fontSize: "16px" }}
+            style={{ color: theme.text, fontWeight: 600, fontSize: "16px" }}
           >
-            Comments
+            {t('disc_comments_title')}
           </h3>
           {comments.length === 0 && (
-            <p className="text-sm" style={{ color: "#999999" }}>
-              No comments yet. Start the conversation!
+            <p className="text-sm" style={{ color: theme.textSecondary }}>
+              {t('disc_no_comments')}
             </p>
           )}
           <div className="space-y-3">
             {comments.map((comment) => (
               <div
                 key={comment.id}
-                className="border bg-white p-4"
-                style={{ borderColor: "#E5E5E5", borderRadius: "14px" }}
+                className="border p-4 transition-colors"
+                style={{
+                  backgroundColor: theme.cardBg,
+                  borderColor: theme.border,
+                  borderRadius: "14px"
+                }}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
                     style={{
-                      backgroundColor: "#F5F5F5",
-                      color: "#7A0019",
+                      backgroundColor: theme.mode === 1 ? "#333333" : "#F5F5F5",
+                      color: theme.primary,
                       fontWeight: 600,
                       fontSize: "14px",
                     }}
@@ -545,7 +550,7 @@ export function DiscussionDetailScreen({
                     <div className="flex items-center justify-between mb-1">
                       <span
                         style={{
-                          color: "#000000",
+                          color: theme.text,
                           fontWeight: 600,
                           fontSize: "14px",
                         }}
@@ -553,7 +558,7 @@ export function DiscussionDetailScreen({
                         {comment.author_name}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs" style={{ color: "#888888" }}>
+                        <span className="text-xs" style={{ color: theme.textSecondary }}>
                           {new Date(comment.created_at).toLocaleString()}
                         </span>
                         {comment.author_name === studentName && (
@@ -570,7 +575,7 @@ export function DiscussionDetailScreen({
                     </div>
                     <p
                       className="text-sm"
-                      style={{ color: "#555555", lineHeight: "1.6" }}
+                      style={{ color: theme.textSecondary, lineHeight: "1.6" }}
                     >
                       {comment.content}
                     </p>
@@ -583,27 +588,28 @@ export function DiscussionDetailScreen({
       </div>
 
       {/* Comment Input Footer */}
-      <div className="fixed-footer">
+      <div className="fixed bottom-0 left-0 right-0 p-4" style={{ borderTop: `1px solid ${theme.border}`, backgroundColor: theme.cardBg }}>
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Write a comment..."
+            placeholder={t('disc_comment_ph')}
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            className="flex-1 h-10 px-4 border bg-white"
+            className="flex-1 h-10 px-4 border transition-colors"
             style={{
-              borderColor: "#E5E5E5",
+              backgroundColor: theme.background,
+              borderColor: theme.border,
               borderRadius: "14px",
               fontSize: "14px",
-              color: "#1A1A1A",
+              color: theme.text,
             }}
           />
           <button
             onClick={handleAddComment}
             disabled={!newComment.trim() || posting}
-            className="h-10 px-4 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 px-4 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
             style={{
-              backgroundColor: "#7A0019",
+              backgroundColor: theme.primary,
               color: "#FFFFFF",
               borderRadius: "8px",
               fontWeight: "500",
@@ -611,7 +617,7 @@ export function DiscussionDetailScreen({
               boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
             }}
           >
-            {posting ? "Sending..." : "Send"}
+            {posting ? t('disc_sending') : t('disc_send')}
           </button>
         </div>
       </div>
@@ -620,34 +626,37 @@ export function DiscussionDetailScreen({
       {showDeleteDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-6 z-50">
           <div
-            className="bg-white p-6 w-full max-w-sm border"
-            style={{ borderRadius: "14px", borderColor: "#E5E5E5" }}
+            className="p-6 w-full max-w-sm border transition-colors"
+            style={{
+              backgroundColor: theme.cardBg,
+              borderRadius: "14px",
+              borderColor: theme.border
+            }}
           >
             <h3
               className="mb-2"
-              style={{ color: "#1A1A1A", fontWeight: 600, fontSize: "18px" }}
+              style={{ color: theme.text, fontWeight: 600, fontSize: "18px" }}
             >
-              Delete {deleteTarget?.type === "post" ? "Post" : "Comment"}?
+              {t('disc_delete_confirm_title')}
             </h3>
             <p
               className="text-sm mb-6"
-              style={{ color: "#555555", lineHeight: "1.6" }}
+              style={{ color: theme.textSecondary, lineHeight: "1.6" }}
             >
-              Are you sure you want to delete this {deleteTarget?.type}? This
-              action cannot be undone.
+              {t('disc_delete_confirm_msg')}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteDialog(false)}
                 className="flex-1 h-11 border"
                 style={{
-                  borderColor: "#E5E5E5",
+                  borderColor: theme.border,
                   borderRadius: "14px",
-                  color: "#555555",
+                  color: theme.textSecondary,
                   fontWeight: "500",
                 }}
               >
-                Cancel
+                {t('disc_cancel')}
               </button>
               <button
                 onClick={confirmDelete}
@@ -659,7 +668,7 @@ export function DiscussionDetailScreen({
                   fontWeight: "500",
                 }}
               >
-                Delete
+                {t('disc_delete')}
               </button>
             </div>
           </div>
@@ -670,25 +679,29 @@ export function DiscussionDetailScreen({
       {showReportDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-6 z-50">
           <div
-            className="bg-white p-6 w-full max-w-sm border"
-            style={{ borderRadius: "14px", borderColor: "#E5E5E5" }}
+            className="p-6 w-full max-w-sm border transition-colors"
+            style={{
+              backgroundColor: theme.cardBg,
+              borderRadius: "14px",
+              borderColor: theme.border
+            }}
           >
             <h3
               className="mb-2"
-              style={{ color: "#1A1A1A", fontWeight: 600, fontSize: "18px" }}
+              style={{ color: theme.text, fontWeight: 600, fontSize: "18px" }}
             >
-              Report post
+              {t('disc_report_title')}
             </h3>
             <p
               className="text-sm mb-4"
-              style={{ color: "#555555", lineHeight: "1.6" }}
+              style={{ color: theme.textSecondary, lineHeight: "1.6" }}
             >
-              Why are you reporting this post?
+              {t('disc_report_msg')}
             </p>
 
             <div
               className="space-y-2 mb-6 text-sm"
-              style={{ color: "#1A1A1A" }}
+              style={{ color: theme.text }}
             >
               <label className="flex items-center gap-2">
                 <input
@@ -697,7 +710,7 @@ export function DiscussionDetailScreen({
                   checked={reportReason === "spam"}
                   onChange={() => setReportReason("spam")}
                 />
-                <span>Spam or promotion</span>
+                <span>{t('disc_report_spam')}</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
@@ -706,7 +719,7 @@ export function DiscussionDetailScreen({
                   checked={reportReason === "harassment"}
                   onChange={() => setReportReason("harassment")}
                 />
-                <span>Harassment or hate</span>
+                <span>{t('disc_report_harassment')}</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
@@ -715,7 +728,7 @@ export function DiscussionDetailScreen({
                   checked={reportReason === "false_info"}
                   onChange={() => setReportReason("false_info")}
                 />
-                <span>False or misleading information</span>
+                <span>{t('disc_report_false')}</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
@@ -724,7 +737,7 @@ export function DiscussionDetailScreen({
                   checked={reportReason === "other"}
                   onChange={() => setReportReason("other")}
                 />
-                <span>Other</span>
+                <span>{t('disc_report_other')}</span>
               </label>
             </div>
 
@@ -733,13 +746,13 @@ export function DiscussionDetailScreen({
                 onClick={() => setShowReportDialog(false)}
                 className="flex-1 h-11 border"
                 style={{
-                  borderColor: "#E5E5E5",
+                  borderColor: theme.border,
                   borderRadius: "14px",
-                  color: "#555555",
+                  color: theme.textSecondary,
                   fontWeight: "500",
                 }}
               >
-                Cancel
+                {t('disc_cancel')}
               </button>
               <button
                 onClick={handleSubmitReport}
@@ -751,7 +764,7 @@ export function DiscussionDetailScreen({
                   fontWeight: "500",
                 }}
               >
-                Submit report
+                {t('disc_submit_report')}
               </button>
             </div>
           </div>
@@ -760,3 +773,4 @@ export function DiscussionDetailScreen({
     </div>
   );
 }
+

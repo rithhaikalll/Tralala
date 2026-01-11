@@ -18,7 +18,7 @@ interface PrivateChatListScreenProps {
   currentUserId: string;
 }
 
-export function PrivateChatListScreen({ 
+export function PrivateChatListScreen({
   onNavigate,
   currentUserId
 }: PrivateChatListScreenProps) {
@@ -29,7 +29,7 @@ export function PrivateChatListScreen({
   useEffect(() => {
     const fetchChats = async () => {
       if (!currentUserId) return;
-      
+
       const { data, error } = await supabase
         .from('chats')
         .select('*')
@@ -70,9 +70,8 @@ export function PrivateChatListScreen({
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={`flex-1 py-3 flex items-center justify-center gap-2 text-sm font-medium relative ${
-                activeTab === tab ? "text-[#7A0019]" : "text-gray-500"
-              }`}
+              className={`flex-1 py-3 flex items-center justify-center gap-2 text-sm font-medium relative ${activeTab === tab ? "text-[#7A0019]" : "text-gray-500"
+                }`}
             >
               {tab === "buddy" ? <Users className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
               <span className="capitalize">{tab}</span>
@@ -87,9 +86,9 @@ export function PrivateChatListScreen({
       {/* List */}
       <div className="px-6 py-4">
         {loading ? (
-           <div className="text-center mt-10 text-gray-400">Loading chats...</div>
+          <div className="text-center mt-10 text-gray-400">Loading chats...</div>
         ) : filteredChats.length === 0 ? (
-           <div className="text-center mt-10 text-gray-400">No {activeTab} chats yet.</div>
+          <div className="text-center mt-10 text-gray-400">No {activeTab} chats yet.</div>
         ) : (
           <div className="space-y-2">
             {filteredChats.map((chat) => (
@@ -156,10 +155,10 @@ export function PrivateChatScreen({
     // Subscribe to new messages
     const channel = supabase
       .channel(`room_${chat.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chat.id}` }, 
-      (payload) => {
-        setMessages((prev) => [...prev, payload.new]);
-      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chat.id}` },
+        (payload: any) => {
+          setMessages((prev) => [...prev, payload.new]);
+        })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -217,13 +216,13 @@ export function PrivateChatScreen({
             <div key={msg.id || index} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-[15px] shadow-sm
                 ${isMe ? "bg-[#7A0019] text-white rounded-br-none" : "bg-white text-gray-800 border border-gray-100 rounded-bl-none"}`}>
-                
+
                 {msg.message_type === 'location' ? (
-                   <div className="flex items-center gap-2">
-                     <MapPin className="w-4 h-4" /> <span>{msg.content}</span>
-                   </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" /> <span>{msg.content}</span>
+                  </div>
                 ) : (
-                   msg.content
+                  msg.content
                 )}
 
                 <div className={`text-[10px] mt-1 text-right ${isMe ? "text-white/70" : "text-gray-400"}`}>
@@ -239,12 +238,12 @@ export function PrivateChatScreen({
       {/* Input */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 safe-area-bottom">
         <div className="flex gap-2 items-end">
-          <button 
-             onClick={() => handleSend("📍 Shared Location: Library", "location")}
-             className="p-3 text-gray-400 border border-gray-200 rounded-xl hover:bg-gray-50">
-             <MapPin className="w-5 h-5" />
+          <button
+            onClick={() => handleSend("📍 Shared Location: Library", "location")}
+            className="p-3 text-gray-400 border border-gray-200 rounded-xl hover:bg-gray-50">
+            <MapPin className="w-5 h-5" />
           </button>
-          
+
           <div className="flex-1 relative">
             <input
               type="text"
@@ -254,7 +253,7 @@ export function PrivateChatScreen({
               placeholder="Type a message..."
               className="w-full pl-4 pr-12 py-3 bg-gray-50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#7A0019]"
             />
-            <button 
+            <button
               onClick={() => handleSend()}
               disabled={!message.trim()}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-[#7A0019] text-white rounded-lg disabled:opacity-50"
