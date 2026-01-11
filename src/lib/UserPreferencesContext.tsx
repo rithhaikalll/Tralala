@@ -43,7 +43,7 @@ export function UserPreferencesProvider({ children }: { children: React.ReactNod
   const [userRole, setUserRole] = useState<string | null>(null);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const isMounted = useRef(true);
 
   const getTableName = (role: string | null) => role === 'staff' ? 'staff_preferences' : 'user_preferences';
@@ -55,7 +55,7 @@ export function UserPreferencesProvider({ children }: { children: React.ReactNod
     const bgColor = isDark ? "#121212" : "#FFFFFF";
     document.documentElement.style.setProperty("--primary-color", preferences.theme_color);
     document.body.style.backgroundColor = bgColor;
-    document.body.style.overflow = "auto"; 
+    document.body.style.overflow = "auto";
   }, [preferences.theme_mode, preferences.theme_color]);
 
   // --- 2. LOAD PREFERENCES ---
@@ -144,9 +144,9 @@ export function UserPreferencesProvider({ children }: { children: React.ReactNod
   const saveToDatabase = async (currentPrefs: UserPreferences) => {
     if (!activeProfileId) return;
     const tableName = getTableName(userRole);
-    
-    const payload: any = { 
-      id: activeProfileId, 
+
+    const payload: any = {
+      id: activeProfileId,
       last_updated: new Date().toISOString(),
       validation_status: true,
       theme_mode: currentPrefs.theme_mode,
@@ -160,9 +160,9 @@ export function UserPreferencesProvider({ children }: { children: React.ReactNod
     }
 
     try {
-        await supabase.from(tableName).upsert(payload);
+      await supabase.from(tableName).upsert(payload);
     } catch (err) {
-        console.error("Save Error:", err);
+      console.error("Save Error:", err);
     }
   };
 
@@ -186,21 +186,22 @@ export function UserPreferencesProvider({ children }: { children: React.ReactNod
   };
 
   const updateNavOrder = async (order: string[]) => await updateInterface('nav', order);
-  
+
   const resetInterface = async (type: 'dashboard' | 'nav') => {
     const defaultOrder = type === 'dashboard' ? DEFAULT_DASHBOARD_ORDER : DEFAULT_NAV_ORDER;
     await updateInterface(type, defaultOrder);
   };
 
   const clearPreferences = () => {
-      setPreferences(INITIAL_PREFERENCES);
-      setActiveProfileId(null);
-      setUserRole(null);
+    setPreferences(INITIAL_PREFERENCES);
+    setActiveProfileId(null);
+    setUserRole(null);
   };
 
   const t = (key: string) => translations[preferences.language_code]?.[key] || translations['en']?.[key] || key;
 
   const theme = {
+    mode: preferences.theme_mode,
     primary: preferences.theme_color,
     background: preferences.theme_mode === 1 ? "#121212" : "#FFFFFF",
     cardBg: preferences.theme_mode === 1 ? "#1E1E1E" : "#FFFFFF",
@@ -210,8 +211,8 @@ export function UserPreferencesProvider({ children }: { children: React.ReactNod
   };
 
   return (
-    <UserPreferencesContext.Provider value={{ 
-      preferences, theme, t, updateTheme, updateLanguage, updateInterface, updateNavOrder, resetInterface, clearPreferences, isLoading, userRole 
+    <UserPreferencesContext.Provider value={{
+      preferences, theme, t, updateTheme, updateLanguage, updateInterface, updateNavOrder, resetInterface, clearPreferences, isLoading, userRole
     }}>
       {children}
     </UserPreferencesContext.Provider>
