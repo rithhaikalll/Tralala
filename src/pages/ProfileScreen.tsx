@@ -184,8 +184,17 @@ export function ProfileScreen({
       } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Call the Enhanced RPC (Server-side cleanup handled in SQL)
       const { error: rpcError } = await supabase.rpc("delete_user_account");
-      if (rpcError) throw new Error(rpcError.message);
+
+      if (rpcError) {
+        console.error("RPC Error:", rpcError);
+        throw new Error(
+          isMs
+            ? `Sila jalankan skrip SQL di Supabase: ${rpcError.message}`
+            : `Please run the updated SQL script in Supabase. Error: ${rpcError.message}`
+        );
+      }
 
       await onLogout();
     } catch (error: any) {
