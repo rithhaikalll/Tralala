@@ -21,12 +21,15 @@ export function PrivateChatListScreen({
     fetchChats();
 
     const channel = supabase
-      .channel('public:private_messages')
+      .channel('public:chats')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'private_messages' },
-        (_payload: any) => {
-          fetchChats();
+        { event: '*', schema: 'public', table: 'chats' }, // Listen to all events on chats
+        (payload: any) => {
+          // Check if this chat involves current user
+          if (payload.new && payload.new.participant_ids && payload.new.participant_ids.includes(currentUserId)) {
+            fetchChats();
+          }
         }
       )
       .subscribe();
@@ -39,23 +42,69 @@ export function PrivateChatListScreen({
   const fetchChats = async () => {
     setLoading(true);
     try {
-      // Fetch chats logic - simplified for now as schema is not fully clear
-      // We'll emulate fetching a list of chats
-      const { data, error } = await supabase
-        .from('private_chats')
+      // 1. Fetch chats where current user is a participant
+      const { data: chatsData, error } = await supabase
+        .from('chats')
         .select('*')
-        .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`)
+        .contains('participant_ids', [currentUserId])
         .order('last_message_time', { ascending: false });
 
-      if (!error && data) {
-        setChats(data);
-      } else {
-        // If table doesn't exist, just empty list
+      if (error) throw error;
+
+      if (!chatsData || chatsData.length === 0) {
         setChats([]);
+        setLoading(false);
+        return;
       }
+
+      // 2. Identify other users to fetch their profiles
+      const otherUserIds = new Set<string>();
+      chatsData.forEach((checkChat: any) => {
+        const otherId = checkChat.participant_ids.find((pid: string) => pid !== currentUserId);
+        if (otherId) otherUserIds.add(otherId);
+      });
+
+      // 3. Fetch profiles for those users
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', Array.from(otherUserIds));
+
+      const profilesMap = new Map();
+      profilesData?.forEach((p: any) => {
+        profilesMap.set(p.id, p);
+      });
+
+      // 4. Map chats to include other user details
+      const mappedChats = chatsData.map((c: any) => {
+        const otherId = c.participant_ids.find((pid: string) => pid !== currentUserId);
+        const profile = profilesMap.get(otherId);
+
+        // Fallback title logic:
+        // Use profile name if available, otherwise use chat title, otherwise "User"
+        let displayTitle = c.title || "Chat";
+        if (c.type === 'buddy' && profile?.full_name) {
+          displayTitle = profile.full_name;
+        } else if (c.type === 'marketplace') {
+          // For marketplace, keeps the item title usually, but let's append user name if needed
+          // or just trust the stored title.
+          // If title is missing, use profile name
+          if (!c.title) displayTitle = profile?.full_name || "Seller";
+        }
+
+        return {
+          ...c,
+          otherUserId: otherId,
+          otherUserName: displayTitle,
+          otherUserAvatar: profile?.avatar_url
+        };
+      });
+
+      setChats(mappedChats);
+
     } catch (err) {
-      console.error(err);
-      setChats([]);
+      console.error("Error fetching chats:", err);
+      // setChats([]); 
     } finally {
       setLoading(false);
     }
@@ -122,14 +171,14 @@ export function PrivateChatListScreen({
         ) : (
           <div className="space-y-4">
             {filteredChats.map((chat) => {
-              const otherUserId = chat.user1_id === currentUserId ? chat.user2_id : chat.user1_id;
-              const otherUserName = chat.other_user_name || "User";
-              const otherUserAvatar = chat.other_user_avatar;
+              const otherUserId = chat.otherUserId;
+              const otherUserName = chat.otherUserName;
+              const otherUserAvatar = chat.otherUserAvatar;
 
               return (
                 <button
                   key={chat.id}
-                  onClick={() => onNavigate("private-chat", { chatId: chat.id, otherUserId, otherUserName })}
+                  onClick={() => onNavigate("private-chat", { chat, chatType: chat.type })}
                   className="w-full flex items-center gap-4 p-4 rounded-xl border transition-colors active:scale-95"
                   style={{
                     backgroundColor: theme.cardBg,
@@ -145,7 +194,7 @@ export function PrivateChatListScreen({
                       {otherUserAvatar ? (
                         <img src={otherUserAvatar} alt={otherUserName} className="w-full h-full object-cover" />
                       ) : (
-                        otherUserName.charAt(0).toUpperCase()
+                        (otherUserName || "?").charAt(0).toUpperCase()
                       )}
                     </div>
                   </div>
@@ -158,7 +207,7 @@ export function PrivateChatListScreen({
                       </span>
                     </div>
                     <p className="text-sm line-clamp-1" style={{ color: theme.textSecondary }}>
-                      {chat.last_message_content || t('chat_say_hello')}
+                      {chat.last_message}
                     </p>
                   </div>
                 </button>
