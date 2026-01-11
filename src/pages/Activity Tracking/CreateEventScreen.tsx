@@ -8,7 +8,7 @@ interface CreateEventScreenProps {
   staffName?: string;
 }
 
-export function CreateEventScreen({ onNavigate, staffName}: CreateEventScreenProps) {
+export function CreateEventScreen({ onNavigate, staffName }: CreateEventScreenProps) {
   const { theme, t, preferences } = useUserPreferences();
 
   const [formData, setFormData] = useState({
@@ -26,6 +26,7 @@ export function CreateEventScreen({ onNavigate, staffName}: CreateEventScreenPro
   const [showError, setShowError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [networkError, setNetworkError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
   const categories = ["Event", "Tournament", "Workshop", "Training", "Competition"];
@@ -84,11 +85,13 @@ export function CreateEventScreen({ onNavigate, staffName}: CreateEventScreenPro
 
     setIsSubmitting(true);
     setNetworkError(false);
+    setErrorMessage("");
 
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
         setNetworkError(true);
+        setErrorMessage(sessionError?.message || "No active session");
         setIsSubmitting(false);
         return;
       }
@@ -104,19 +107,24 @@ export function CreateEventScreen({ onNavigate, staffName}: CreateEventScreenPro
         capacity: parseInt(formData.capacity),
         created_at: new Date().toISOString(),
         created_by: staffName,
+        status: "open",
       };
 
       const { error } = await supabase.from("activity_events").insert([newEvent]);
 
       if (error) {
+        console.error("Error creating event:", error);
         setNetworkError(true);
+        setErrorMessage(error.message || "Unknown error occurred");
         setIsSubmitting(false);
         return;
       }
 
       setShowSuccess(true);
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Unexpected error:", err);
       setNetworkError(true);
+      setErrorMessage(err.message || "Unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -327,11 +335,11 @@ export function CreateEventScreen({ onNavigate, staffName}: CreateEventScreenPro
             <div className="flex items-center gap-3 mb-4">
               <AlertCircle className="w-8 h-8 text-red-500" />
               <h2 className="text-xl font-bold" style={{ color: theme.text }}>
-                {preferences.language_code === 'ms' ? 'Ralat Rangkaian' : 'Network Error'}
+                {preferences.language_code === 'ms' ? 'Ralat' : 'Error'}
               </h2>
             </div>
             <p className="mb-8" style={{ color: theme.textSecondary }}>
-              {preferences.language_code === 'ms' ? 'Sila periksa sambungan anda dan cuba lagi.' : 'Please check your connection and try again.'}
+              {errorMessage || (preferences.language_code === 'ms' ? 'Sila periksa sambungan anda dan cuba lagi.' : 'Please check your connection and try again.')}
             </p>
             <div className="flex gap-3">
               <button
