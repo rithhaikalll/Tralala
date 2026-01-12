@@ -175,7 +175,7 @@ export function CommunityScreen() {
     <div className="min-h-screen transition-colors" style={{ backgroundColor: theme.background }}>
       {/* Header (MATCH BookListHeader format) */}
       <div
-        className="fixed top-0 left-0 right-0 z-50 px-6 py-6 border-b transition-colors duration-300"
+        className="fixed top-0 left-0 right-0 z-50 px-6 py-6 border-b transition-colors duration-300 lg:hidden"
         style={{ backgroundColor: theme.cardBg, borderColor: theme.border, transform: "none" }}
       >
         <h2 style={{ color: theme.text, fontWeight: 600, fontSize: "20px" }}>
@@ -190,63 +190,65 @@ export function CommunityScreen() {
       </div>
 
       {/* Spacer so content starts below fixed header */}
-      <div className="h-24" />
+      <div className="h-24 lg:hidden" />
 
       {/* Content */}
-      <div className="p-6 pb-32">
-        {/* Grid Menu */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <MenuCard
-            title={t("comm_discussion")}
-            description={t("comm_discussion_desc")}
-            icon={MessageCircle}
-            colorScheme="orange"
-            onClick={() => navigate("/community/discussion")}
-            theme={theme}
-          />
-          <MenuCard
-            title={t("comm_news")}
-            description={t("comm_news_desc")}
-            icon={Newspaper}
-            colorScheme="blue"
-            onClick={() => navigate("/community/news")}
-            theme={theme}
-          />
-          <MenuCard
-            title={t("comm_find_buddy")}
-            description={t("comm_find_buddy_desc")}
-            icon={UserPlus}
-            colorScheme="pink"
-            onClick={() => navigate("/community/buddy")}
-            theme={theme}
-          />
-          <MenuCard
-            title={t("comm_marketplace")}
-            description={t("comm_marketplace_desc")}
-            icon={ShoppingBag}
-            colorScheme="teal"
-            onClick={() => navigate("/community/marketplace")}
-            theme={theme}
-          />
-          <MenuCard
-            title={t("comm_chats")}
-            description={t("comm_chats_desc")}
-            icon={MessageSquare}
-            colorScheme="pink"
-            onClick={() => navigate("/private-chat-list")}
-            theme={theme}
-          />
-        </div>
+      <div className="container-dashboard lg:pt-8">
+        <div className="p-6 pb-32">
+          {/* Grid Menu */}
+          <div className="grid grid-cols-2 gap-4 mb-8 lg:grid-cols-3">
+            <MenuCard
+              title={t("comm_discussion")}
+              description={t("comm_discussion_desc")}
+              icon={MessageCircle}
+              colorScheme="orange"
+              onClick={() => navigate("/community/discussion")}
+              theme={theme}
+            />
+            <MenuCard
+              title={t("comm_news")}
+              description={t("comm_news_desc")}
+              icon={Newspaper}
+              colorScheme="blue"
+              onClick={() => navigate("/community/news")}
+              theme={theme}
+            />
+            <MenuCard
+              title={t("comm_find_buddy")}
+              description={t("comm_find_buddy_desc")}
+              icon={UserPlus}
+              colorScheme="pink"
+              onClick={() => navigate("/community/buddy")}
+              theme={theme}
+            />
+            <MenuCard
+              title={t("comm_marketplace")}
+              description={t("comm_marketplace_desc")}
+              icon={ShoppingBag}
+              colorScheme="teal"
+              onClick={() => navigate("/community/marketplace")}
+              theme={theme}
+            />
+            <MenuCard
+              title={t("comm_chats")}
+              description={t("comm_chats_desc")}
+              icon={MessageSquare}
+              colorScheme="pink"
+              onClick={() => navigate("/private-chat-list")}
+              theme={theme}
+            />
+          </div>
 
-        {/* Community Activity Footer (Dynamic Data) */}
-        <div className="p-5 rounded-[20px] border" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
-          <h3 className="text-lg font-bold mb-4" style={{ color: theme.text }}>{t("comm_activity_title")}</h3>
-          <div className="flex justify-around items-center">
-            <ActivityStat count={stats.newPosts} label={t("comm_stat_posts")} theme={theme} />
-            <div className="h-8 w-[1px]" style={{ backgroundColor: theme.border }}></div>
-            <ActivityStat count={stats.buddies} label={t("comm_stat_buddies")} theme={theme} />
-            <div className="h-8 w-[1px]" style={{ backgroundColor: theme.border }}></div>
-            <ActivityStat count={stats.items} label={t("comm_stat_items")} theme={theme} />
+          {/* Community Activity Footer (Dynamic Data) */}
+          <div className="p-5 rounded-[20px] border" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
+            <h3 className="text-lg font-bold mb-4" style={{ color: theme.text }}>{t("comm_activity_title")}</h3>
+            <div className="flex justify-around items-center">
+              <ActivityStat count={stats.newPosts} label={t("comm_stat_posts")} theme={theme} />
+              <div className="h-8 w-[1px]" style={{ backgroundColor: theme.border }}></div>
+              <ActivityStat count={stats.buddies} label={t("comm_stat_buddies")} theme={theme} />
+              <div className="h-8 w-[1px]" style={{ backgroundColor: theme.border }}></div>
+              <ActivityStat count={stats.items} label={t("comm_stat_items")} theme={theme} />
+            </div>
           </div>
         </div>
       </div>

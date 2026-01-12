@@ -70,8 +70,8 @@ export function ActivityHistoryScreen({ onNavigate }: ActivityHistoryScreenProps
 
   return (
     <div className="min-h-screen pb-24 transition-colors duration-300" style={{ backgroundColor: theme.background, color: theme.text }}>
-      {/* Header */}
-      <div className="sticky top-0 z-40 px-6 py-6 border-b transition-colors duration-300" style={{ backgroundColor: theme.background, borderColor: theme.border }}>
+      {/* Header - Hidden on desktop */}
+      <div className="sticky top-0 z-40 px-6 py-6 border-b transition-colors duration-300 lg:hidden" style={{ backgroundColor: theme.background, borderColor: theme.border }}>
         <div className="flex items-center gap-3">
           <button onClick={() => onNavigate("profile")} style={{ color: theme.primary }}>
             <ArrowLeft className="w-6 h-6" strokeWidth={1.5} />
@@ -80,41 +80,43 @@ export function ActivityHistoryScreen({ onNavigate }: ActivityHistoryScreenProps
         </div>
       </div>
 
-      <div className="px-6 py-4 space-y-4">
-        {loading && <p className="text-sm" style={{ color: theme.textSecondary }}>{t("view_all")}...</p>}
-        {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
-        {!loading && !errorMsg && activities.length === 0 && (
-          <p className="text-sm" style={{ color: theme.textSecondary }}>{t("no_upcoming")}</p>
-        )}
+      <div className="container-dashboard lg:pt-8">
+        <div className="px-6 py-4 space-y-4">
+          {loading && <p className="text-sm" style={{ color: theme.textSecondary }}>{t("view_all")}...</p>}
+          {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
+          {!loading && !errorMsg && activities.length === 0 && (
+            <p className="text-sm" style={{ color: theme.textSecondary }}>{t("no_upcoming")}</p>
+          )}
 
-        {activities.map((activity) => (
-          <button
-            key={activity.id}
-            onClick={() => onNavigate("activity-detail", activity.id)}
-            className="w-full border p-4 text-left rounded-xl shadow-sm transition-all active:scale-[0.98]"
-            style={{ 
-              backgroundColor: theme.cardBg, 
-              borderColor: theme.border 
-            }}
-          >
-            <div className="flex items-start gap-3 mb-2">
-              {activity.type === "cancelled" ? (
-                <XCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" strokeWidth={1.5} />
-              ) : (
-                <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" strokeWidth={1.5} style={{ color: theme.primary }} />
-              )}
-              <div className="flex-1">
-                <h3 className="mb-1 font-semibold text-[16px]" style={{ color: theme.text }}>{activity.action}</h3>
-                <p className="text-sm mb-2" style={{ color: theme.textSecondary }}>
-                  {activity.facility} — {activity.location}
-                </p>
-                <p className="text-sm" style={{ color: theme.textSecondary }}>
-                  {activity.date} • {activity.time}
-                </p>
+          {activities.map((activity) => (
+            <button
+              key={activity.id}
+              onClick={() => onNavigate("activity-detail", activity.id)}
+              className="w-full border p-4 text-left rounded-xl shadow-sm transition-all active:scale-[0.98]"
+              style={{ 
+                backgroundColor: theme.cardBg, 
+                borderColor: theme.border 
+              }}
+            >
+              <div className="flex items-start gap-3 mb-2">
+                {activity.type === "cancelled" ? (
+                  <XCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" strokeWidth={1.5} />
+                ) : (
+                  <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" strokeWidth={1.5} style={{ color: theme.primary }} />
+                )}
+                <div className="flex-1">
+                  <h3 className="mb-1 font-semibold text-[16px]" style={{ color: theme.text }}>{activity.action}</h3>
+                  <p className="text-sm mb-2" style={{ color: theme.textSecondary }}>
+                    {activity.facility} — {activity.location}
+                  </p>
+                  <p className="text-sm" style={{ color: theme.textSecondary }}>
+                    {activity.date} • {activity.time}
+                  </p>
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

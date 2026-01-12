@@ -22,7 +22,7 @@ export function HomeScreenHeader({ studentName }: { studentName: string }) {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-50 px-6 py-6 border-b transition-colors duration-300"
+      className="fixed top-0 left-0 right-0 z-50 px-6 py-6 border-b transition-colors duration-300 lg:hidden"
       style={{
         backgroundColor: theme.cardBg,
         borderColor: theme.border,
@@ -516,15 +516,17 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       className="h-full transition-colors duration-300"
       style={{ backgroundColor: theme.background }}
     >
-      <div className="h-10" />
-      <div
-        className="px-6 py-2 space-y-8"
-        style={{
-          paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px) + 60px)",
-        }}
-      >
-        {/* Render widgets mengikut urutan DB (UC15) */}
-        {preferences.dashboard_order.map((key) => renderWidget(key))}
+      <div className="h-10 lg:hidden" />
+      <div className="container-dashboard">
+        <div
+          className="px-6 py-2 space-y-8"
+          style={{
+            paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px) + 60px)",
+          }}
+        >
+          {/* Render widgets mengikut urutan DB (UC15) */}
+          {preferences.dashboard_order.map((key) => renderWidget(key))}
+        </div>
       </div>
     </div>
   );

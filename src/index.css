@@ -15,9 +15,16 @@ html, body {
   display: flex;
   flex-direction: column;
   background-color: var(--bg-primary, #121212);
-  max-width: 448px; /* Mengikut saiz aplikasi anda */
+  max-width: 448px; /* Mobile: Mengikut saiz aplikasi anda */
   margin: 0 auto;
   position: relative;
+}
+
+/* Desktop: Remove max-width constraint */
+@media (min-width: 1024px) {
+  #root {
+    max-width: 100%;
+  }
 }
 
 /* 2. Kawasan kandungan utama yang boleh diskrol */
@@ -67,4 +74,36 @@ nav.fixed-bottom-nav {
   flex-shrink: 0;
   /* Tambah padding bawah untuk peranti tanpa butang (home bar) */
   padding-bottom: env(safe-area-inset-bottom, 0px); 
+}
+
+/* 6. Responsive Container Utilities */
+/* Mobile: No constraints */
+@media (max-width: 1023px) {
+  .container-dashboard,
+  .container-form,
+  .container-wide {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Desktop: Apply max-width constraints */
+@media (min-width: 1024px) {
+  .container-dashboard {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .container-form {
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  
+  .container-wide {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
 }

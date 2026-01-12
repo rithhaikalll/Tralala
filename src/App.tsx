@@ -24,6 +24,7 @@ import { HomeScreen, HomeScreenHeader } from "./pages/StudentDashboard";
 import { StaffCheckInDashboardScreen } from "./pages/StaffDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { BottomNav } from "./pages/BottomNav";
+import { DesktopTopNav } from "./components/DesktopTopNav";
 import { ProfileScreen } from "./pages/ProfileScreen";
 import { EditProfileScreen } from "./pages/EditProfileScreen";
 import { ActivityHistoryScreen } from "./pages/Activity Tracking/ActivityHistoryScreen";
@@ -907,10 +908,11 @@ export default function App() {
 
   const showBottomNav = authed && !hideBottomNav;
 
-  // UPDATED: Header Logic
+  // UPDATED: Header Logic - Hide mobile headers on desktop (lg breakpoint)
   const hasHeader =
     authed &&
     userRole !== "admin" &&
+    window.innerWidth < 1024 && // Only show mobile headers on mobile
     ((location.pathname.startsWith("/facility") && !location.pathname.startsWith("/facility-complaints")) ||
       (location.pathname.startsWith("/book") && !location.pathname.startsWith("/booking")) ||
       (location.pathname === "/home" && userRole === "student") ||
@@ -985,6 +987,22 @@ export default function App() {
     <UserPreferencesProvider>
       <Toaster position="top-center" richColors />
       <div className="h-full w-full bg-[--bg-primary)] text-[--text-primary)] transition-colors duration-300 flex flex-col overflow-hidden">
+        {/* Desktop Top Navigation - Only show when authenticated AND not on auth pages */}
+        {authed && 
+         userRole !== "admin" && 
+         !location.pathname.startsWith("/login") &&
+         !location.pathname.startsWith("/register") &&
+         !location.pathname.startsWith("/reset-password") && (
+          <DesktopTopNav
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+            studentName={studentName}
+            profilePictureUrl={profilePicture}
+            onNavigate={(screen) => navigate(`/${screen}`)}
+            onLogout={handleLogout}
+          />
+        )}
+
         {hasHeader && (
           <header className="fixed-header-top">
             {location.pathname === "/home" && userRole === "student" && (

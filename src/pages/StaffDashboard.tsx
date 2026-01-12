@@ -350,9 +350,9 @@ export function StaffCheckInDashboardScreen({
       className="min-h-screen transition-colors duration-300"
       style={{ backgroundColor: theme.background }}
     >
-      {/* Header */}
+      {/* Header - Hidden on desktop */}
       <div
-        className="sticky top-0 z-10 px-6 py-6 flex items-center justify-between border-b"
+        className="sticky top-0 z-10 px-6 py-6 flex items-center justify-between border-b lg:hidden"
         style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
       >
         <h1
@@ -382,362 +382,365 @@ export function StaffCheckInDashboardScreen({
         </button>
       </div>
 
-      {/* Page Title */}
-      <div className="px-6 py-6 border-b" style={{ borderColor: theme.border }}>
-        <h2
-          style={{
-            color: theme.text,
-            fontWeight: "600",
-            fontSize: "24px",
-            marginBottom: "4px",
-          }}
-        >
-          {isMs ? "Sesi Hari Ini" : "Today's Sessions"}
-        </h2>
-        <p style={{ color: theme.textSecondary, fontSize: "14px" }}>
-          {new Date().toLocaleDateString(isMs ? "ms-MY" : "en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </p>
-        <p
-          style={{
-            color: theme.textSecondary,
-            opacity: 0.8,
-            fontSize: "12px",
-            marginTop: "4px",
-          }}
-        >
-          {isMs ? "Log masuk sebagai" : "Logged in as"} {staffName}
-        </p>
-      </div>
-
-      {/* Feedback Message */}
-      {feedbackMessage && (
-        <div
-          className="mx-6 mt-4 p-3 rounded-lg text-sm"
-          style={{
-            backgroundColor:
-              feedbackMessage.type === "success" ? "#F0FDF4" : "#FEF2F2",
-            color: feedbackMessage.type === "success" ? "#15803D" : "#DC2626",
-            border: `1px solid ${
-              feedbackMessage.type === "success" ? "#BBF7D0" : "#FECACA"
-            }`,
-          }}
-        >
-          {feedbackMessage.text}
-        </div>
-      )}
-
-      {/* Check-In Code Entry */}
-      <div className="p-6">
-        <div className="mb-4">
-          <label
-            className="block mb-2 text-sm"
-            style={{ color: theme.text, fontWeight: "500" }}
-          >
-            {isMs ? "Masukkan Kod Daftar Masuk" : "Enter Check-In Code"}
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              maxLength={6}
-              value={checkInCode}
-              onChange={(e) =>
-                setCheckInCode(e.target.value.replace(/\D/g, ""))
-              }
-              placeholder={isMs ? "Kod 6-digit" : "6-digit code"}
-              className="flex-1 h-12 px-4 border outline-none"
-              style={{
-                borderColor: theme.border,
-                backgroundColor: theme.cardBg,
-                color: theme.text,
-                borderRadius: "8px",
-                fontSize: "15px",
-                fontFamily: "monospace",
-                letterSpacing: "2px",
-              }}
-            />
-            <button
-              onClick={handleCheckIn}
-              disabled={checkInCode.length !== 6}
-              className="h-12 px-6 transition-all active:scale-95 disabled:opacity-50"
-              style={{
-                backgroundColor:
-                  checkInCode.length === 6 ? theme.primary : theme.border,
-                color:
-                  checkInCode.length === 6 ? "#FFFFFF" : theme.textSecondary,
-                borderRadius: "8px",
-                fontWeight: "500",
-                fontSize: "15px",
-              }}
-            >
-              {isMs ? "Daftar" : "Check In"}
-            </button>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowManualSearch(!showManualSearch)}
-          className="text-sm"
-          style={{ color: theme.primary, fontWeight: "500" }}
-        >
-          {showManualSearch
-            ? isMs
-              ? "Tutup"
-              : "Hide"
-            : isMs
-            ? "Carian manual?"
-            : "Can't find code? Search manually"}
-        </button>
-      </div>
-
-      {/* Manual Search */}
-      {showManualSearch && (
-        <div className="px-6 pb-4">
-          <div
-            className="p-4"
+      {/* Responsive Container */}
+      <div className="container-dashboard lg:pt-8">
+        {/* Page Title */}
+        <div className="px-6 py-6 border-b" style={{ borderColor: theme.border }}>
+          <h2
             style={{
-              backgroundColor: theme.cardBg,
-              borderRadius: "8px",
-              border: `1px solid ${theme.border}`,
+              color: theme.text,
+              fontWeight: "600",
+              fontSize: "24px",
+              marginBottom: "4px",
             }}
           >
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={
-                isMs
-                  ? "Cari nama, matrik..."
-                  : "Search by name, matric ID, or facility"
-              }
-              className="w-full h-10 px-3 border mb-3 outline-none"
-              style={{
-                borderColor: theme.border,
-                backgroundColor: theme.background,
-                color: theme.text,
-                borderRadius: "8px",
-                fontSize: "14px",
-              }}
-            />
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {filteredSessions
-                .filter((s) => s.status === "Approved")
-                .map((session) => (
-                  <div
-                    key={session.id}
-                    className="p-3 border flex justify-between items-center"
-                    style={{
-                      borderColor: theme.border,
-                      backgroundColor: theme.background,
-                      borderRadius: "8px",
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          color: theme.text,
-                        }}
-                      >
-                        {session.studentName}
-                      </div>
-                      <div
-                        style={{ fontSize: "12px", color: theme.textSecondary }}
-                      >
-                        {session.matricId} • {session.facility} • {session.time}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleManualCheckIn(session.id)}
-                      className="px-3 py-1 text-sm text-white active:scale-95"
-                      style={{
-                        backgroundColor: theme.primary,
-                        borderRadius: "6px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {isMs ? "Daftar" : "Check In"}
-                    </button>
-                  </div>
-                ))}
-            </div>
-          </div>
+            {isMs ? "Sesi Hari Ini" : "Today's Sessions"}
+          </h2>
+          <p style={{ color: theme.textSecondary, fontSize: "14px" }}>
+            {new Date().toLocaleDateString(isMs ? "ms-MY" : "en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+          <p
+            style={{
+              color: theme.textSecondary,
+              opacity: 0.8,
+              fontSize: "12px",
+              marginTop: "4px",
+            }}
+          >
+            {isMs ? "Log masuk sebagai" : "Logged in as"} {staffName}
+          </p>
         </div>
-      )}
 
-      {/* Filter Tabs */}
-      <div className="px-6 pb-4">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {["all", "approved", "checked-in", "completed"].map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setSelectedFilter(filter as any)}
-              className="px-4 py-2 text-sm font-medium whitespace-nowrap"
-              style={{
-                backgroundColor:
-                  selectedFilter === filter ? theme.primary : theme.cardBg,
-                color:
-                  selectedFilter === filter ? "#FFFFFF" : theme.textSecondary,
-                border: `1px solid ${
-                  selectedFilter === filter ? theme.primary : theme.border
-                }`,
-                borderRadius: "8px",
-                textTransform: "capitalize",
-              }}
+        {/* Feedback Message */}
+        {feedbackMessage && (
+          <div
+            className="mx-6 mt-4 p-3 rounded-lg text-sm"
+            style={{
+              backgroundColor:
+                feedbackMessage.type === "success" ? "#F0FDF4" : "#FEF2F2",
+              color: feedbackMessage.type === "success" ? "#15803D" : "#DC2626",
+              border: `1px solid ${
+                feedbackMessage.type === "success" ? "#BBF7D0" : "#FECACA"
+              }`,
+            }}
+          >
+            {feedbackMessage.text}
+          </div>
+        )}
+
+        {/* Check-In Code Entry */}
+        <div className="p-6">
+          <div className="mb-4">
+            <label
+              className="block mb-2 text-sm"
+              style={{ color: theme.text, fontWeight: "500" }}
             >
-              {filter === "all"
-                ? isMs
-                  ? "Semua"
-                  : "All"
-                : filter.replace("-", " ")}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Sessions List */}
-      <div className="px-6 space-y-3 pb-24">
-        {loading ? (
-          <div
-            className="text-center py-12"
-            style={{ color: theme.textSecondary }}
-          >
-            {isMs ? "Memuatkan..." : "Loading sessions..."}
-          </div>
-        ) : filteredSessions.length === 0 ? (
-          <div
-            className="text-center py-12"
-            style={{ color: theme.textSecondary }}
-          >
-            {isMs ? "Tiada sesi." : "No sessions found."}
-          </div>
-        ) : (
-          filteredSessions.map((session) => {
-            const statusStyle = getStatusStyle(session.status);
-            return (
-              <div
-                key={session.id}
-                className="p-4 border shadow-sm"
+              {isMs ? "Masukkan Kod Daftar Masuk" : "Enter Check-In Code"}
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                maxLength={6}
+                value={checkInCode}
+                onChange={(e) =>
+                  setCheckInCode(e.target.value.replace(/\D/g, ""))
+                }
+                placeholder={isMs ? "Kod 6-digit" : "6-digit code"}
+                className="flex-1 h-12 px-4 border outline-none"
                 style={{
                   borderColor: theme.border,
                   backgroundColor: theme.cardBg,
-                  borderRadius: "12px",
+                  color: theme.text,
+                  borderRadius: "8px",
+                  fontSize: "15px",
+                  fontFamily: "monospace",
+                  letterSpacing: "2px",
+                }}
+              />
+              <button
+                onClick={handleCheckIn}
+                disabled={checkInCode.length !== 6}
+                className="h-12 px-6 transition-all active:scale-95 disabled:opacity-50"
+                style={{
+                  backgroundColor:
+                    checkInCode.length === 6 ? theme.primary : theme.border,
+                  color:
+                    checkInCode.length === 6 ? "#FFFFFF" : theme.textSecondary,
+                  borderRadius: "8px",
+                  fontWeight: "500",
+                  fontSize: "15px",
                 }}
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
+                {isMs ? "Daftar" : "Check In"}
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowManualSearch(!showManualSearch)}
+            className="text-sm"
+            style={{ color: theme.primary, fontWeight: "500" }}
+          >
+            {showManualSearch
+              ? isMs
+                ? "Tutup"
+                : "Hide"
+              : isMs
+              ? "Carian manual?"
+              : "Can't find code? Search manually"}
+          </button>
+        </div>
+
+        {/* Manual Search */}
+        {showManualSearch && (
+          <div className="px-6 pb-4">
+            <div
+              className="p-4"
+              style={{
+                backgroundColor: theme.cardBg,
+                borderRadius: "8px",
+                border: `1px solid ${theme.border}`,
+              }}
+            >
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={
+                  isMs
+                    ? "Cari nama, matrik..."
+                    : "Search by name, matric ID, or facility"
+                }
+                className="w-full h-10 px-3 border mb-3 outline-none"
+                style={{
+                  borderColor: theme.border,
+                  backgroundColor: theme.background,
+                  color: theme.text,
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                }}
+              />
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {filteredSessions
+                  .filter((s) => s.status === "Approved")
+                  .map((session) => (
+                    <div
+                      key={session.id}
+                      className="p-3 border flex justify-between items-center"
+                      style={{
+                        borderColor: theme.border,
+                        backgroundColor: theme.background,
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <div>
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            color: theme.text,
+                          }}
+                        >
+                          {session.studentName}
+                        </div>
+                        <div
+                          style={{ fontSize: "12px", color: theme.textSecondary }}
+                        >
+                          {session.matricId} • {session.facility} • {session.time}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleManualCheckIn(session.id)}
+                        className="px-3 py-1 text-sm text-white active:scale-95"
+                        style={{
+                          backgroundColor: theme.primary,
+                          borderRadius: "6px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {isMs ? "Daftar" : "Check In"}
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Filter Tabs */}
+        <div className="px-6 pb-4">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+            {["all", "approved", "checked-in", "completed"].map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setSelectedFilter(filter as any)}
+                className="px-4 py-2 text-sm font-medium whitespace-nowrap"
+                style={{
+                  backgroundColor:
+                    selectedFilter === filter ? theme.primary : theme.cardBg,
+                  color:
+                    selectedFilter === filter ? "#FFFFFF" : theme.textSecondary,
+                  border: `1px solid ${
+                    selectedFilter === filter ? theme.primary : theme.border
+                  }`,
+                  borderRadius: "8px",
+                  textTransform: "capitalize",
+                }}
+              >
+                {filter === "all"
+                  ? isMs
+                    ? "Semua"
+                    : "All"
+                  : filter.replace("-", " ")}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sessions List */}
+        <div className="px-6 space-y-3 pb-24">
+          {loading ? (
+            <div
+              className="text-center py-12"
+              style={{ color: theme.textSecondary }}
+            >
+              {isMs ? "Memuatkan..." : "Loading sessions..."}
+            </div>
+          ) : filteredSessions.length === 0 ? (
+            <div
+              className="text-center py-12"
+              style={{ color: theme.textSecondary }}
+            >
+              {isMs ? "Tiada sesi." : "No sessions found."}
+            </div>
+          ) : (
+            filteredSessions.map((session) => {
+              const statusStyle = getStatusStyle(session.status);
+              return (
+                <div
+                  key={session.id}
+                  className="p-4 border shadow-sm"
+                  style={{
+                    borderColor: theme.border,
+                    backgroundColor: theme.cardBg,
+                    borderRadius: "12px",
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: "600",
+                          color: theme.text,
+                        }}
+                      >
+                        {session.facility}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          color: theme.textSecondary,
+                          marginTop: "2px",
+                        }}
+                      >
+                        {session.time}
+                      </div>
+                    </div>
+                    <span
+                      className="px-3 py-1 text-[10px] font-bold uppercase rounded-full"
+                      style={{
+                        backgroundColor: statusStyle.bg,
+                        color: statusStyle.color,
+                      }}
+                    >
+                      {session.status}
+                    </span>
+                  </div>
+
+                  <div
+                    className="mb-3 pb-3"
+                    style={{ borderBottom: `1px solid ${theme.border}44` }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        color: theme.text,
+                        fontWeight: "500",
+                        marginBottom: "2px",
+                      }}
+                    >
+                      {session.studentName}
+                    </div>
+                    <div style={{ fontSize: "13px", color: theme.textSecondary }}>
+                      {session.matricId}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-3">
+                    <div style={{ fontSize: "12px", color: theme.textSecondary }}>
+                      {isMs ? "Kod Daftar" : "Check-In Code"}
+                    </div>
                     <div
                       style={{
                         fontSize: "16px",
                         fontWeight: "600",
-                        color: theme.text,
+                        color: theme.primary,
+                        fontFamily: "monospace",
+                        letterSpacing: "2px",
                       }}
                     >
-                      {session.facility}
+                      {session.code}
                     </div>
+                  </div>
+
+                  {session.checkInTime && (
                     <div
+                      className="text-xs mb-1"
+                      style={{ color: theme.textSecondary }}
+                    >
+                      {isMs ? "Daftar masuk pada" : "Checked in at"}{" "}
+                      {session.checkInTime}
+                    </div>
+                  )}
+                  {session.checkOutTime && (
+                    <div
+                      className="text-xs mb-1"
+                      style={{ color: theme.textSecondary }}
+                    >
+                      {isMs ? "Daftar keluar pada" : "Checked out at"}{" "}
+                      {session.checkOutTime}
+                    </div>
+                  )}
+
+                  {session.status === "Checked-In" && (
+                    <button
+                      onClick={() => {
+                        setSelectedSession(session);
+                        setShowEndSessionModal(true);
+                      }}
+                      className="w-full h-10 mt-2 font-bold text-white shadow-md active:scale-95"
                       style={{
+                        backgroundColor: theme.primary,
+                        borderRadius: "8px",
                         fontSize: "14px",
-                        color: theme.textSecondary,
-                        marginTop: "2px",
                       }}
                     >
-                      {session.time}
-                    </div>
-                  </div>
-                  <span
-                    className="px-3 py-1 text-[10px] font-bold uppercase rounded-full"
-                    style={{
-                      backgroundColor: statusStyle.bg,
-                      color: statusStyle.color,
-                    }}
-                  >
-                    {session.status}
-                  </span>
+                      {isMs
+                        ? "Tamat Sesi / Daftar Keluar"
+                        : "End Session / Check Out"}
+                    </button>
+                  )}
                 </div>
-
-                <div
-                  className="mb-3 pb-3"
-                  style={{ borderBottom: `1px solid ${theme.border}44` }}
-                >
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      color: theme.text,
-                      fontWeight: "500",
-                      marginBottom: "2px",
-                    }}
-                  >
-                    {session.studentName}
-                  </div>
-                  <div style={{ fontSize: "13px", color: theme.textSecondary }}>
-                    {session.matricId}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between mb-3">
-                  <div style={{ fontSize: "12px", color: theme.textSecondary }}>
-                    {isMs ? "Kod Daftar" : "Check-In Code"}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: "600",
-                      color: theme.primary,
-                      fontFamily: "monospace",
-                      letterSpacing: "2px",
-                    }}
-                  >
-                    {session.code}
-                  </div>
-                </div>
-
-                {session.checkInTime && (
-                  <div
-                    className="text-xs mb-1"
-                    style={{ color: theme.textSecondary }}
-                  >
-                    {isMs ? "Daftar masuk pada" : "Checked in at"}{" "}
-                    {session.checkInTime}
-                  </div>
-                )}
-                {session.checkOutTime && (
-                  <div
-                    className="text-xs mb-1"
-                    style={{ color: theme.textSecondary }}
-                  >
-                    {isMs ? "Daftar keluar pada" : "Checked out at"}{" "}
-                    {session.checkOutTime}
-                  </div>
-                )}
-
-                {session.status === "Checked-In" && (
-                  <button
-                    onClick={() => {
-                      setSelectedSession(session);
-                      setShowEndSessionModal(true);
-                    }}
-                    className="w-full h-10 mt-2 font-bold text-white shadow-md active:scale-95"
-                    style={{
-                      backgroundColor: theme.primary,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    {isMs
-                      ? "Tamat Sesi / Daftar Keluar"
-                      : "End Session / Check Out"}
-                  </button>
-                )}
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* End Session Confirmation Modal */}

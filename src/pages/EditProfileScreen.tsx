@@ -199,7 +199,7 @@ export function EditProfileScreen({
   return (
     <div className="min-h-screen pb-20" style={{ backgroundColor: theme.background }}>
       {/* Header */}
-      <div className="sticky top-0 z-40 border-b" style={{ backgroundColor: theme.background, borderColor: theme.border }}>
+      <div className="sticky top-0 z-40 border-b lg:hidden" style={{ backgroundColor: theme.background, borderColor: theme.border }}>
         <div className="px-6 py-4 flex items-center gap-4">
           <button onClick={() => onNavigate("profile")} className="p-1 -ml-1" style={{ color: theme.primary }}>
             <ArrowLeft className="w-6 h-6" />
@@ -208,69 +208,71 @@ export function EditProfileScreen({
         </div>
       </div>
 
-      <div className="px-6 py-6 space-y-6">
-        {/* Profile Picture */}
-        <div className="border p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg, borderRadius: "14px" }}>
-          <h3 style={{ color: theme.text, fontWeight: "600", fontSize: "15px", marginBottom: "16px" }}>Profile Picture</h3>
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-24 h-24 rounded-full flex items-center justify-center border overflow-hidden" style={{ borderColor: theme.border, backgroundColor: theme.background }}>
-              {profilePicture ? (
-                <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-12 h-12" style={{ color: theme.primary }} />
+      <div className="container-form lg:pt-8">
+        <div className="px-6 py-6 space-y-6">
+          {/* Profile Picture */}
+          <div className="border p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg, borderRadius: "14px" }}>
+            <h3 style={{ color: theme.text, fontWeight: "600", fontSize: "15px", marginBottom: "16px" }}>Profile Picture</h3>
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-24 h-24 rounded-full flex items-center justify-center border overflow-hidden" style={{ borderColor: theme.border, backgroundColor: theme.background }}>
+                {profilePicture ? (
+                  <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-12 h-12" style={{ color: theme.primary }} />
+                )}
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              <button 
+                onClick={() => fileInputRef.current?.click()} 
+                className="h-10 px-4 flex items-center gap-2 border rounded-lg"
+                style={{ borderColor: theme.primary, color: theme.primary, fontWeight: "500", fontSize: "14px" }}
+              >
+                <Camera className="w-4 h-4" />
+                Change Photo
+              </button>
+              {imageError && (
+                <div className="w-full flex items-start gap-2 p-3 rounded-lg" style={{ backgroundColor: "#FEE2E2" }}>
+                  <AlertCircle className="w-4 h-4 mt-0.5" style={{ color: "#DC2626" }} />
+                  <p className="text-sm" style={{ color: "#DC2626" }}>{imageError}</p>
+                </div>
               )}
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-            <button 
-              onClick={() => fileInputRef.current?.click()} 
-              className="h-10 px-4 flex items-center gap-2 border rounded-lg"
-              style={{ borderColor: theme.primary, color: theme.primary, fontWeight: "500", fontSize: "14px" }}
-            >
-              <Camera className="w-4 h-4" />
-              Change Photo
-            </button>
-            {imageError && (
-              <div className="w-full flex items-start gap-2 p-3 rounded-lg" style={{ backgroundColor: "#FEE2E2" }}>
-                <AlertCircle className="w-4 h-4 mt-0.5" style={{ color: "#DC2626" }} />
-                <p className="text-sm" style={{ color: "#DC2626" }}>{imageError}</p>
-              </div>
-            )}
           </div>
-        </div>
 
-        {/* Personal Info */}
-        <div className="border p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg, borderRadius: "14px" }}>
-          <h3 style={{ color: theme.text, fontWeight: "600", fontSize: "15px", marginBottom: "16px" }}>Personal Information</h3>
-          <div className="space-y-2">
-            <label className="text-sm" style={{ color: theme.textSecondary, fontWeight: "500" }}>Full Name</label>
-            <input 
-              type="text" 
-              value={fullName} 
-              onChange={(e) => setFullName(e.target.value)} 
-              className="w-full h-12 px-4 border rounded-lg"
-              style={{ borderColor: theme.border, backgroundColor: theme.background, color: theme.text, fontSize: "15px" }} 
-            />
-          </div>
-          <div className="space-y-2 mt-4">
-            <label className="text-sm" style={{ color: theme.textSecondary, fontWeight: "500" }}>
-              {userRole === "staff" ? "Staff ID" : "Student ID"}
-            </label>
-            <div className="w-full h-12 px-4 border rounded-lg flex items-center opacity-50" style={{ borderColor: theme.border, backgroundColor: theme.background, color: theme.textSecondary }}>
-               <span>{studentId || "(No ID Found)"}</span> 
+          {/* Personal Info */}
+          <div className="border p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg, borderRadius: "14px" }}>
+            <h3 style={{ color: theme.text, fontWeight: "600", fontSize: "15px", marginBottom: "16px" }}>Personal Information</h3>
+            <div className="space-y-2">
+              <label className="text-sm" style={{ color: theme.textSecondary, fontWeight: "500" }}>Full Name</label>
+              <input 
+                type="text" 
+                value={fullName} 
+                onChange={(e) => setFullName(e.target.value)} 
+                className="w-full h-12 px-4 border rounded-lg"
+                style={{ borderColor: theme.border, backgroundColor: theme.background, color: theme.text, fontSize: "15px" }} 
+              />
             </div>
-            <p className="text-xs" style={{ color: theme.textSecondary }}>ID cannot be changed.</p>
+            <div className="space-y-2 mt-4">
+              <label className="text-sm" style={{ color: theme.textSecondary, fontWeight: "500" }}>
+                {userRole === "staff" ? "Staff ID" : "Student ID"}
+              </label>
+              <div className="w-full h-12 px-4 border rounded-lg flex items-center opacity-50" style={{ borderColor: theme.border, backgroundColor: theme.background, color: theme.textSecondary }}>
+                 <span>{studentId || "(No ID Found)"}</span> 
+              </div>
+              <p className="text-xs" style={{ color: theme.textSecondary }}>ID cannot be changed.</p>
+            </div>
           </div>
-        </div>
 
-        <button 
-          onClick={handleSave} 
-          disabled={isSaving}
-          className="w-full h-12 rounded-lg flex items-center justify-center gap-2"
-          style={{ backgroundColor: theme.primary, color: "#FFF", fontWeight: "500", fontSize: "16px" }}
-        >
-          {isSaving ? <Loader2 className="animate-spin" /> : <Check className="w-5 h-5" />}
-          Save Changes
-        </button>
+          <button 
+            onClick={handleSave} 
+            disabled={isSaving}
+            className="w-full h-12 rounded-lg flex items-center justify-center gap-2"
+            style={{ backgroundColor: theme.primary, color: "#FFF", fontWeight: "500", fontSize: "16px" }}
+          >
+            {isSaving ? <Loader2 className="animate-spin" /> : <Check className="w-5 h-5" />}
+            Save Changes
+          </button>
+        </div>
       </div>
     </div>
   );

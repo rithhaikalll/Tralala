@@ -436,15 +436,16 @@ export function ProfileScreen({
       style={{ backgroundColor: theme.background, color: theme.text }}
     >
       <div
-        className="fixed top-0 left-0 right-0 z-40 px-6 py-6 border-b"
+        className="fixed top-0 left-0 right-0 z-40 px-6 py-6 border-b lg:hidden"
         style={{ backgroundColor: theme.background, borderColor: theme.border }}
       >
         <h2 className="font-semibold text-xl">{isMs ? "Profil" : "Profile"}</h2>
       </div>
 
-      <div className="h-22" />
+      <div className="h-22 lg:hidden" />
 
-      <div className="px-6 py-2 space-y-6 pb-28">
+      <div className="container-form lg:pt-8">
+        <div className="px-6 py-2 space-y-6 pb-28">
         <div
           className="border p-6 text-center rounded-2xl shadow-sm"
           style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}
@@ -538,6 +539,7 @@ export function ProfileScreen({
           </button>
         </div>
       </div>
+    </div>
 
       {showLogoutDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-6 z-50 animate-in fade-in">
