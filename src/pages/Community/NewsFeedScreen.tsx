@@ -1,6 +1,7 @@
 // src/pages/News/NewsFeedScreen.tsx
-import { Calendar, ChevronRight, Plus } from "lucide-react";
+import { Calendar, ChevronRight, Plus, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
@@ -21,6 +22,7 @@ interface NewsPost {
 
 export function NewsFeedScreen({ onNavigate, userRole }: NewsFeedScreenProps) {
   const { theme, t } = useUserPreferences();
+  const navigate = useNavigate(); // Hook for back navigation
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [newsData, setNewsData] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,31 +115,41 @@ export function NewsFeedScreen({ onNavigate, userRole }: NewsFeedScreenProps) {
 
   return (
     <div className="min-h-screen pb-20 transition-colors" style={{ backgroundColor: theme.background }}>
-      {/* Updated Header with Create Button */}
+      {/* Updated Header with Back Button */}
       <div className="sticky top-0 z-40 px-6 py-6 border-b transition-colors" style={{ backgroundColor: theme.background, borderColor: theme.border }}>
         <div className="flex items-center justify-between">
-          <div>
-            <h1
-              className="mb-1"
-              style={{
-                color: theme.primary,
-                fontWeight: "600",
-                fontSize: "20px",
-                letterSpacing: "-0.01em"
-              }}
+          <div className="flex items-center gap-3">
+            {/* BACK BUTTON */}
+            <button
+              onClick={() => navigate(-1)} // Go back to previous screen (Community)
+              className="-ml-2 p-2 rounded-full hover:bg-black/5 transition-colors"
+              style={{ color: theme.primary }}
             >
-              {t('news_title')}
-            </h1>
-            <p
-              className="text-sm"
-              style={{ color: theme.textSecondary, lineHeight: "1.6" }}
-            >
-              {t('news_subtitle')}
-            </p>
+              <ArrowLeft className="w-6 h-6" strokeWidth={2} />
+            </button>
+            
+            <div>
+              <h1
+                className="mb-1"
+                style={{
+                  color: theme.primary,
+                  fontWeight: "600",
+                  fontSize: "20px",
+                  letterSpacing: "-0.01em"
+                }}
+              >
+                {t('news_title')}
+              </h1>
+              <p
+                className="text-sm"
+                style={{ color: theme.textSecondary, lineHeight: "1.6" }}
+              >
+                {t('news_subtitle')}
+              </p>
+            </div>
           </div>
 
-          {/* --- NEW BUTTON ADDED HERE (Staff Only) --- */}
-
+          {/* Create Button (Staff Only) */}
           <button
             onClick={() => onNavigate("create-news-post")}
             className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-95"
@@ -343,4 +355,3 @@ export function NewsFeedScreen({ onNavigate, userRole }: NewsFeedScreenProps) {
     </div>
   );
 }
-

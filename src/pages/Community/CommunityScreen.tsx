@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   MessageCircle,
   Newspaper,
@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserPreferences } from "../../lib/UserPreferencesContext";
+import { supabase } from "../../lib/supabaseClient";
 
 // Helper component for the cards
 const MenuCard = ({ title, description, icon: Icon, colorScheme, onClick, theme }: any) => {
@@ -76,6 +77,100 @@ export function CommunityScreen() {
   const navigate = useNavigate();
   const { theme, t } = useUserPreferences();
 
+  // --- REAL-TIME STATS STATE ---
+  const [stats, setStats] = useState({
+    newPosts: 0,
+    buddies: 0,
+    items: 0,
+  });
+
+  const fetchStats = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // 1. New Posts: Count discussion posts created in the last 7 days
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const postsPromise = supabase
+        .from("discussion_posts")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", oneWeekAgo.toISOString());
+
+      // 2. Buddies: Count accepted buddy requests where current user is involved
+      const buddiesPromise = supabase
+        .from("buddy_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "Accepted")
+        .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`);
+
+      // 3. Items: Count all active marketplace listings
+      const itemsPromise = supabase
+        .from("marketplace_listings")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "Available"); // Optional: ensure we only count available items
+
+      // Run all queries in parallel
+      const [postsRes, buddiesRes, itemsRes] = await Promise.all([
+        postsPromise,
+        buddiesPromise,
+        itemsPromise
+      ]);
+
+      setStats({
+        newPosts: postsRes.count || 0,
+        buddies: buddiesRes.count || 0,
+        items: itemsRes.count || 0,
+      });
+
+    } catch (err) {
+      console.error("Error fetching community stats:", err);
+    }
+  };
+
+  useEffect(() => {
+    // 1. Initial Fetch
+    fetchStats();
+
+    // 2. Set up Real-time Subscription
+    const channel = supabase
+      .channel('community_stats_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'discussion_posts'
+        },
+        () => fetchStats() // Re-fetch on post changes
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'buddy_requests'
+        },
+        () => fetchStats() // Re-fetch on buddy changes
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'marketplace_listings'
+        },
+        () => fetchStats() // Re-fetch on marketplace changes
+      )
+      .subscribe();
+
+    // 3. Cleanup on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen transition-colors" style={{ backgroundColor: theme.background }}>
       {/* Header (MATCH BookListHeader format) */}
@@ -97,7 +192,7 @@ export function CommunityScreen() {
       {/* Spacer so content starts below fixed header */}
       <div className="h-24" />
 
-      {/* Content (unchanged) */}
+      {/* Content */}
       <div className="p-6 pb-32">
         {/* Grid Menu */}
         <div className="grid grid-cols-2 gap-4 mb-8">
@@ -143,15 +238,15 @@ export function CommunityScreen() {
           />
         </div>
 
-        {/* Community Activity Footer */}
+        {/* Community Activity Footer (Dynamic Data) */}
         <div className="p-5 rounded-[20px] border" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
           <h3 className="text-lg font-bold mb-4" style={{ color: theme.text }}>{t("comm_activity_title")}</h3>
           <div className="flex justify-around items-center">
-            <ActivityStat count={4} label={t("comm_stat_posts")} theme={theme} />
+            <ActivityStat count={stats.newPosts} label={t("comm_stat_posts")} theme={theme} />
             <div className="h-8 w-[1px]" style={{ backgroundColor: theme.border }}></div>
-            <ActivityStat count={1} label={t("comm_stat_buddies")} theme={theme} />
+            <ActivityStat count={stats.buddies} label={t("comm_stat_buddies")} theme={theme} />
             <div className="h-8 w-[1px]" style={{ backgroundColor: theme.border }}></div>
-            <ActivityStat count={6} label={t("comm_stat_items")} theme={theme} />
+            <ActivityStat count={stats.items} label={t("comm_stat_items")} theme={theme} />
           </div>
         </div>
       </div>

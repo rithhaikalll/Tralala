@@ -1,6 +1,7 @@
 // src/pages/DiscussionScreen.tsx
 import { useEffect, useState } from "react";
-import { Plus, MessageCircle, Heart } from "lucide-react";
+import { Plus, MessageCircle, Heart, ArrowLeft } from "lucide-react"; // Added ArrowLeft
+import { useNavigate } from "react-router-dom"; // Added useNavigate
 import { supabase } from "../../lib/supabaseClient";
 import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
@@ -24,23 +25,39 @@ export function DiscussionScreenHeader({
   onNavigate: (screen: string) => void;
 }) {
   const { theme, t } = useUserPreferences();
+  const navigate = useNavigate(); // Hook for navigation
+
   return (
     <div
       className="fixed top-0 left-0 right-0 z-50 px-6 py-6 border-b transition-colors"
       style={{ backgroundColor: theme.background, borderColor: theme.border, transform: "none" }}
     >
       <div className="flex items-center justify-between">
-        <div>
-          <h2 style={{ color: theme.text, fontWeight: 600, fontSize: "20px" }}>
-            {t('disc_title')}
-          </h2>
-          <p
-            className="text-sm mt-1"
-            style={{ color: theme.textSecondary, lineHeight: "1.6" }}
+        
+        {/* Left Side: Back Button + Title */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="-ml-2 p-2 rounded-full hover:bg-black/5 transition-colors"
+            style={{ color: theme.primary }}
           >
-            {t('disc_subtitle')}
-          </p>
+            <ArrowLeft className="w-6 h-6" strokeWidth={2} />
+          </button>
+
+          <div>
+            <h2 style={{ color: theme.text, fontWeight: 600, fontSize: "20px" }}>
+              {t('disc_title')}
+            </h2>
+            <p
+              className="text-sm mt-1"
+              style={{ color: theme.textSecondary, lineHeight: "1.6" }}
+            >
+              {t('disc_subtitle')}
+            </p>
+          </div>
         </div>
+
+        {/* Right Side: Create Button */}
         <button
           onClick={() => onNavigate("create-discussion")}
           className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-95"
@@ -114,7 +131,7 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
   return (
     <div className="h-full transition-colors" style={{ backgroundColor: theme.background }}>
       {/* spacer reserved by app-level header */}
-      <div className="h-10" />
+      <div className="h-24" />
 
       {/* Content */}
       <div

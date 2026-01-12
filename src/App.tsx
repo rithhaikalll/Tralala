@@ -107,10 +107,12 @@ import { useUserPreferences } from "./lib/UserPreferencesContext";
 const useBuddyData = (userId: string) => {
   const [requests, setRequests] = useState<any[]>([]);
   const [connectedBuddies, setConnectedBuddies] = useState<any[]>([]);
+  const [pendingRequestIds, setPendingRequestIds] = useState<string[]>([]); // New state
 
   const refresh = async () => {
     if (!userId) return;
 
+    // 1. Fetch Requests
     const { data: reqs } = await supabase
       .from("buddy_requests")
       .select(`
@@ -125,19 +127,55 @@ const useBuddyData = (userId: string) => {
       .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`);
 
     if (reqs) {
-      // 1. Map for BuddyRequestsScreen (needs isIncoming flag)
-      const mappedRequests = reqs.map((r: any) => ({
-        id: r.id,
-        requesterId: r.requester_id === userId ? r.recipient?.matric_id : r.requester?.matric_id,
-        requesterName: r.requester_id === userId ? r.recipient?.full_name : r.requester?.full_name,
-        recipientId: r.recipient_id === userId ? "You" : r.recipient?.matric_id,
-        status: r.status,
-        createdAt: r.created_at,
-        isIncoming: r.recipient_id === userId // Critical for your new screen
-      }));
+      // 2. Extract all User IDs to fetch images in one go
+      const allUserIds = new Set<string>();
+      reqs.forEach((r: any) => {
+        if (r.requester_id) allUserIds.add(r.requester_id);
+        if (r.recipient_id) allUserIds.add(r.recipient_id);
+      });
+
+      // 3. Fetch Images from profile_details
+      const { data: images } = await supabase
+        .from("profile_details")
+        .select("user_id, profile_picture_url")
+        .in("user_id", Array.from(allUserIds));
+
+      const imageMap: Record<string, string> = {};
+      images?.forEach((img: any) => {
+        if (img.profile_picture_url) {
+          imageMap[img.user_id] = img.profile_picture_url;
+        }
+      });
+
+      // 4. Map Requests with Images
+      const mappedRequests = reqs.map((r: any) => {
+        const isIncoming = r.recipient_id === userId;
+        const otherId = isIncoming ? r.requester_id : r.recipient_id;
+        
+        return {
+          id: r.id,
+          requesterId: r.requester_id === userId ? r.recipient?.matric_id : r.requester?.matric_id,
+          requesterName: r.requester_id === userId ? r.recipient?.full_name : r.requester?.full_name,
+          recipientId: r.recipient_id === userId ? "You" : r.recipient?.matric_id,
+          
+          // Add Profile Picture
+          profilePicture: imageMap[otherId] || null, 
+
+          status: r.status,
+          createdAt: r.created_at,
+          isIncoming: isIncoming,
+          otherUserId: otherId // Helper for pending check
+        };
+      });
       setRequests(mappedRequests);
 
-      // 2. Map for MyBuddiesScreen
+      // 5. Track Pending Outgoing Requests (To disable button in Find Screen)
+      const pending = mappedRequests
+        .filter((r: any) => !r.isIncoming && r.status === "Pending")
+        .map((r: any) => r.otherUserId);
+      setPendingRequestIds(pending);
+
+      // 6. Map Connected Buddies with Images
       const connected = reqs
         .filter((r: any) => r.status === "Accepted")
         .map((r: any) => {
@@ -149,7 +187,8 @@ const useBuddyData = (userId: string) => {
             faculty: buddyProfile?.faculty || "Unknown Faculty",
             year: buddyProfile?.year || "Unknown Year",
             favoriteSports: buddyProfile?.favorite_sports || [],
-            connectedSince: r.created_at
+            connectedSince: r.created_at,
+            profilePicture: imageMap[buddyProfile?.id] || null // Add Image
           };
         });
       setConnectedBuddies(connected);
@@ -157,7 +196,7 @@ const useBuddyData = (userId: string) => {
   };
 
   useEffect(() => { refresh(); }, [userId]);
-  return { requests, connectedBuddies, refresh };
+  return { requests, connectedBuddies, pendingRequestIds, refresh };
 };
 
 
@@ -691,7 +730,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { requests, connectedBuddies, refresh: refreshBuddyData } = useBuddyData(userId);
+  const { requests, connectedBuddies, pendingRequestIds, refresh: refreshBuddyData } = useBuddyData(userId);
 
 
   // --- BUDDY SYSTEM HANDLERS ---
@@ -1285,6 +1324,7 @@ export default function App() {
                     onNavigate={() => navigate("/community/buddy")}
                     studentId={userId}
                     connectedBuddies={connectedBuddies.map(b => b.id)}
+                    pendingRequests={pendingRequestIds} // <--- PASS THIS PROP
                     onSendRequest={handleSendBuddyRequest}
                   />
                 </RequireAuth>

@@ -1,4 +1,4 @@
-import { Home, MessageSquare, Book, Compass, User } from "lucide-react";
+import { Home, Globe, Book, Compass, User } from "lucide-react";
 import { useUserPreferences } from "../lib/UserPreferencesContext";
 
 export function BottomNav({ activeTab, onTabChange }: any) {
@@ -6,7 +6,8 @@ export function BottomNav({ activeTab, onTabChange }: any) {
 
   const tabData: Record<string, { labelKey: string; icon: any }> = {
     home: { labelKey: "nav_home", icon: Home },
-    community: { labelKey: "nav_community", icon: MessageSquare },
+    // Updated Icon to Globe
+    community: { labelKey: "Community", icon: Globe },
     book: { labelKey: "nav_book", icon: Book },
     activity: { labelKey: "nav_activity", icon: Compass },
     profile: { labelKey: "nav_profile", icon: User },
