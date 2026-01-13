@@ -199,15 +199,41 @@ export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) 
             <div className="p-4 border rounded-xl shadow-sm" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
               <h3 className="font-bold text-sm mb-3" style={{ color: theme.text }}>{isMs ? "Pecahan Aktiviti" : "Activity Types"}</h3>
               <div className="space-y-3">
-                {reportData.byCategory.map((cat, idx) => (
-                  <div key={idx} className="flex justify-between items-center pb-2 border-b last:border-0" style={{ borderColor: theme.border }}>
-                    <span className="text-sm" style={{ color: theme.text }}>{cat.category}</span>
-                    <div className="text-right">
-                      <div className="text-sm font-bold" style={{ color: theme.text }}>{cat.count}</div>
-                      <div className="text-[10px]" style={{ color: theme.textSecondary }}>{cat.hours}h</div>
-                    </div>
+                {reportData.byCategory && reportData.byCategory.length > 0 ? (
+                  <div className="space-y-3">
+                    {reportData.byCategory.map((cat, idx) => (
+                      <div key={idx} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-3 h-3"
+                            style={{
+                              backgroundColor: COLORS[idx % COLORS.length],
+                              borderRadius: "2px",
+                            }}
+                          />
+                          <span className="text-sm" style={{ color: theme.text }}>
+                            {cat.category}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold" style={{ color: theme.text }}>
+                            {cat.count} activities
+                          </div>
+                          <div className="text-[10px]" style={{ color: theme.textSecondary }}>
+                            {cat.hours} hours
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div
+                    className="text-m text-center py-4"
+                    style={{ color: theme.textSecondary }}
+                  >
+                    {isMs ? "Tiada aktiviti" : "No activities"}
+                  </div>
+                )}
               </div>
             </div>
 
