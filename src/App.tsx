@@ -935,7 +935,9 @@ export default function App() {
       p.startsWith("/activity") ||
       p.startsWith("/detailactivity") ||
       p.startsWith("/badges") ||
-      p.startsWith("/activity-main")
+      p.startsWith("/activity-main") ||
+      p.startsWith("/event-detail") ||
+      p.startsWith("/event-reminders") 
     )
       return "activity";
     if (p.startsWith("/profile") || p === "/edit-profile") return "profile";
