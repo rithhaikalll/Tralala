@@ -153,7 +153,7 @@ export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) 
         </div>
       </div>
 
-      <div className="p-6 space-y-6 pb-32"> 
+      <div className="p-6 space-y-6 pb-32 md:space-y-8"> 
         <div className="flex gap-2">
           {["week", "month", "year"].map((range) => (
             <button key={range} className="flex-1 py-2 rounded-lg font-medium border"
@@ -180,6 +180,7 @@ export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) 
               </div>
             </div>
 
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-6">
             {reportData.byCategory.length > 0 && (
               <div className="p-5 border shadow-sm rounded-2xl" style={{ backgroundColor: theme.cardBg, borderColor: theme.border }}>
                 <h3 className="text-sm font-bold mb-4" style={{ color: theme.text }}>{isMs ? "Agihan Aktiviti berdasarkan Kategori" : "Activity Distribution by Category"}</h3>
@@ -235,6 +236,7 @@ export function ActivityReportScreen({ onNavigate }: ActivityReportScreenProps) 
                   </div>
                 )}
               </div>
+            </div>
             </div>
 
             <button className="w-full py-4 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all"
