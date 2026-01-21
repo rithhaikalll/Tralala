@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { supabase } from "./lib/supabaseClient";
 import { UserPreferencesProvider } from "./lib/UserPreferencesContext";
 import { Toaster, toast } from "sonner";
-import { getOrCreateChat } from "./lib/chatService"; // <--- MAKE SURE THIS IS IMPORTED
+import { getOrCreateChat } from "./lib/chatService"; 
 
 import {
   Routes,
@@ -53,10 +53,7 @@ import {
 
 // --- COMMUNITY IMPORTS ---
 import { CommunityScreen } from "./pages/Community/CommunityScreen";
-import {
-  DiscussionScreen,
-  DiscussionScreenHeader,
-} from "./pages/Community/DiscussionScreen";
+import { DiscussionScreen } from "./pages/Community/DiscussionScreen";
 import { DiscussionDetailScreen } from "./pages/Community/DiscussionDetailScreen";
 import { CreateDiscussionScreen } from "./pages/Community/CreateDiscussionScreen";
 
@@ -108,7 +105,7 @@ import { useUserPreferences } from "./lib/UserPreferencesContext";
 const useBuddyData = (userId: string) => {
   const [requests, setRequests] = useState<any[]>([]);
   const [connectedBuddies, setConnectedBuddies] = useState<any[]>([]);
-  const [pendingRequestIds, setPendingRequestIds] = useState<string[]>([]); // New state
+  const [pendingRequestIds, setPendingRequestIds] = useState<string[]>([]); 
 
   const refresh = async () => {
     if (!userId) return;
@@ -200,8 +197,6 @@ const useBuddyData = (userId: string) => {
   return { requests, connectedBuddies, pendingRequestIds, refresh };
 };
 
-
-
 function DiscussionDetailWrapper({
   onNavigate,
   studentName,
@@ -252,15 +247,6 @@ function EditNewsWrapper({
   );
 }
 
-
-// ------------------------------------------------------------------
-// COPY THIS INTO YOUR App.tsx (Replace the existing MarketplaceDetailWrapper)
-// ------------------------------------------------------------------
-
-// ============================================================================
-// REPLACE THE ENTIRE MarketplaceDetailWrapper FUNCTION IN App.tsx
-// ============================================================================
-
 function MarketplaceDetailWrapper({ userId, onNavigate }: any) {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -310,7 +296,6 @@ function MarketplaceDetailWrapper({ userId, onNavigate }: any) {
     }
   };
 
-  // 👇 THIS IS THE NEW CHAT FUNCTION 👇
   const handleCreateChat = async () => {
     if (!item || !userId) return;
 
@@ -322,14 +307,13 @@ function MarketplaceDetailWrapper({ userId, onNavigate }: any) {
     const toastId = toast.loading("Opening chat...");
 
     try {
-      // Create chat with "marketplace" type and Item ID metadata
       const chat = await getOrCreateChat(
         "marketplace",
         userId,
         item.seller_id,
         item.seller_name,
-        item.id,       // Item ID
-        item.title     // Item Title
+        item.id,      
+        item.title    
       );
 
       toast.dismiss(toastId);
@@ -356,7 +340,7 @@ function MarketplaceDetailWrapper({ userId, onNavigate }: any) {
       isFavourite={isFavourite}
       onToggleFavourite={handleToggleFav}
       isOwner={item.seller_id === userId}
-      onCreateMarketplaceChat={handleCreateChat} // <--- Pass the function
+      onCreateMarketplaceChat={handleCreateChat} 
     />
   );
 }
@@ -688,7 +672,6 @@ function RequireAuth({
 
 function PrivateChatListWrapper({ userId }: any) {
   const navigate = useNavigate();
-  // We no longer need to pass chats as props, the component fetches them!
   return (
     <PrivateChatListScreen
       currentUserId={userId}
@@ -737,14 +720,13 @@ export default function App() {
   // --- BUDDY SYSTEM HANDLERS ---
   const handleSendBuddyRequest = async (targetUserId: string) => {
     try {
-      // Check if request already exists to prevent duplicates
       const { data: existing } = await supabase
         .from("buddy_requests")
         .select("*")
         .or(`and(requester_id.eq.${userId},recipient_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},recipient_id.eq.${userId})`)
         .maybeSingle();
 
-      if (existing) return; // Request already exists
+      if (existing) return; 
 
       const { error } = await supabase.from("buddy_requests").insert({
         requester_id: userId,
@@ -775,7 +757,6 @@ export default function App() {
 
   const handleRemoveBuddy = async (buddyUserId: string) => {
     try {
-      // Delete the connection where either user is the requester or recipient
       const { error } = await supabase
         .from("buddy_requests")
         .delete()
@@ -788,16 +769,13 @@ export default function App() {
     }
   };
 
-  // Helper to fetch all necessary data centrally
   const fetchUserData = async (uid: string, role: string) => {
-    // 1. Fetch editable details (profile_details) for Picture and Custom Name
     const { data: details } = await supabase
       .from("profile_details")
       .select("full_name, profile_picture_url")
       .eq("user_id", uid)
       .maybeSingle();
 
-    // 2. Fetch core identity
     let coreName = "User";
     let matric = "";
 
@@ -870,7 +848,6 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // UPDATED: Logic to hide bottom nav
   const hideBottomNav =
     userRole === "admin" ||
     location.pathname === "/" ||
@@ -881,10 +858,9 @@ export default function App() {
     location.pathname.startsWith("/private-chat-list") ||
     location.pathname.includes("/community/marketplace/") ||
 
-    // Updated discussion paths
     location.pathname.includes("/community/discussion/create") ||
     location.pathname.match(/\/community\/discussion\/[^/]+$/) ||
-    // NEWS PATHS: Hide nav on create, edit, or detail view
+    
     location.pathname.includes("/community/news/create") ||
     location.pathname.includes("/community/news/edit") ||
     location.pathname.match(/\/community\/news\/[^/]+$/) ||
@@ -908,7 +884,6 @@ export default function App() {
 
   const showBottomNav = authed && !hideBottomNav;
 
-  // UPDATED: Header Logic - Hide mobile headers on desktop (lg breakpoint)
   const hasHeader =
     authed &&
     userRole !== "admin" &&
@@ -916,11 +891,9 @@ export default function App() {
     ((location.pathname.startsWith("/facility") && !location.pathname.startsWith("/facility-complaints")) ||
       (location.pathname.startsWith("/book") && !location.pathname.startsWith("/booking")) ||
       (location.pathname === "/home" && userRole === "student") ||
-      // Show Discussion Header ONLY on list view
-      (location.pathname === "/community/discussion") ||
+      // ✅ Removed Discussion Header check here because it's now handled in DiscussionScreen.tsx
       location.pathname === "/my-bookings" ||
       (location.pathname.match(/^\/activity\/[^/]+$/) && !location.pathname.startsWith("/activity/record")));
-  // NOTE: We do NOT want the global header for News, as news screens have their own.
 
   const activeTab = useMemo(() => {
     const p = location.pathname;
@@ -989,7 +962,6 @@ export default function App() {
     <UserPreferencesProvider>
       <Toaster position="top-center" richColors />
       <div className="h-full w-full bg-[--bg-primary)] text-[--text-primary)] transition-colors duration-300 flex flex-col overflow-hidden">
-        {/* Desktop Top Navigation - Only show when authenticated AND not on auth pages */}
         {authed && 
          userRole !== "admin" && 
          !location.pathname.startsWith("/login") &&
@@ -1016,14 +988,7 @@ export default function App() {
               )}
             {location.pathname.startsWith("/book") && <BookListHeader />}
 
-            {/* Discussion Header */}
-            {location.pathname === "/community/discussion" && (
-              <DiscussionScreenHeader
-                onNavigate={(screen) => {
-                  if (screen === "create-discussion") navigate("/community/discussion/create");
-                }}
-              />
-            )}
+            {/* ✅ Removed DiscussionScreenHeader from here */}
 
             {location.pathname === "/my-bookings" && (
               <MyBookingsScreenHeader onBack={() => navigate("/home")} />
@@ -1262,7 +1227,6 @@ export default function App() {
                     <MarketplaceDetailWrapper
                       userId={userId}
                       onNavigate={(screen: string, data: any) => {
-                        // 👇 THIS BLOCK HANDLES THE REDIRECT TO CHAT
                         if (screen === "private-chat") {
                           navigate("/private-chat", { state: data });
                         } else {
@@ -1294,7 +1258,6 @@ export default function App() {
                     connectedBuddies={connectedBuddies}
                     onRemoveBuddy={handleRemoveBuddy}
 
-                    // 👇 DEBUGGING VERSION OF THE CHAT TRIGGER 👇
                     onChat={async (buddyId, buddyName) => {
                       console.log("🟢 1. Button Clicked! Trying to chat with:", buddyName);
                       console.log("   - My ID:", userId);
@@ -1344,7 +1307,7 @@ export default function App() {
                     onNavigate={() => navigate("/community/buddy")}
                     studentId={userId}
                     connectedBuddies={connectedBuddies.map(b => b.id)}
-                    pendingRequests={pendingRequestIds} // <--- PASS THIS PROP
+                    pendingRequests={pendingRequestIds} 
                     onSendRequest={handleSendBuddyRequest}
                   />
                 </RequireAuth>
@@ -1360,31 +1323,7 @@ export default function App() {
                   />
                 </RequireAuth>
               } />
-              <Route path="/community/my-buddies" element={
-                <RequireAuth authed={authed}>
-                  <MyBuddiesScreen
-                    onNavigate={() => navigate("/community/buddy")}
-                    studentId={userId}
-                    connectedBuddies={connectedBuddies}
-                    onRemoveBuddy={handleRemoveBuddy}
 
-                    // 👇 IF THIS CHUNK IS MISSING, NOTHING WILL HAPPEN 👇
-                    onChat={async (buddyId, buddyName) => {
-                      console.log("2. App.tsx received request for:", buddyName); // <--- Debug Log
-
-                      const chat = await getOrCreateChat("buddy", userId, buddyId, buddyName);
-
-                      console.log("3. Chat created:", chat); // <--- Debug Log
-
-                      if (chat) {
-                        navigate("/private-chat", { state: { chat, chatType: "buddy" } });
-                      }
-                    }}
-                  />
-                </RequireAuth>
-              } />
-
-              {/* PRIVATE CHAT ROUTES */}
               <Route path="/private-chat-list" element={
                 <RequireAuth authed={authed}>
                   <PrivateChatListWrapper userId={userId} />
@@ -1424,8 +1363,6 @@ export default function App() {
                   </RequireAuth>
                 }
               />
-
-              {/* ... (Keep existing Activity/Event/Settings routes unchanged) ... */}
 
               <Route
                 path="/edit-profile"

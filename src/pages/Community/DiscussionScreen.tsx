@@ -1,7 +1,7 @@
 // src/pages/DiscussionScreen.tsx
 import { useEffect, useState } from "react";
-import { Plus, MessageCircle, Heart, ArrowLeft } from "lucide-react"; // Added ArrowLeft
-import { useNavigate } from "react-router-dom"; // Added useNavigate
+import { Plus, MessageCircle, Heart, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useUserPreferences } from "../../lib/UserPreferencesContext";
 
@@ -25,7 +25,7 @@ export function DiscussionScreenHeader({
   onNavigate: (screen: string) => void;
 }) {
   const { theme, t } = useUserPreferences();
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
 
   return (
     <div
@@ -63,7 +63,7 @@ export function DiscussionScreenHeader({
           className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-95"
           style={{
             backgroundColor: theme.primary,
-            boxShadow: `0 4px 12px ${theme.primary}4D`, // 30% opacity
+            boxShadow: `0 4px 12px ${theme.primary}4D`,
           }}
         >
           <Plus
@@ -88,8 +88,6 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
       setLoading(true);
       setErrorMsg(null);
 
-      // assumes FK: discussion_comments.discussion_id -> discussions.id
-      // and     FK: discussion_likes.discussion_id     -> discussions.id
       const { data, error } = await supabase
         .from("discussions")
         .select(
@@ -130,7 +128,11 @@ export function DiscussionScreen({ onNavigate }: DiscussionScreenProps) {
 
   return (
     <div className="h-full transition-colors" style={{ backgroundColor: theme.background }}>
-      {/* spacer reserved by app-level header */}
+      
+      {/* ✅ Header is now rendered directly here so the button always appears */}
+      <DiscussionScreenHeader onNavigate={onNavigate} />
+
+      {/* spacer reserved by fixed header */}
       <div className="h-24" />
 
       {/* Content */}
